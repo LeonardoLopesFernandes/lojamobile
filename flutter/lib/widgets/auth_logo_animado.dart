@@ -59,8 +59,7 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
       animation: _c,
       builder: (_, __) {
         final t = _c.value;
-        final drawP = (t / 0.6).clamp(0.0, 1.0);
-        final fillP = ((t - 0.55) / 0.35).clamp(0.0, 1.0);
+        final drawP = (t / 0.85).clamp(0.0, 1.0);
         return CustomPaint(
           size: Size.square(widget.size),
           painter: _LogoPainter(
@@ -68,7 +67,6 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
             metrics: _metrics,
             total: _total,
             drawP: drawP,
-            fillP: fillP,
             color: widget.color,
           ),
         );
@@ -82,7 +80,6 @@ class _LogoPainter extends CustomPainter {
   final List<PathMetric> metrics;
   final double total;
   final double drawP;
-  final double fillP;
   final Color color;
 
   _LogoPainter({
@@ -90,7 +87,6 @@ class _LogoPainter extends CustomPainter {
     required this.metrics,
     required this.total,
     required this.drawP,
-    required this.fillP,
     required this.color,
   });
 
@@ -105,15 +101,6 @@ class _LogoPainter extends CustomPainter {
     canvas.save();
     canvas.translate(dx, dy);
     canvas.scale(s);
-
-    if (fillP > 0) {
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = color.withValues(alpha: fillP)
-          ..style = PaintingStyle.fill,
-      );
-    }
 
     var restante = total * drawP;
     final stroke = Paint()
@@ -134,7 +121,5 @@ class _LogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LogoPainter old) =>
-      old.drawP != drawP ||
-      old.fillP != fillP ||
-      old.color != color;
+      old.drawP != drawP || old.color != color;
 }
