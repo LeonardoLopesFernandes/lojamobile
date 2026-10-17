@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'animated_trash_icon.dart';
 
-/// Item que pode ser arrastado para a DIREITA (StartToEnd) para remover,
-/// fundo vermelho com ícone de lixeira à esquerda (fiel ao SwipeToDismiss
-/// do Compose).
+/// Item que pode ser arrastado (para a esquerda OU direita) para remover,
+/// revelando a lixeira branca animada no lado correspondente.
 class SwipeToTrashItem extends StatefulWidget {
   final Widget child;
   final VoidCallback onDismissed;
@@ -27,7 +27,7 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
   late AnimationController _controller;
   late Animation<double> _animProgress;
 
-  final double _threshold = 100.0; // distância mínima (para a direita)
+  final double _threshold = 100.0;
 
   @override
   void initState() {
@@ -54,15 +54,12 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
 
   void _onHorizontalDragUpdate(DragUpdateDetails details) {
     if (_isDeleting) return;
-    setState(() {
-      _dragOffset += details.delta.dx;
-      if (_dragOffset < 0) _dragOffset = 0; // só para a direita
-    });
+    setState(() => _dragOffset += details.delta.dx);
   }
 
   void _onHorizontalDragEnd(DragEndDetails details) {
     if (_isDeleting) return;
-    if (_dragOffset > _threshold) {
+    if (_dragOffset.abs() > _threshold) {
       setState(() => _isDeleting = true);
       _controller.forward();
     } else {
@@ -74,7 +71,8 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
   Widget build(BuildContext context) {
     if (_isRemoved) return const SizedBox.shrink();
 
-    final bool isTrashOpen = _dragOffset > (_threshold / 2);
+    final bool paraDireita = _dragOffset >= 0;
+    final bool isTrashOpen = _dragOffset.abs() > (_threshold / 2);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -83,15 +81,17 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
         children: [
           Positioned.fill(
             child: Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(left: 20),
+              alignment:
+                  paraDireita ? Alignment.centerLeft : Alignment.centerRight,
+              padding: EdgeInsets.only(
+                  left: paraDireita ? 20 : 0, right: paraDireita ? 0 : 20),
               decoration: const BoxDecoration(
                 color: Color(0xFFD32F2F),
               ),
               child: AnimatedScale(
-                scale: isTrashOpen ? 1.3 : 1.0,
+                scale: isTrashOpen ? 1.25 : 1.0,
                 duration: const Duration(milliseconds: 200),
-                child: const Icon(Icons.delete, color: Colors.white),
+                child: AnimatedTrashIcon(animate: isTrashOpen || _isDeleting),
               ),
             ),
           ),
@@ -109,6 +109,7 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
                   ),
                 );
               }
+              final dir = _dragOffset >= 0 ? 1.0 : -1.0;
               double scaleFactor = 1.0;
               double opacity = 1.0;
               double translateX = _dragOffset;
@@ -120,7 +121,7 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
                 final p = (progress - 0.4) / 0.6;
                 scaleFactor = 0.7 * (1.0 - p * 0.5);
                 opacity = (1.0 - p).clamp(0.0, 1.0);
-                translateX = _dragOffset + (p * (120 - _dragOffset));
+                translateX = _dragOffset + (p * (dir * 140 - _dragOffset));
                 translateY = -math.sin(p * math.pi) * 30;
               }
               return Opacity(
