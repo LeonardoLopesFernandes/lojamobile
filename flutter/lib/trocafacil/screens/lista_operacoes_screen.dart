@@ -258,7 +258,7 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
           ? 'Devolução'
           : (systemSource == 'FISICO' ? 'Físico' : '');
       try {
-        final ok = await TrocaEtiquetaPdf.salvarNoDownloads(
+        final uri = await TrocaEtiquetaPdf.salvarNoDownloads(
           labelNumber: etq,
           tradeId: op.tradeId,
           loja: s(det?['storeNumber']),
@@ -268,8 +268,14 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
           modalidade: modalidade,
         );
         if (!mounted) return;
-        if (ok) {
-          ToastUtils.showSuccess(context, 'Etiqueta salva em Download/Troca');
+        if (uri != null && uri.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Etiqueta salva em Download/Troca'),
+            action: SnackBarAction(
+              label: 'Abrir',
+              onPressed: () => _abrirPdf(uri),
+            ),
+          ));
         } else {
           ToastUtils.showError(context, 'Não foi possível salvar a etiqueta');
         }
@@ -280,6 +286,20 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
       }
     } else if (acao == 'cancelar') {
       await _cancelar(op);
+    }
+  }
+
+  Future<void> _abrirPdf(String uri) async {
+    try {
+      const channel = MethodChannel('com.ir/media');
+      await channel.invokeMethod('openUri', {
+        'uri': uri,
+        'mime': 'application/pdf',
+      });
+    } catch (_) {
+      if (mounted) {
+        ToastUtils.showError(context, 'Não foi possível abrir o PDF');
+      }
     }
   }
 

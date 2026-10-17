@@ -266,8 +266,8 @@ class TrocaEtiquetaPdf {
     );
   }
 
-  /// Gera e salva em Download/Troca. Retorna true se salvou.
-  static Future<bool> salvarNoDownloads({
+  /// Gera e salva em Download/Troca. Retorna a URI salva (ou null).
+  static Future<String?> salvarNoDownloads({
     required String labelNumber,
     required String tradeId,
     required String loja,
@@ -286,12 +286,11 @@ class TrocaEtiquetaPdf {
       modalidade: modalidade,
     );
     const channel = MethodChannel('com.ir/media');
-    final uri = await channel.invokeMethod<String>('saveToDownloads', {
+    return channel.invokeMethod<String>('saveToDownloads', {
       'fileName': 'etiqueta_$labelNumber.pdf',
       'mime': 'application/pdf',
       'bytes': bytes,
       'subfolder': 'Troca',
     });
-    return uri != null && uri.isNotEmpty;
   }
 }

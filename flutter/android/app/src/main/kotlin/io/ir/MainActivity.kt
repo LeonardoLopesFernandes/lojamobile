@@ -149,6 +149,21 @@ class MainActivity : FlutterActivity() {
                             }
                         }.start()
                     }
+                    "openUri" -> {
+                        try {
+                            val uriStr = call.argument<String>("uri")
+                            val mime = call.argument<String>("mime")
+                                ?: "application/octet-stream"
+                            if (uriStr == null) {
+                                result.error("NO_URI", "uri nulo", null)
+                                return@setMethodCallHandler
+                            }
+                            openFile(Uri.parse(uriStr), mime)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("OPEN_FAILED", e.message, null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
