@@ -35,7 +35,7 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
     super.initState();
     _c = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 3200),
     )..repeat();
     final m = Matrix4.identity()
       ..translate(0.0, 480.0)
