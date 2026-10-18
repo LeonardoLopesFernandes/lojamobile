@@ -16,6 +16,7 @@ class TrocaEtiquetaPdf {
     required String produto,
     required String motivo,
     required String modalidade,
+    required String cause,
   }) async {
     final doc = pw.Document();
     pw.MemoryImage? icone;
