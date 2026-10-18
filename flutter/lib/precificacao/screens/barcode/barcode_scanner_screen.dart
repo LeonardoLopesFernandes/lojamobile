@@ -1,15 +1,16 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/core/lista_store.dart';
 import 'package:inventario/precificacao/core/session_manager.dart';
 import 'package:inventario/precificacao/core/theme.dart';
+import 'package:inventario/precificacao/models/models.dart';
 import 'package:inventario/precificacao/network/api_client.dart';
 import 'package:inventario/precificacao/network/api_service.dart';
 import 'package:inventario/precificacao/utils/beep.dart';
 import 'package:inventario/precificacao/utils/log_helper.dart';
 import 'package:inventario/precificacao/utils/price_tag_mapper.dart';
 import 'package:inventario/precificacao/utils/session_expired_handler.dart';
+import 'package:inventario/precificacao/utils/toast_utils.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
@@ -36,11 +37,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   bool _processing = false;
   String _lastCode = '';
   int _lastCodeTime = 0;
-  int _lidas = 0;
-  String _toastMsg = '';
-  bool _toastErro = false;
-  bool _mostrarToast = false;
-  Timer? _toastTimer;
+  int _added = 0;
 
   @override
   void initState() {
@@ -51,7 +48,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     );
     if (widget.continuo) {
       _api = ApiService(ApiClient.instance.getSlApiService());
-      _storeId = SessionManager.instance?.getUserStore() ?? Constants.defaultStore;
+      _storeId =
+          SessionManager.instance?.getUserStore() ?? Constants.defaultStore;
       final d = DateTime.now();
       _today =
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -94,18 +92,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     return semZeros.isEmpty ? raw : semZeros;
   }
 
-  void _exibirToast(String msg, {bool erro = false}) {
-    _toastTimer?.cancel();
-    setState(() {
-      _toastMsg = msg;
-      _toastErro = erro;
-      _mostrarToast = true;
-    });
-    _toastTimer = Timer(const Duration(milliseconds: 1400), () {
-      if (mounted) setState(() => _mostrarToast = false);
-    });
-  }
-
   Future<void> _processar(String ean) async {
     final api = _api;
     if (api == null) return;
@@ -119,7 +105,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       if (!mounted) return;
       if (resp.items.isEmpty) {
         Beep.error();
-        _exibirToast('Código não encontrado: $ean', erro: true);
         return;
       }
       final lista = await ListaStore.instance.getEtiquetas();
@@ -134,9 +119,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       await ListaStore.instance.saveEtiquetas(lista);
       await ListaStore.instance.setColagem(ean);
       if (!mounted) return;
-      _lidas++;
+      setState(() => _added += resp.items.length);
       Beep.success();
-      _exibirToast('$_lidas ${_lidas == 1 ? 'etiqueta lida' : 'etiquetas lidas'}');
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         Beep.error();
@@ -144,13 +128,136 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         return;
       }
       Beep.error();
-      _exibirToast('Erro de leitura: $ean', erro: true);
     } catch (e) {
       LogHelper.e('BarcodeScanner: erro na leitura contínua', e);
       Beep.error();
-      _exibirToast('Erro de leitura: $ean', erro: true);
     } finally {
       _processing = false;
+    }
+  }
+
+  Future<void> _escolherImpressoraEEnviar() async {
+    final escolha = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Enviar impressão'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, Constants.printerZebra1),
+            child: const Text('Zebra 1'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, Constants.printerZebra2),
+            child: const Text('Zebra 2'),
+          ),
+        ],
+      ),
+    );
+    if (escolha == null || !mounted) return;
+    await _enviarImpressao(escolha);
+  }
+
+  Future<void> _enviarImpressao(String printerId) async {
+    final api = _api;
+    if (api == null) return;
+    final etiquetas = await ListaStore.instance.getEtiquetas();
+    if (etiquetas.isEmpty) {
+      ToastUtils.show(context, 'Nenhuma etiqueta adicionada');
+      return;
+    }
+    final lista = <PrintingData>[];
+    for (final item in etiquetas) {
+      final pd = item.printingData;
+      if (pd == null) continue;
+      final template = pd.takeAndWin != null
+          ? Constants.signTemplateModelo
+          : Constants.templateNormalizado(pd.template);
+      lista.add(pd.copyWith(quantity: 1, template: template));
+    }
+    if (lista.isEmpty) {
+      ToastUtils.show(context, 'Dados de impressão não disponíveis');
+      return;
+    }
+    try {
+      await api.sendPriceTagsToPrinter(
+        _storeId,
+        printerId,
+        Constants.tagGondola,
+        SendPriceTagsRequest(products: lista),
+      );
+      if (!mounted) return;
+      ToastUtils.show(
+          context, '${lista.length} etiqueta(s) enviada(s) para impressão!');
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ToastUtils.showError(context, 'Erro ao enviar: $e');
+    }
+  }
+
+  Future<void> _abrirPreviewPapeleta() async {
+    final api = _api;
+    if (api == null) return;
+    final etiquetas = await ListaStore.instance.getEtiquetas();
+    if (etiquetas.isEmpty) {
+      ToastUtils.show(context, 'Nenhuma etiqueta adicionada');
+      return;
+    }
+    try {
+      final lista = <PapeletaPrintingData>[];
+      final vistos = <String>{};
+      for (final et in etiquetas) {
+        for (final tipo in [Constants.tipoComum, Constants.tipoPromocional]) {
+          try {
+            final resp = await api.getPriceSignStandalone(_storeId, tipo,
+                ean: et.ean, startDate: _today);
+            for (final item in resp.items) {
+              final pd = item.printingData;
+              if (pd == null) continue;
+              if (!vistos.add(item.ean)) continue;
+              lista.add(pd.copyWith(quantity: 1, size: Constants.signSize1x1));
+            }
+          } catch (_) {}
+        }
+      }
+      if (lista.isEmpty) {
+        ToastUtils.show(context, 'Dados de papeleta não disponíveis');
+        return;
+      }
+      final tamanhos = ['1×1', '2×1', '4×1', '6×1'];
+      final sizes = [
+        Constants.signSize1x1,
+        Constants.signSize2x1,
+        Constants.signSize4x1,
+        Constants.signSize6x1,
+      ];
+      final escolha = await showDialog<String>(
+        context: context,
+        builder: (ctx) => SimpleDialog(
+          title: const Text('Tamanho da papeleta'),
+          children: [
+            for (var i = 0; i < tamanhos.length; i++)
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, sizes[i]),
+                child: Text(tamanhos[i]),
+              ),
+          ],
+        ),
+      );
+      if (escolha == null || !mounted) return;
+      await Navigator.pushNamed(context, '/modelo_editavel', arguments: {
+        'items': lista,
+        'size': escolha,
+        'mostrarCheckboxOverlay': true,
+        'modoEditavel': false,
+        'modoVencimentos': false,
+        'semOverlay': false,
+        'apiSemOverlay': true,
+        'hideGerarPreview': false,
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ToastUtils.showError(context, 'Erro: $e');
     }
   }
 
@@ -165,6 +272,24 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       _controller.setZoomScale((_currentZoom - 1) / 7);
       setState(() {});
     }
+  }
+
+  Widget _botaoCamera(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD7193F),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+              color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
   }
 
   @override
@@ -213,12 +338,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ),
             if (_currentZoom > 1.0)
               Positioned(
-                bottom: 60,
+                bottom: 120,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(20),
@@ -235,38 +361,45 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             if (widget.continuo)
               Positioned(
-                bottom: 56,
-                left: 16,
-                right: 16,
-                child: IgnorePointer(
-                  ignoring: true,
-                  child: AnimatedOpacity(
-                    opacity: _mostrarToast ? 1 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Center(
+                bottom: 40,
+                left: 0,
+                right: 0,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: _toastErro
-                              ? const Color(0xFFD32F2F)
-                              : Colors.white,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Text(
-                          _toastMsg,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _toastErro
-                                ? Colors.white
-                                : const Color(0xFFD7193F),
+                          _added == 1
+                              ? '1 item adicionado'
+                              : '$_added itens adicionados',
+                          style: const TextStyle(
+                            color: Color(0xFFD7193F),
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _botaoCamera(
+                            'ENVIAR IMPRESSÃO', _escolherImpressoraEEnviar),
+                        const SizedBox(width: 8),
+                        _botaoCamera(
+                            'IMPRIMIR PAPELETA', _abrirPreviewPapeleta),
+                      ],
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -277,7 +410,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   void dispose() {
-    _toastTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

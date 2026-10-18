@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 const Color avulsaRed = Color(0xFFD32F2F);
 const Color avulsaLabelGrey = Color(0xFF8C9BA5);
@@ -230,8 +231,11 @@ class _AvulsaFabScannerState extends State<AvulsaFabScanner>
             color: avulsaRed,
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.qr_code_scanner,
-              color: Colors.white, size: 26),
+          child: SvgPicture.asset(
+            'assets/drawables/ic_barcode_scan.svg',
+            width: 26,
+            height: 26,
+          ),
         ),
       ),
     );

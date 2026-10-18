@@ -518,7 +518,7 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: _limpando ? null : _limparLista,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: primaryRed,
@@ -527,14 +527,16 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
                             borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      child: const Text('LIMPAR LISTA',
+                      icon: const Icon(Icons.cleaning_services_outlined,
+                          size: 18),
+                      label: const Text('LIMPAR LISTA',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       onPressed: _imprimindo ? null : _imprimirTodas,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryRed,
@@ -543,7 +545,17 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
                             borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      child: Text(
+                      icon: _imprimindo
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white)),
+                            )
+                          : const Icon(Icons.print, size: 18),
+                      label: Text(
                           _imprimindo ? 'IMPRIMINDO...' : 'IMPRIMIR TODAS',
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12)),
