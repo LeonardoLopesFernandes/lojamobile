@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
 import '../utils/app_version.dart';
+import '../widgets/auth_logo_animado.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,27 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 48),
-                    SizedBox(
-                      width: 150,
-                      height: 150,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Lottie.asset(
-                            'assets/lottie/loader_ring.json',
-                            width: 150,
-                            height: 150,
-                            fit: BoxFit.contain,
-                            repeat: true,
-                          ),
-                          Image.asset(
-                            'assets/drawables/mobile.png',
-                            width: 84,
-                            height: 84,
-                          ),
-                        ],
-                      ),
-                    ),
+                    const AuthLogoAnimado(size: 150),
                     const SizedBox(height: 6),
                     const Text(
                       'Loja Mobile',
