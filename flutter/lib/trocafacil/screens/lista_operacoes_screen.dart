@@ -266,6 +266,7 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
           produto: s(prod['productDescription']),
           motivo: motivo,
           modalidade: modalidade,
+          cause: s(det?['cause']),
         );
         if (!mounted) return;
         if (uri != null && uri.isNotEmpty) {

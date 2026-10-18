@@ -44,9 +44,10 @@ class TrocaEtiquetaPdf {
             labelNumber: labelNumber,
             produto: produto,
             motivo: motivo,
+            modalidade: modalidade,
           ),
           pw.SizedBox(height: 12),
-          _abas(),
+          _abas(cause),
         ],
       ),
     );
@@ -168,6 +169,7 @@ class TrocaEtiquetaPdf {
     required String labelNumber,
     required String produto,
     required String motivo,
+    required String modalidade,
   }) {
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -219,6 +221,20 @@ class TrocaEtiquetaPdf {
                       children: [
                         pw.Expanded(child: _info('Recebido em loja', data)),
                         pw.Expanded(child: _info('Nº Etiqueta', labelNumber)),
+                        if (modalidade.isNotEmpty)
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: pw.BoxDecoration(
+                              color: PdfColor.fromInt(0xFFFCE4EC),
+                              borderRadius: pw.BorderRadius.circular(8),
+                            ),
+                            child: pw.Text(modalidade,
+                                style: pw.TextStyle(
+                                    fontSize: 12,
+                                    color: PdfColor.fromInt(0xFFAD1457),
+                                    fontWeight: pw.FontWeight.bold)),
+                          ),
                       ],
                     ),
                     pw.SizedBox(height: 10),
@@ -233,17 +249,21 @@ class TrocaEtiquetaPdf {
     );
   }
 
-  static pw.Widget _abas() {
+  static pw.Widget _abas(String cause) {
+    final defeito = cause.toUpperCase() == 'DEFEITO';
+    final ativo = PdfColor.fromInt(0xFFFF0033);
+    final inativo = PdfColor.fromInt(0xFFFDE8ED);
+    final txtInativo = PdfColor.fromInt(0xFF880E4F);
     return pw.Row(
       children: [
         pw.Expanded(
           child: pw.Container(
-            color: PdfColor.fromInt(0xFFFF0033),
+            color: defeito ? inativo : ativo,
             padding: const pw.EdgeInsets.symmetric(vertical: 8),
             child: pw.Center(
               child: pw.Text('Troca',
                   style: pw.TextStyle(
-                      color: PdfColors.white,
+                      color: defeito ? txtInativo : PdfColors.white,
                       fontWeight: pw.FontWeight.bold,
                       fontSize: 12)),
             ),
@@ -251,12 +271,12 @@ class TrocaEtiquetaPdf {
         ),
         pw.Expanded(
           child: pw.Container(
-            color: PdfColor.fromInt(0xFFFDE8ED),
+            color: defeito ? ativo : inativo,
             padding: const pw.EdgeInsets.symmetric(vertical: 8),
             child: pw.Center(
               child: pw.Text('Defeito',
                   style: pw.TextStyle(
-                      color: PdfColor.fromInt(0xFF880E4F),
+                      color: defeito ? PdfColors.white : txtInativo,
                       fontWeight: pw.FontWeight.bold,
                       fontSize: 12)),
             ),
@@ -275,6 +295,7 @@ class TrocaEtiquetaPdf {
     required String produto,
     required String motivo,
     required String modalidade,
+    required String cause,
   }) async {
     final bytes = await gerar(
       labelNumber: labelNumber,
@@ -284,6 +305,7 @@ class TrocaEtiquetaPdf {
       produto: produto,
       motivo: motivo,
       modalidade: modalidade,
+      cause: cause,
     );
     const channel = MethodChannel('com.ir/media');
     return channel.invokeMethod<String>('saveToDownloads', {
