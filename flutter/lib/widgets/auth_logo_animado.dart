@@ -28,60 +28,6 @@ Path buildMarcaPath() {
   return marca;
 }
 
-/// Marca do app ("a" + barras) preenchida em branco.
-class LogoMarcaBranca extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const LogoMarcaBranca({
-    super.key,
-    this.size = 84,
-    this.color = Colors.white,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.square(size),
-      painter: _MarcaPainter(color: color),
-    );
-  }
-}
-
-class _MarcaPainter extends CustomPainter {
-  final Color color;
-  _MarcaPainter({required this.color});
-
-  static Path? _cache;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = _cache ??= buildMarcaPath();
-    final b = p.getBounds();
-    if (b.isEmpty) return;
-    final pad = size.shortestSide * 0.06;
-    final availW = size.width - pad * 2;
-    final availH = size.height - pad * 2;
-    final s = math.min(availW / b.width, availH / b.height);
-    final dx = (size.width - b.width * s) / 2 - b.left * s;
-    final dy = (size.height - b.height * s) / 2 - b.top * s;
-
-    canvas.save();
-    canvas.translate(dx, dy);
-    canvas.scale(s);
-    canvas.drawPath(
-      p,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.fill,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _MarcaPainter old) => old.color != color;
-}
-
 /// Ícone do app (logo) sendo "desenhado" (traçado) e preenchido, em branco.
 class AuthLogoAnimado extends StatefulWidget {
   final double size;
@@ -100,6 +46,7 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
   late final Path _path;
+  late final Path _marca;
   late final List<PathMetric> _metrics;
   late final double _total;
 
@@ -118,6 +65,7 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
       ..addPath(parseSvgPathData(_path2).transform(m.storage), Offset.zero);
     _metrics = _path.computeMetrics().toList();
     _total = _metrics.fold(0.0, (s, mt) => s + mt.length);
+    _marca = buildMarcaPath();
   }
 
   @override
@@ -137,6 +85,7 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
           size: Size.square(widget.size),
           painter: _LogoPainter(
             path: _path,
+            marca: _marca,
             metrics: _metrics,
             total: _total,
             drawP: drawP,
@@ -150,6 +99,7 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
 
 class _LogoPainter extends CustomPainter {
   final Path path;
+  final Path marca;
   final List<PathMetric> metrics;
   final double total;
   final double drawP;
@@ -157,6 +107,7 @@ class _LogoPainter extends CustomPainter {
 
   _LogoPainter({
     required this.path,
+    required this.marca,
     required this.metrics,
     required this.total,
     required this.drawP,
@@ -174,6 +125,17 @@ class _LogoPainter extends CustomPainter {
     canvas.save();
     canvas.translate(dx, dy);
     canvas.scale(s);
+
+    // Preenche a marca (o "a" e as barras) de branco durante o desenho.
+    final fillOpacity = (drawP * 1.6).clamp(0.0, 1.0);
+    if (fillOpacity > 0) {
+      canvas.drawPath(
+        marca,
+        Paint()
+          ..color = color.withValues(alpha: fillOpacity)
+          ..style = PaintingStyle.fill,
+      );
+    }
 
     var restante = total * drawP;
     final stroke = Paint()
