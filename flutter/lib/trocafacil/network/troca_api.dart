@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:inventario/network/session_manager.dart';
 import '../models/avaliacao.dart';
+import '../models/bloqueio.dart';
 import '../models/cupom.dart';
 import 'troca_session.dart';
 
@@ -13,6 +14,8 @@ import 'troca_session.dart';
 class TrocaApi {
   static const String baseUrl =
       'https://trocafacil-bff-front.americanas.io/bff-frontend';
+  static const String _blockedBase =
+      'https://trocafacil-bff-front.americanas.io';
 
   Future<Map<String, String>> _headers() async {
     final troca = await TrocaSession.create();
@@ -100,6 +103,72 @@ class TrocaApi {
       throw TrocaApiException(resp.statusCode, 'Erro ${resp.statusCode}');
     }
     return json.decode(resp.body) as Map<String, dynamic>;
+  }
+
+  /// Lista os itens bloqueados da loja (bff-item-blocked/listByStore).
+  Future<BloqueioPage> listarBloqueios({
+    int page = 1,
+    int size = 10,
+    int sort = -1,
+    bool? answered,
+  }) async {
+    final session = await SessionManager.create();
+    final store = session.getUserStore();
+    final uri = Uri.parse('$_blockedBase/bff-item-blocked/listByStore');
+    final headers = await _headers();
+    headers['content-type'] = 'application/json';
+    final resp = await http.post(uri,
+        headers: headers,
+        body: json.encode({
+          'filter': {
+            'page': page,
+            'size': size,
+            'answered': answered,
+            'createdAt': null,
+            'sort': sort,
+          },
+          'stores': [store],
+        }));
+    if (resp.statusCode == 401) {
+      throw TrocaApiException(401, 'Sessão expirada');
+    }
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw TrocaApiException(resp.statusCode, 'Erro ${resp.statusCode}');
+    }
+    final body = resp.body.isEmpty
+        ? <String, dynamic>{}
+        : json.decode(resp.body) as Map<String, dynamic>;
+    return BloqueioPage.fromJson(body);
+  }
+
+  /// Busca as informações do produto pelo EAN (bff-trade/infos-product).
+  Future<List<ProductInfo>> infosProduct({required String ean}) async {
+    final session = await SessionManager.create();
+    final store = _storeNumeric(session.getUserStore());
+    final uri = Uri.parse('$baseUrl/bff-trade/infos-product')
+        .replace(queryParameters: {'store': store, 'ean': ean});
+    final headers = await _headers();
+    final resp = await http.get(uri, headers: headers);
+    if (resp.statusCode == 401) {
+      throw TrocaApiException(401, 'Sessão expirada');
+    }
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw TrocaApiException(resp.statusCode, 'Erro ${resp.statusCode}');
+    }
+    final raw = resp.body.isEmpty ? null : json.decode(resp.body);
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((e) => ProductInfo.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return const [];
+  }
+
+  String _storeNumeric(String store) {
+    final digits = store.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return store;
+    return digits.padLeft(4, '0');
   }
 
   /// Cancela a operação/troca (PUT bff-trade/deleteTags).

@@ -102,6 +102,11 @@ class _TrocaFacilMenuScreenState extends State<TrocaFacilMenuScreen> {
               title: 'Operações',
               onTap: () => _abrir('/troca_operacoes'),
             ),
+            _MenuCard(
+              icon: Icons.lock_outline,
+              title: 'Itens bloqueados',
+              onTap: () => _abrir('/troca_bloqueios'),
+            ),
           ],
         ),
       ),

@@ -20,6 +20,8 @@ import 'trocafacil/screens/lista_operacoes_screen.dart';
 import 'trocafacil/screens/filtrar_operacoes_screen.dart';
 import 'trocafacil/screens/troca_login_webview.dart';
 import 'trocafacil/screens/troca_etiqueta_screen.dart';
+import 'trocafacil/screens/lista_bloqueios_screen.dart';
+import 'trocafacil/screens/bloquear_item_screen.dart';
 import 'precificacao/screens/etiquetas/etiquetas_fragment.dart';
 import 'precificacao/screens/papeletas/papeletas_fragment.dart';
 import 'precificacao/screens/barcode/barcode_scanner_screen.dart';
@@ -148,6 +150,8 @@ class MyApp extends StatelessWidget {
         '/troca_avaliacao': (ctx) => const AvaliacaoProdutoScreen(),
         '/troca_operacoes': (ctx) => const ListaOperacoesScreen(),
         '/troca_operacoes_filtro': (ctx) => const FiltrarOperacoesScreen(),
+        '/troca_bloqueios': (ctx) => const ListaBloqueiosScreen(),
+        '/troca_bloquear_item': (ctx) => const BloquearItemScreen(),
         '/home': (ctx) => const HomeHubScreen(),
       },
     );
