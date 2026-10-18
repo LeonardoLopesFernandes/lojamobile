@@ -9,26 +9,7 @@ const String _path1 =
 const String _path2 =
     'M2715 1815 c-17 -7 -73 -20 -125 -29 -162 -28 -210 -65 -210 -160 0 -87 67 -131 190 -124 129 7 187 76 197 237 7 100 5 101 -52 76z';
 
-/// Caminho somente da marca do logo (o "a" e as barras), preenchível.
-Path buildMarcaPath() {
-  final m = Matrix4.identity()
-    ..translate(0.0, 480.0)
-    ..scale(0.1, -0.1);
-  final full = Path()
-    ..addPath(parseSvgPathData(_path1).transform(m.storage), Offset.zero)
-    ..addPath(parseSvgPathData(_path2).transform(m.storage), Offset.zero);
-  final metrics = full.computeMetrics().toList();
-  final marca = Path();
-  // Ignora a primeira subpath (fachada/loja); mantém o "a" e as barras.
-  for (var i = 1; i < metrics.length; i++) {
-    marca.addPath(
-        metrics[i].extractPath(0, metrics[i].length), Offset.zero);
-  }
-  marca.fillType = PathFillType.evenOdd;
-  return marca;
-}
-
-/// Ícone do app (logo) sendo "desenhado" (traçado) e preenchido, em branco.
+/// Ícone do app (logo) sendo "desenhado" (traçado) em branco.
 class AuthLogoAnimado extends StatefulWidget {
   final double size;
   final Color color;
@@ -46,7 +27,6 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
   late final Path _path;
-  late final Path _marca;
   late final List<PathMetric> _metrics;
   late final double _total;
 
@@ -65,7 +45,6 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
       ..addPath(parseSvgPathData(_path2).transform(m.storage), Offset.zero);
     _metrics = _path.computeMetrics().toList();
     _total = _metrics.fold(0.0, (s, mt) => s + mt.length);
-    _marca = buildMarcaPath();
   }
 
   @override
@@ -85,7 +64,6 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
           size: Size.square(widget.size),
           painter: _LogoPainter(
             path: _path,
-            marca: _marca,
             metrics: _metrics,
             total: _total,
             drawP: drawP,
@@ -99,7 +77,6 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
 
 class _LogoPainter extends CustomPainter {
   final Path path;
-  final Path marca;
   final List<PathMetric> metrics;
   final double total;
   final double drawP;
@@ -107,7 +84,6 @@ class _LogoPainter extends CustomPainter {
 
   _LogoPainter({
     required this.path,
-    required this.marca,
     required this.metrics,
     required this.total,
     required this.drawP,
@@ -126,22 +102,11 @@ class _LogoPainter extends CustomPainter {
     canvas.translate(dx, dy);
     canvas.scale(s);
 
-    // Preenche a marca (o "a" e as barras) de branco durante o desenho.
-    final fillOpacity = (drawP * 1.6).clamp(0.0, 1.0);
-    if (fillOpacity > 0) {
-      canvas.drawPath(
-        marca,
-        Paint()
-          ..color = color.withValues(alpha: fillOpacity)
-          ..style = PaintingStyle.fill,
-      );
-    }
-
     var restante = total * drawP;
     final stroke = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
+      ..strokeWidth = 7
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     for (final m in metrics) {
