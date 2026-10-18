@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inventario/utils/app_version.dart';
+import 'package:lottie/lottie.dart';
 import 'auth_logo_animado.dart';
 
 /// Tela/widget de autenticação: logo do app sendo desenhado (branco), título,
@@ -22,7 +23,23 @@ class AuthLoader extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AuthLogoAnimado(size: 140),
+            SizedBox(
+              width: 150,
+              height: 150,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Lottie.asset(
+                    'assets/lottie/loader_ring.json',
+                    width: 150,
+                    height: 150,
+                    fit: BoxFit.contain,
+                    repeat: true,
+                  ),
+                  const LogoMarcaBranca(size: 84),
+                ],
+              ),
+            ),
             const SizedBox(height: 28),
             Text(
               titulo,

@@ -9,6 +9,79 @@ const String _path1 =
 const String _path2 =
     'M2715 1815 c-17 -7 -73 -20 -125 -29 -162 -28 -210 -65 -210 -160 0 -87 67 -131 190 -124 129 7 187 76 197 237 7 100 5 101 -52 76z';
 
+/// Caminho somente da marca do logo (o "a" e as barras), preenchível.
+Path buildMarcaPath() {
+  final m = Matrix4.identity()
+    ..translate(0.0, 480.0)
+    ..scale(0.1, -0.1);
+  final full = Path()
+    ..addPath(parseSvgPathData(_path1).transform(m.storage), Offset.zero)
+    ..addPath(parseSvgPathData(_path2).transform(m.storage), Offset.zero);
+  final metrics = full.computeMetrics().toList();
+  final marca = Path();
+  // Ignora a primeira subpath (fachada/loja); mantém o "a" e as barras.
+  for (var i = 1; i < metrics.length; i++) {
+    marca.addPath(
+        metrics[i].extractPath(0, metrics[i].length), Offset.zero);
+  }
+  marca.fillType = PathFillType.evenOdd;
+  return marca;
+}
+
+/// Marca do app ("a" + barras) preenchida em branco.
+class LogoMarcaBranca extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const LogoMarcaBranca({
+    super.key,
+    this.size = 84,
+    this.color = Colors.white,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _MarcaPainter(color: color),
+    );
+  }
+}
+
+class _MarcaPainter extends CustomPainter {
+  final Color color;
+  _MarcaPainter({required this.color});
+
+  static Path? _cache;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = _cache ??= buildMarcaPath();
+    final b = p.getBounds();
+    if (b.isEmpty) return;
+    final pad = size.shortestSide * 0.06;
+    final availW = size.width - pad * 2;
+    final availH = size.height - pad * 2;
+    final s = math.min(availW / b.width, availH / b.height);
+    final dx = (size.width - b.width * s) / 2 - b.left * s;
+    final dy = (size.height - b.height * s) / 2 - b.top * s;
+
+    canvas.save();
+    canvas.translate(dx, dy);
+    canvas.scale(s);
+    canvas.drawPath(
+      p,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _MarcaPainter old) => old.color != color;
+}
+
 /// Ícone do app (logo) sendo "desenhado" (traçado) e preenchido, em branco.
 class AuthLogoAnimado extends StatefulWidget {
   final double size;
