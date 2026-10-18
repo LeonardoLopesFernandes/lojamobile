@@ -182,7 +182,7 @@ class _HomeHubScreenState extends State<HomeHubScreen> {
                     const SizedBox(width: 12),
                     const Expanded(
                       child: Text(
-                        'Minha Loja',
+                        'Loja Mobile',
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,

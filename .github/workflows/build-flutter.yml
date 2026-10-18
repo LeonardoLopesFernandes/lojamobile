@@ -72,7 +72,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
-          name: Minha Loja | Operações (${{ github.ref_type == 'tag' && github.ref_name || 'latest' }})
+          name: Loja Mobile (${{ github.ref_type == 'tag' && github.ref_name || 'latest' }})
           body: |
             Build automático a partir do commit `${{ github.sha }}`.
             APK Flutter **arm64-v8a** (release).

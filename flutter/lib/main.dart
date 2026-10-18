@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Minha Loja | Operações',
+        title: 'Loja Mobile',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
       localizationsDelegates: const [
