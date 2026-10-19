@@ -112,9 +112,6 @@ class TrocaEtiquetaPdf {
                         style: pw.TextStyle(
                             fontSize: 15, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 3),
-                    pw.Text('Descrição do item: $produto',
-                        style: const pw.TextStyle(fontSize: 10)),
-                    pw.SizedBox(height: 1),
                     pw.Text('Item recebido na loja $loja',
                         style: const pw.TextStyle(
                             fontSize: 10, color: PdfColors.grey700)),
