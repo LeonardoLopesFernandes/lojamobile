@@ -512,6 +512,55 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     );
   }
 
+  Widget _botaoCameraBranco(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+              color: Color(0xFFD7193F),
+              fontSize: 14,
+              fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _digitarEanManual() async {
+    final ctrl = TextEditingController();
+    final ean = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Digitar EAN'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Digite o EAN'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text),
+              child: const Text('OK')),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    final codigo = _normalizar((ean ?? '').trim());
+    if (codigo.isEmpty) return;
+    _processar(codigo);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -609,16 +658,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _botaoCamera(
-                            'ENVIAR IMPRESSÃO', _escolherImpressoraEEnviar),
-                        const SizedBox(width: 8),
-                        _botaoCamera(
-                            'IMPRIMIR PAPELETA', _abrirPreviewPapeleta),
-                      ],
-                    ),
+                    _botaoCameraBranco('DIGITAR EAN', _digitarEanManual),
+                    const SizedBox(height: 8),
+                    _botaoCamera(
+                        'ENVIAR IMPRESSÃO', _escolherImpressoraEEnviar),
+                    const SizedBox(height: 8),
+                    _botaoCamera(
+                        'IMPRIMIR PAPELETA', _abrirPreviewPapeleta),
                   ],
                 ),
               ),
