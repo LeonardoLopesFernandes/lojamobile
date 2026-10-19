@@ -194,8 +194,12 @@ class TrocaEtiquetaPdf {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Nº da operação',
-                        style: const pw.TextStyle(fontSize: 11)),
+                    pw.SizedBox(
+                      width: 210,
+                      child: pw.Text('Nº da operação',
+                          textAlign: pw.TextAlign.center,
+                          style: const pw.TextStyle(fontSize: 11)),
+                    ),
                     pw.SizedBox(height: 4),
                     pw.BarcodeWidget(
                       barcode: Barcode.code128(),
