@@ -203,7 +203,7 @@ class TrocaEtiquetaPdf {
                       width: 210,
                       height: 80,
                       drawText: true,
-                      textStyle: const pw.TextStyle(fontSize: 9),
+                      textStyle: const pw.TextStyle(fontSize: 12),
                     ),
                   ],
                 ),
