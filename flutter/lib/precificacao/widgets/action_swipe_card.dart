@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'animated_trash_icon.dart';
+import 'trash_draw_icon.dart';
 
 /// Item que pode ser arrastado (para a esquerda OU direita) para remover,
 /// revelando a lixeira branca animada no lado correspondente.
@@ -90,7 +90,7 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
             child: AnimatedScale(
               scale: isTrashOpen ? 1.25 : 1.0,
               duration: const Duration(milliseconds: 200),
-              child: AnimatedTrashIcon(animate: isTrashOpen || _isDeleting),
+              child: TrashDrawIcon(size: 34, animate: isTrashOpen || _isDeleting),
             ),
           ),
         ),
