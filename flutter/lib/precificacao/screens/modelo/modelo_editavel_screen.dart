@@ -843,7 +843,7 @@ class _ModeloEditavelScreenState extends State<ModeloEditavelScreen> {
               ),
               child: _gerando
                   ? const Icon(Icons.share, size: 20, color: Colors.white)
-                  : const Text('COMPARTILHAR PDF',
+                  : const Text('ENVIAR PDF',
                       style: TextStyle(
                           fontSize: 13, fontWeight: FontWeight.bold)),
             ),
@@ -861,7 +861,7 @@ class _ModeloEditavelScreenState extends State<ModeloEditavelScreen> {
               ),
               child: _sending
                   ? const Icon(Icons.print, size: 20, color: Colors.white)
-                  : const Text('IMPRIMIR',
+                  : const Text('IMPRIMIR PAPELETA',
                       style: TextStyle(
                           fontSize: 13, fontWeight: FontWeight.bold)),
             ),
