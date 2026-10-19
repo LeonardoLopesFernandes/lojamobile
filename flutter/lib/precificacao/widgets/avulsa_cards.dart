@@ -247,7 +247,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
       ),
       color: Colors.white,
       child: Padding(
@@ -498,7 +498,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
       margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
       ),
       color: Colors.white,
       child: Padding(

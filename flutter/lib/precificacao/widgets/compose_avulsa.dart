@@ -233,8 +233,8 @@ class _AvulsaFabScannerState extends State<AvulsaFabScanner>
           ),
           child: SvgPicture.asset(
             'assets/drawables/ic_barcode_scan.svg',
-            width: 20,
-            height: 20,
+            width: 16,
+            height: 16,
           ),
         ),
       ),

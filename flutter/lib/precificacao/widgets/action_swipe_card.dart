@@ -74,27 +74,26 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
     final bool paraDireita = _dragOffset >= 0;
     final bool isTrashOpen = _dragOffset.abs() > (_threshold / 2);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: Container(
-              alignment:
-                  paraDireita ? Alignment.centerLeft : Alignment.centerRight,
-              padding: EdgeInsets.only(
-                  left: paraDireita ? 20 : 0, right: paraDireita ? 0 : 20),
-              decoration: const BoxDecoration(
-                color: Color(0xFFD32F2F),
-              ),
-              child: AnimatedScale(
-                scale: isTrashOpen ? 1.25 : 1.0,
-                duration: const Duration(milliseconds: 200),
-                child: AnimatedTrashIcon(animate: isTrashOpen || _isDeleting),
-              ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: Container(
+            alignment:
+                paraDireita ? Alignment.centerLeft : Alignment.centerRight,
+            padding: EdgeInsets.only(
+                left: paraDireita ? 20 : 0, right: paraDireita ? 0 : 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD32F2F),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: AnimatedScale(
+              scale: isTrashOpen ? 1.25 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: AnimatedTrashIcon(animate: isTrashOpen || _isDeleting),
             ),
           ),
+        ),
           AnimatedBuilder(
             animation: _animProgress,
             builder: (context, _) {
@@ -136,8 +135,7 @@ class _SwipeToTrashItemState extends State<SwipeToTrashItem>
               );
             },
           ),
-        ],
-      ),
+      ],
     );
   }
 }
