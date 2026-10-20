@@ -465,7 +465,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
   }
 
   String _promoLinha0(PrintingData d) {
-    if (_ehDeporParcelado(d)) return 'EM ATÉ';
+    if (_ehDeporParcelado(d) || _ehParcelado(d)) return 'EM ATÉ';
     return '';
   }
 
@@ -821,8 +821,9 @@ class _GondolaPreviewPainter extends CustomPainter {
     // Caixa preta (promocional)
     if (modo == 1) {
       final tamBox = valorTam > 0 ? (valorTam * 0.5).clamp(20.0, 60.0) : 54.0;
+      final tamPequeno = (tamBox * 0.45).clamp(12.0, 28.0);
       if (promoLinha0.isNotEmpty) {
-        final tam = _ajustarTexto(promoLinha0, tamBox, 16, _boxMax);
+        final tam = _ajustarTexto(promoLinha0, tamPequeno, 10, _boxMax);
         draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), tam, TextAlign.center,
             Colors.white, fontFamily: 'HelveticaNeueCondensed');
       }
@@ -833,7 +834,7 @@ class _GondolaPreviewPainter extends CustomPainter {
             centerY: true, fontFamily: 'HelveticaNeueCondensed');
       }
       if (promoLinha2.isNotEmpty) {
-        final tam = _ajustarTexto(promoLinha2, tamBox, 16, _boxMax);
+        final tam = _ajustarTexto(promoLinha2, tamPequeno, 10, _boxMax);
         draw(promoLinha2, tx(_boxCx), ty(252), tam, TextAlign.center,
             Colors.white, fontFamily: 'HelveticaNeueCondensed');
       }
