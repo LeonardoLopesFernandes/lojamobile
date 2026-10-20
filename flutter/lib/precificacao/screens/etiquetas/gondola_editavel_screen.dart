@@ -825,7 +825,6 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw(cifrao, tx(345) - wValor - px(12), ty(_boxCy), tamCifrao,
             TextAlign.right, const Color(0xFF000000),
             centerY: true,
-            targetHeight: 150,
             fontFamily: 'HelveticaNeueCondensed');
       } else {
         final cw = _largura(cifrao, px(tam));
@@ -874,7 +873,9 @@ class _GondolaPreviewPainter extends CustomPainter {
         final tam = _ajustarTexto(promoLinha1, tamPrincipal, 24, _boxMax);
         draw(promoLinha1, tx(_boxCx), ty(_boxCy), tam, TextAlign.center,
             Colors.white,
-            centerY: true, fontFamily: 'HelveticaNeueCondensed');
+            centerY: true,
+            targetHeight: promoLinha1.startsWith('Por R\$') ? tam * 1.5 : null,
+            fontFamily: 'HelveticaNeueCondensed');
       }
       if (promoLinha2.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha2, tamPequeno, 10, _boxMax);
