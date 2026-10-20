@@ -760,7 +760,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           final inteiro = valor.substring(0, commaIdx);
           final decimal = valor.substring(commaIdx + 1);
           final wInt = _largura(inteiro, px(tamValor));
-          final wComma = _largura(',', px(tamValor * 0.75));
+          final wComma = _largura(',', px(tamValor * 0.9));
           final wDec = _largura(decimal, px(tamValor));
           final startX = tx(345) - (wInt + wComma + wDec);
           draw(inteiro, startX, ty(_boxCy), tamValor, TextAlign.left,
@@ -768,7 +768,7 @@ class _GondolaPreviewPainter extends CustomPainter {
               centerY: true,
               targetHeight: 150,
               fontFamily: 'HelveticaNeueCondensed');
-          draw(',', startX + wInt, ty(_boxCy), tamValor * 0.75,
+          draw(',', startX + wInt, ty(_boxCy), tamValor * 0.9,
               TextAlign.left, const Color(0xFF000000),
               centerY: true, fontFamily: 'HelveticaNeueCondensed');
           draw(decimal, startX + wInt + wComma, ty(_boxCy), tamValor,
