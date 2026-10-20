@@ -38,6 +38,13 @@ class TrocaApi {
     return session.getUserStore().replaceFirst(RegExp('^L'), '');
   }
 
+  /// Etiquetas têm 13 dígitos (com zero à esquerda). Mantém só dígitos e
+  /// completa com zeros para o filtro do BFF casar.
+  String _normalizarTag(String v) {
+    final d = v.replaceAll(RegExp(r'[^0-9]'), '');
+    return d.isEmpty ? v : d.padLeft(13, '0');
+  }
+
   /// Lista as operações/avaliações (endpoint /bff-trade/avaliations).
   Future<AvaliacoesPage> getAvaliacoes({
     required String startDate,
@@ -76,7 +83,7 @@ class TrocaApi {
         'costumerName': costumerName,
       if (costumerDocument != null && costumerDocument.isNotEmpty)
         'costumerDocument': costumerDocument,
-      if (tag != null && tag.isNotEmpty) 'tag': tag,
+      if (tag != null && tag.isNotEmpty) 'tag': _normalizarTag(tag),
       if (tradeId != null && tradeId.isNotEmpty) 'tradeId': tradeId,
       if (origin != null && origin.isNotEmpty) 'origin': origin,
     };
