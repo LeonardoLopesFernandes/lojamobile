@@ -739,6 +739,21 @@ class _GondolaPreviewPainter extends CustomPainter {
             fontFamily: 'HelveticaNeueCondensed');
       }).toList();
       final total = widths.fold(0.0, (a, b) => a + b);
+      final tpDig = TextPainter(
+        text: TextSpan(
+            text: '0',
+            style: TextStyle(
+                fontFamily: 'HelveticaNeueCondensed',
+                fontSize: px(tam),
+                fontWeight: FontWeight.bold)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final hDig = tpDig.height;
+      final baseDig =
+          tpDig.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final stretchDig = hDig > 0 ? px(150) / hDig : 1.0;
+      final baselineY =
+          yCenter + ((baseDig - hDig / 2) * stretchDig) / scale;
       var x = xRight - total;
       for (var i = 0; i < segs.length; i++) {
         final isDigit = RegExp(r'[0-9]').hasMatch(segs[i][0]);
@@ -748,8 +763,8 @@ class _GondolaPreviewPainter extends CustomPainter {
               targetHeight: 150,
               fontFamily: 'HelveticaNeueCondensed');
         } else {
-          draw(segs[i], x, ty(yCenter + 85), tam * 0.97, TextAlign.left,
-              color, fontFamily: 'HelveticaNeueCondensed');
+          draw(segs[i], x, ty(baselineY), tam * 0.97, TextAlign.left, color,
+              fontFamily: 'HelveticaNeueCondensed');
         }
         x += widths[i];
       }
