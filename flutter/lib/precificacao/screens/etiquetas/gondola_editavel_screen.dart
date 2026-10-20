@@ -615,13 +615,17 @@ class _GondolaPreviewPainter extends CustomPainter {
   static const double _boxMax = 325;
 
   
-  double _largura(String text, double size) => (TextPainter(
-          text: TextSpan(
-              text: text,
-              style: TextStyle(fontSize: size, fontWeight: FontWeight.bold)),
-          textDirection: TextDirection.ltr)
-        ..layout())
-      .width;
+  double _largura(String text, double size, {String? fontFamily}) =>
+      (TextPainter(
+              text: TextSpan(
+                  text: text,
+                  style: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: size,
+                      fontWeight: FontWeight.bold)),
+              textDirection: TextDirection.ltr)
+            ..layout())
+          .width;
 
   /// Posição X da vírgula de um número alinhado à direita em [rightX].
   double _commaXFromRight(String texto, double rightX, double size) {
@@ -759,16 +763,19 @@ class _GondolaPreviewPainter extends CustomPainter {
         if (commaIdx >= 0) {
           final inteiro = valor.substring(0, commaIdx);
           final decimal = valor.substring(commaIdx + 1);
-          final wInt = _largura(inteiro, px(tamValor));
-          final wComma = _largura(',', px(tamValor * 0.9));
-          final wDec = _largura(decimal, px(tamValor));
+          final wInt = _largura(inteiro, px(tamValor),
+              fontFamily: 'HelveticaNeueCondensed');
+          final wComma = _largura(',', px(tamValor * 0.97),
+              fontFamily: 'HelveticaNeueCondensed');
+          final wDec = _largura(decimal, px(tamValor),
+              fontFamily: 'HelveticaNeueCondensed');
           final startX = tx(345) - (wInt + wComma + wDec);
           draw(inteiro, startX, ty(_boxCy), tamValor, TextAlign.left,
               const Color(0xFF000000),
               centerY: true,
               targetHeight: 150,
               fontFamily: 'HelveticaNeueCondensed');
-          draw(',', startX + wInt, ty(_boxCy), tamValor * 0.9,
+          draw(',', startX + wInt, ty(_boxCy), tamValor * 0.97,
               TextAlign.left, const Color(0xFF000000),
               centerY: true, fontFamily: 'HelveticaNeueCondensed');
           draw(decimal, startX + wInt + wComma, ty(_boxCy), tamValor,
@@ -811,14 +818,14 @@ class _GondolaPreviewPainter extends CustomPainter {
       if (modo == 1) {
         final idx = unidade.indexOf('R\$/PCE ');
         final numero = idx >= 0 ? unidade.substring(idx + 8).trim() : unidade;
-        draw('R\$/PCE', tx(30), ty(262), 15, TextAlign.left,
+        draw('R\$/PCE', tx(30), ty(270), 15, TextAlign.left,
             const Color(0xFF000000));
         // Alinha a vírgula do valor unitário com a vírgula do valor acima.
         final uAp = numero.contains(',')
             ? numero.substring(numero.lastIndexOf(','))
             : numero;
         final uRight = valorCommaX + _largura(uAp, px(15));
-        draw('R\$' + numero, uRight, ty(262), 15, TextAlign.right,
+        draw('R\$' + numero, uRight, ty(270), 15, TextAlign.right,
             const Color(0xFF000000));
       } else {
         draw(unidade, tx(_TW / 2), ty(252), 15, TextAlign.center,
