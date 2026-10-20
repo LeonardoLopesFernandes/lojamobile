@@ -682,9 +682,10 @@ class _GondolaPreviewPainter extends CustomPainter {
               : x;
       final base = tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
       final dy = centerY ? y - tp.height / 2 : y - base;
-      final stretchY = targetHeight == null || tp.height <= 0
+      final targetPx = targetHeight == null ? null : targetHeight * scale;
+      final stretchY = targetPx == null || tp.height <= 0
           ? 1.0
-          : targetHeight / tp.height;
+          : targetPx / tp.height;
       if (stretchY != 1.0) {
         canvas.save();
         canvas.translate(dx, dy + tp.height / 2);
