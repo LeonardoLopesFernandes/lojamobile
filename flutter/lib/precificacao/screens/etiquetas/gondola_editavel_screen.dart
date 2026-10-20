@@ -829,14 +829,15 @@ class _GondolaPreviewPainter extends CustomPainter {
     // Caixa preta (promocional)
     if (modo == 1) {
       final tamBox = valorTam > 0 ? (valorTam * 0.5).clamp(20.0, 60.0) : 54.0;
-      final tamPequeno = (tamBox * 0.45).clamp(12.0, 28.0);
+      final tamPrincipal = (tamBox * 1.6).clamp(36.0, 60.0);
+      final tamPequeno = (tamPrincipal * 0.45).clamp(12.0, 28.0);
       if (promoLinha0.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha0, tamPequeno, 10, _boxMax);
         draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), tam, TextAlign.center,
             Colors.white, fontFamily: 'HelveticaNeueCondensed');
       }
       if (promoLinha1.isNotEmpty) {
-        final tam = _ajustarTexto(promoLinha1, tamBox, 16, _boxMax);
+        final tam = _ajustarTexto(promoLinha1, tamPrincipal, 24, _boxMax);
         draw(promoLinha1, tx(_boxCx), ty(_boxCy), tam, TextAlign.center,
             Colors.white,
             centerY: true, fontFamily: 'HelveticaNeueCondensed');
