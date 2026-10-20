@@ -716,6 +716,45 @@ class _GondolaPreviewPainter extends CustomPainter {
       }
     }
 
+    void drawValorEsticado(
+        String v, double xRight, double yCenter, double tam, Color color) {
+      final segs = <String>[];
+      final buf = StringBuffer();
+      bool? lastDigit;
+      for (final ch in v.split('')) {
+        final isDigit = RegExp(r'[0-9]').hasMatch(ch);
+        if (lastDigit == null || isDigit == lastDigit) {
+          buf.write(ch);
+        } else {
+          segs.add(buf.toString());
+          buf.clear();
+          buf.write(ch);
+        }
+        lastDigit = isDigit;
+      }
+      if (buf.isNotEmpty) segs.add(buf.toString());
+      final widths = segs.map((s) {
+        final isDigit = RegExp(r'[0-9]').hasMatch(s[0]);
+        return _largura(s, px(isDigit ? tam : tam * 0.97),
+            fontFamily: 'HelveticaNeueCondensed');
+      }).toList();
+      final total = widths.fold(0.0, (a, b) => a + b);
+      var x = xRight - total;
+      for (var i = 0; i < segs.length; i++) {
+        final isDigit = RegExp(r'[0-9]').hasMatch(segs[i][0]);
+        if (isDigit) {
+          draw(segs[i], x, ty(yCenter), tam, TextAlign.left, color,
+              centerY: true,
+              targetHeight: 150,
+              fontFamily: 'HelveticaNeueCondensed');
+        } else {
+          draw(segs[i], x, ty(yCenter + 75), tam * 0.97, TextAlign.left,
+              color, fontFamily: 'HelveticaNeueCondensed');
+        }
+        x += widths[i];
+      }
+    }
+
     var valorCommaX = 0.0;
     double valorTam = 0;
 
@@ -759,37 +798,8 @@ class _GondolaPreviewPainter extends CustomPainter {
             : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
         final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
         valorTam = tamValor;
-        final commaIdx = valor.lastIndexOf(',');
-        if (commaIdx >= 0) {
-          final inteiro = valor.substring(0, commaIdx);
-          final decimal = valor.substring(commaIdx + 1);
-          final wInt = _largura(inteiro, px(tamValor),
-              fontFamily: 'HelveticaNeueCondensed');
-          final wComma = _largura(',', px(tamValor * 0.97),
-              fontFamily: 'HelveticaNeueCondensed');
-          final wDec = _largura(decimal, px(tamValor),
-              fontFamily: 'HelveticaNeueCondensed');
-          final startX = tx(345) - (wInt + wComma + wDec);
-          draw(inteiro, startX, ty(_boxCy), tamValor, TextAlign.left,
-              const Color(0xFF000000),
-              centerY: true,
-              targetHeight: 150,
-              fontFamily: 'HelveticaNeueCondensed');
-          draw(',', startX + wInt, ty(_boxCy), tamValor * 0.97,
-              TextAlign.left, const Color(0xFF000000),
-              centerY: true, fontFamily: 'HelveticaNeueCondensed');
-          draw(decimal, startX + wInt + wComma, ty(_boxCy), tamValor,
-              TextAlign.left, const Color(0xFF000000),
-              centerY: true,
-              targetHeight: 150,
-              fontFamily: 'HelveticaNeueCondensed');
-        } else {
-          draw(valor, tx(345), ty(_boxCy), tamValor, TextAlign.right,
-              const Color(0xFF000000),
-              centerY: true,
-              targetHeight: 150,
-              fontFamily: 'HelveticaNeueCondensed');
-        }
+        drawValorEsticado(valor, tx(345), _boxCy, tamValor,
+            const Color(0xFF000000));
         valorCommaX = _commaXFromRight(valor, tx(345), px(tamValor));
 
         final maxCifrao =
