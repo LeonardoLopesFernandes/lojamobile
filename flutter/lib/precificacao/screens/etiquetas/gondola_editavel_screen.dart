@@ -817,9 +817,7 @@ class _GondolaPreviewPainter extends CustomPainter {
             const Color(0xFF000000));
         valorCommaX = _commaXFromRight(valor, tx(345), px(tamValor));
 
-        final maxCifrao =
-            (ehDepor && (temMilhar || parteInteira.length >= 3)) ? 30.0 : 45.0;
-        final tamCifrao = _ajustarTexto(cifrao, maxCifrao, 26, 100);
+        final tamCifrao = _ajustarTexto(cifrao, 60.0, 30.0, 170.0);
         final wValor = _largura(valor, px(tamValor),
             fontFamily: 'HelveticaNeueCondensed');
         draw(cifrao, tx(345) - wValor - px(12), ty(_boxCy), tamCifrao,
