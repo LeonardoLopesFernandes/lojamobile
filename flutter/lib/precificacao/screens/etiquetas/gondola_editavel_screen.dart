@@ -748,7 +748,7 @@ class _GondolaPreviewPainter extends CustomPainter {
               targetHeight: 150,
               fontFamily: 'HelveticaNeueCondensed');
         } else {
-          draw(segs[i], x, ty(yCenter + 75), tam * 0.97, TextAlign.left,
+          draw(segs[i], x, ty(yCenter + 85), tam * 0.97, TextAlign.left,
               color, fontFamily: 'HelveticaNeueCondensed');
         }
         x += widths[i];
