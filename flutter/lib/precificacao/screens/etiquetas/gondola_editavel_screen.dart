@@ -93,6 +93,8 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
   
   void initState() {
     super.initState();
+    _parcelasController.addListener(_recalcularParcela);
+    _precoParceladoController.addListener(_recalcularParcela);
     _selecionados.addAll(_items.asMap().keys);
     _loadTemplates();
     _carregar();
@@ -147,8 +149,6 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
       _precoParceladoController.text = _fmt(_precoAtual(d));
       _parcelasController.text =
           '${d.installments?.installmentQuantity ?? 1}';
-      _valorParcelaController.text =
-          _fmt(d.installments?.installmentValue ?? 0);
     } else if (_ehDepor(d)) {
       _precoDeController.text = _fmt(d.price?.value ?? 0);
       _precoPorController.text = _fmt(d.promotionalPrice?.value ?? 0);
@@ -156,6 +156,14 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
       _precoController.text = _fmt(d.price?.value ?? 0);
     }
     setState(() {});
+  }
+
+  void _recalcularParcela() {
+    final parcelas = int.tryParse(_parcelasController.text) ?? 0;
+    final preco = _parse(_precoParceladoController.text);
+    if (parcelas > 0 && preco > 0) {
+      _valorParcelaController.text = _fmt(preco / parcelas);
+    }
   }
 
   void _salvar() {
@@ -835,7 +843,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       }
       if (promoLinha2.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha2, tamPequeno, 10, _boxMax);
-        draw(promoLinha2, tx(_boxCx), ty(252), tam, TextAlign.center,
+        draw(promoLinha2, tx(_boxCx), ty(262), tam, TextAlign.center,
             Colors.white, fontFamily: 'HelveticaNeueCondensed');
       }
     }
