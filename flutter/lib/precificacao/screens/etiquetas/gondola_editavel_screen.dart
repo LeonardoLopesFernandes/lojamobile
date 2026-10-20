@@ -74,6 +74,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
 
   final _descController = TextEditingController();
   final _eanController = TextEditingController();
+  final _sapController = TextEditingController();
   final _precoController = TextEditingController();
   final _precoDeController = TextEditingController();
   final _precoPorController = TextEditingController();
@@ -116,6 +117,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
   void dispose() {
     _descController.dispose();
     _eanController.dispose();
+    _sapController.dispose();
     _precoController.dispose();
     _precoDeController.dispose();
     _precoPorController.dispose();
@@ -135,6 +137,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
     final d = _d;
     _descController.text = d.description;
     _eanController.text = d.ean;
+    _sapController.text = d.codSap.isNotEmpty ? d.codSap : d.department;
     if (_ehLeveGanhe(d)) {
       _unitarioController.text = _fmt(d.price?.value ?? 0);
       _qtdController.text = '${d.takeAndWin?.qty ?? 1}';
@@ -346,9 +349,11 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
                             painter: _GondolaPreviewPainter(
                               template: template,
                               modo: promocional ? 1 : 0,
-                              codigo: d.codSap.isNotEmpty
-                                  ? d.codSap
-                                  : d.department,
+                              codigo: _sapController.text.trim().isEmpty
+                                  ? (d.codSap.isNotEmpty
+                                      ? d.codSap
+                                      : d.department)
+                                  : _sapController.text.trim(),
                               ean: _eanController.text.trim().isEmpty
                                   ? d.ean
                                   : _eanController.text.trim(),
@@ -377,6 +382,8 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
                 children: [
                   _campo('DESCRIÇÃO', _descController),
                   _campo('EAN', _eanController,
+                      keyboardType: TextInputType.number),
+                  _campo('SAP', _sapController,
                       keyboardType: TextInputType.number),
                   if (!isLeve && !isParcelado && !isDepor)
                     _campo('PREÇO (R\$)', _precoController),
@@ -702,7 +709,7 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     // Código lateral (SAP) na vertical (promocional: mais ao topo).
     if (codigo.isNotEmpty) {
-      final sapY = modo == 1 ? 100.0 : _TH / 2;
+      final sapY = modo == 1 ? 112.0 : _TH / 2 + 12;
       canvas.save();
       canvas.translate(tx(18), ty(sapY));
       canvas.rotate(-1.5708);
