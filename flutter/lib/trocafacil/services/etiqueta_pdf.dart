@@ -253,6 +253,7 @@ class TrocaEtiquetaPdf {
 
   static pw.Widget _abas(String cause) {
     final defeito = cause.toUpperCase() == 'DEFEITO';
+    final labelCausa = defeito ? 'Defeito' : 'Insatisfação';
     final ativo = PdfColor.fromInt(0xFFFF0033);
     final inativo = PdfColor.fromInt(0xFFFDE8ED);
     final txtInativo = PdfColor.fromInt(0xFF880E4F);
@@ -276,7 +277,7 @@ class TrocaEtiquetaPdf {
             color: defeito ? ativo : inativo,
             padding: const pw.EdgeInsets.symmetric(vertical: 8),
             child: pw.Center(
-              child: pw.Text('Defeito',
+              child: pw.Text(labelCausa,
                   style: pw.TextStyle(
                       color: defeito ? PdfColors.white : txtInativo,
                       fontWeight: pw.FontWeight.bold,

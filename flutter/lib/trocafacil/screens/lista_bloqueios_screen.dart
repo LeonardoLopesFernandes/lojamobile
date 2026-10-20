@@ -140,15 +140,31 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
 
   Future<void> _reimprimir(BloqueioOperacao op) async {
     if (op.itemsBlocked.isEmpty) return;
-    final it = op.itemsBlocked.first;
+    final itens = <BloqueioEtiquetaItem>[];
+    for (final it in op.itemsBlocked) {
+      if (it.tags.isEmpty) {
+        itens.add(BloqueioEtiquetaItem(
+          descricao: it.description,
+          motivo: it.reasonBlocking,
+          etiqueta: '',
+        ));
+      } else {
+        for (final tag in it.tags) {
+          itens.add(BloqueioEtiquetaItem(
+            descricao: it.description,
+            motivo: it.reasonBlocking,
+            etiqueta: tag,
+          ));
+        }
+      }
+    }
+    if (itens.isEmpty) return;
     try {
       final uri = await BloqueioEtiquetaPdf.salvarNoDownloads(
         numeroOperacao: op.id,
         loja: op.store,
         dataBloqueio: TrocaApi.fmtIsoDate(op.createdAt),
-        numeroEtiqueta: it.tags.isNotEmpty ? it.tags.first : '',
-        motivo: it.reasonBlocking,
-        descricao: it.description,
+        itens: itens,
       );
       if (!mounted) return;
       if (uri != null && uri.isNotEmpty) {
