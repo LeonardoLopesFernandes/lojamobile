@@ -9,7 +9,7 @@ class TrocaEtiquetaPdf {
   TrocaEtiquetaPdf._();
 
   static Future<Uint8List> gerar({
-    required String labelNumber,
+    required List<String> labelNumbers,
     required String tradeId,
     required String loja,
     required String data,
@@ -24,34 +24,36 @@ class TrocaEtiquetaPdf {
       final bytes = await rootBundle.load('assets/drawables/troca.png');
       icone = pw.MemoryImage(bytes.buffer.asUint8List());
     } catch (_) {}
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(18),
-        build: (ctx) => [
-          _card1(
-            loja: loja,
-            data: data,
-            tradeId: tradeId,
-            produto: produto,
-            modalidade: modalidade,
-            icone: icone,
-          ),
-          pw.SizedBox(height: 12),
-          _card2(
-            loja: loja,
-            data: data,
-            tradeId: tradeId,
-            labelNumber: labelNumber,
-            produto: produto,
-            motivo: motivo,
-            modalidade: modalidade,
-          ),
-          pw.SizedBox(height: 12),
-          _abas(cause),
-        ],
-      ),
-    );
+    for (final labelNumber in labelNumbers) {
+      doc.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(18),
+          build: (ctx) => [
+            _card1(
+              loja: loja,
+              data: data,
+              tradeId: tradeId,
+              produto: produto,
+              modalidade: modalidade,
+              icone: icone,
+            ),
+            pw.SizedBox(height: 12),
+            _card2(
+              loja: loja,
+              data: data,
+              tradeId: tradeId,
+              labelNumber: labelNumber,
+              produto: produto,
+              motivo: motivo,
+              modalidade: modalidade,
+            ),
+            pw.SizedBox(height: 12),
+            _abas(cause),
+          ],
+        ),
+      );
+    }
     return doc.save();
   }
 
@@ -291,7 +293,7 @@ class TrocaEtiquetaPdf {
 
   /// Gera e salva em Download/Troca. Retorna a URI salva (ou null).
   static Future<String?> salvarNoDownloads({
-    required String labelNumber,
+    required List<String> labelNumbers,
     required String tradeId,
     required String loja,
     required String data,
@@ -301,7 +303,7 @@ class TrocaEtiquetaPdf {
     required String cause,
   }) async {
     final bytes = await gerar(
-      labelNumber: labelNumber,
+      labelNumbers: labelNumbers,
       tradeId: tradeId,
       loja: loja,
       data: data,
@@ -310,9 +312,10 @@ class TrocaEtiquetaPdf {
       modalidade: modalidade,
       cause: cause,
     );
+    final nome = labelNumbers.isNotEmpty ? labelNumbers.first : tradeId;
     const channel = MethodChannel('com.ir/media');
     return channel.invokeMethod<String>('saveToDownloads', {
-      'fileName': 'etiqueta_$labelNumber.pdf',
+      'fileName': 'etiqueta_$nome.pdf',
       'mime': 'application/pdf',
       'bytes': bytes,
       'subfolder': 'Troca',

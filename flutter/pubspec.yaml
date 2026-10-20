@@ -56,4 +56,10 @@ flutter:
     - assets/icons/
     - assets/overlays/
     - assets/lottie/
+    - assets/fonts/
+
+  fonts:
+    - family: HelveticaNeueCondensed
+      fonts:
+        - asset: assets/fonts/HelveticaNeueCondensed.otf
 

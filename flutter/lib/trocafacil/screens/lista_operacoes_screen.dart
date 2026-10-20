@@ -165,7 +165,7 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
         .where((e) => e.isNotEmpty)
         .join(' | ');
 
-    String? selecionada = etiquetas.isNotEmpty ? etiquetas.first : null;
+    final selecionadas = <String>{...etiquetas};
 
     final acao = await showModalBottomSheet<String>(
       context: context,
@@ -194,21 +194,27 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
                   _linha('Produtos', produtosTxt),
                 if (etiquetas.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  const Text('Selecione a etiqueta para reimprimir:',
+                  const Text('Selecione as etiquetas para reimprimir:',
                       style: TextStyle(
                           fontSize: 13, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   for (final e in etiquetas)
                     InkWell(
-                      onTap: () => setSheetState(() => selecionada = e),
+                      onTap: () => setSheetState(() {
+                        if (selecionadas.contains(e)) {
+                          selecionadas.remove(e);
+                        } else {
+                          selecionadas.add(e);
+                        }
+                      }),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Row(
                           children: [
                             Icon(
-                                selecionada == e
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_off,
+                                selecionadas.contains(e)
+                                    ? Icons.check_box
+                                    : Icons.check_box_outline_blank,
                                 color: const Color(0xFFD32F2F),
                                 size: 20),
                             const SizedBox(width: 8),
@@ -229,14 +235,16 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
                             'REIMPRIMIR',
                             op.cancelada
                                 ? null
-                                : () => Navigator.pop(ctx, 'reimprimir'))),
+                                : () => Navigator.pop(ctx, 'reimprimir'),
+                            icon: Icons.print)),
                     const SizedBox(width: 12),
                     Expanded(
                         child: _badge(
                             'CANCELAR',
                             op.cancelada
                                 ? null
-                                : () => Navigator.pop(ctx, 'cancelar'))),
+                                : () => Navigator.pop(ctx, 'cancelar'),
+                            icon: Icons.close)),
                   ],
                 ),
               ],
@@ -247,9 +255,9 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
     );
     if (!mounted) return;
     if (acao == 'reimprimir') {
-      final etq = selecionada;
-      if (etq == null || etq.isEmpty) return;
-      await Clipboard.setData(ClipboardData(text: etq));
+      final etqs = selecionadas.toList();
+      if (etqs.isEmpty) return;
+      await Clipboard.setData(ClipboardData(text: etqs.join(', ')));
       final prod =
           prods.isNotEmpty ? Map<String, dynamic>.from(prods.first as Map) : <String, dynamic>{};
       final operationType = s(det?['operationType']).toUpperCase();
@@ -259,19 +267,19 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
           : (systemSource == 'FISICO' ? 'Físico' : '');
       try {
         final uri = await TrocaEtiquetaPdf.salvarNoDownloads(
-          labelNumber: etq,
+          labelNumbers: etqs,
           tradeId: op.tradeId,
           loja: s(det?['storeNumber']),
           data: TrocaApi.fmtIsoDate(s(det?['operationDate'])),
           produto: s(prod['productDescription']),
           motivo: motivo,
           modalidade: modalidade,
-          cause: s(det?['cause']),
+          cause: op.cause.isNotEmpty ? op.cause : s(det?['cause']),
         );
         if (!mounted) return;
         if (uri != null && uri.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: const Text('Etiqueta salva em Download/Troca'),
+            content: Text('${etqs.length} etiqueta(s) salva(s) em Download/Troca'),
             action: SnackBarAction(
               label: 'Abrir',
               onPressed: () => _abrirPdf(uri),
@@ -322,7 +330,7 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
     );
   }
 
-  Widget _badge(String label, VoidCallback? onTap) {
+  Widget _badge(String label, VoidCallback? onTap, {IconData? icon}) {
     return ElevatedButton(
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
@@ -334,7 +342,16 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 6),
+          ],
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 

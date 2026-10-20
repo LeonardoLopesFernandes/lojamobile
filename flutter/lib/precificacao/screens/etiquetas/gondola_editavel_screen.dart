@@ -660,11 +660,15 @@ class _GondolaPreviewPainter extends CustomPainter {
     double ty(double y) => oy + y * scale;
 
     void draw(String text, double x, double y, double size, TextAlign align,
-        Color color) {
+        Color color,
+        {bool centerY = false,
+        double? targetHeight,
+        String? fontFamily}) {
       final tp = TextPainter(
         text: TextSpan(
             text: text,
             style: TextStyle(
+                fontFamily: fontFamily,
                 fontSize: px(size),
                 fontWeight: FontWeight.bold,
                 color: color)),
@@ -677,7 +681,19 @@ class _GondolaPreviewPainter extends CustomPainter {
               ? x - tp.width
               : x;
       final base = tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      tp.paint(canvas, Offset(dx, y - base));
+      final dy = centerY ? y - tp.height / 2 : y - base;
+      final stretchY = targetHeight == null || tp.height <= 0
+          ? 1.0
+          : targetHeight / tp.height;
+      if (stretchY != 1.0) {
+        canvas.save();
+        canvas.translate(dx, dy + tp.height / 2);
+        canvas.scale(1.0, stretchY);
+        tp.paint(canvas, Offset(0, -tp.height / 2));
+        canvas.restore();
+      } else {
+        tp.paint(canvas, Offset(dx, dy));
+      }
     }
 
     var valorCommaX = 0.0;
@@ -721,15 +737,21 @@ class _GondolaPreviewPainter extends CustomPainter {
             ? 60.0
             : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
         final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
-        draw(valor, tx(345), ty(baseline), tamValor, TextAlign.right,
-            const Color(0xFF000000));
+        draw(valor, tx(345), ty(_boxCy), tamValor, TextAlign.right,
+            const Color(0xFF000000),
+            centerY: true,
+            targetHeight: 150,
+            fontFamily: 'HelveticaNeueCondensed');
         valorCommaX = _commaXFromRight(valor, tx(345), px(tamValor));
 
         final maxCifrao =
             (ehDepor && (temMilhar || parteInteira.length >= 3)) ? 30.0 : 45.0;
         final tamCifrao = _ajustarTexto(cifrao, maxCifrao, 26, 100);
-        draw(cifrao, tx(20), ty(baseline), tamCifrao, TextAlign.left,
-            const Color(0xFF000000));
+        draw(cifrao, tx(20), ty(_boxCy), tamCifrao, TextAlign.left,
+            const Color(0xFF000000),
+            centerY: true,
+            targetHeight: 150,
+            fontFamily: 'HelveticaNeueCondensed');
       } else {
         final cw = _largura(cifrao, px(tam));
         final vw2 = _largura(valor, px(tam));
@@ -768,17 +790,18 @@ class _GondolaPreviewPainter extends CustomPainter {
       if (promoLinha0.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha0, 17, 10, _boxMax);
         draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), tam, TextAlign.center,
-            const Color(0xFFFFE600));
+            Colors.white, fontFamily: 'HelveticaNeueCondensed');
       }
       if (promoLinha1.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha1, 54, 24, _boxMax);
         draw(promoLinha1, tx(_boxCx), ty(_boxCy), tam, TextAlign.center,
-            const Color(0xFFFFE600));
+            Colors.white,
+            centerY: true, fontFamily: 'HelveticaNeueCondensed');
       }
       if (promoLinha2.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha2, 17, 10, _boxMax);
         draw(promoLinha2, tx(_boxCx), ty(252), tam, TextAlign.center,
-            const Color(0xFFFFE600));
+            Colors.white, fontFamily: 'HelveticaNeueCondensed');
       }
     }
   }
