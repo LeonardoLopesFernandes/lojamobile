@@ -451,7 +451,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
   }
 
   String _cifrao(PrintingData d) {
-    if (_ehDepor(d)) return 'De R\$';
+    if (_ehDepor(d)) return 'De   R\$';
     return 'R\$';
   }
 
@@ -820,8 +820,10 @@ class _GondolaPreviewPainter extends CustomPainter {
         final maxCifrao =
             (ehDepor && (temMilhar || parteInteira.length >= 3)) ? 30.0 : 45.0;
         final tamCifrao = _ajustarTexto(cifrao, maxCifrao, 26, 100);
-        draw(cifrao, tx(20), ty(_boxCy), tamCifrao, TextAlign.left,
-            const Color(0xFF000000),
+        final wValor = _largura(valor, px(tamValor),
+            fontFamily: 'HelveticaNeueCondensed');
+        draw(cifrao, tx(345) - wValor - px(12), ty(_boxCy), tamCifrao,
+            TextAlign.right, const Color(0xFF000000),
             centerY: true,
             targetHeight: 150,
             fontFamily: 'HelveticaNeueCondensed');
@@ -861,7 +863,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     // Caixa preta (promocional)
     if (modo == 1) {
       final tamBox = valorTam > 0 ? (valorTam * 0.5).clamp(20.0, 60.0) : 54.0;
-      final tamPrincipal = (tamBox * 1.6).clamp(36.0, 60.0);
+      final tamPrincipal = (tamBox * 1.8).clamp(40.0, 70.0);
       final tamPequeno = (tamPrincipal * 0.45).clamp(12.0, 28.0);
       if (promoLinha0.isNotEmpty) {
         final tam = _ajustarTexto(promoLinha0, tamPequeno, 10, _boxMax);
