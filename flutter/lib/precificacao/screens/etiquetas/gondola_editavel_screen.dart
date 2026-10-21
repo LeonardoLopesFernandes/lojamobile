@@ -751,7 +751,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       final hDig = tpDig.height;
       final baseDig =
           tpDig.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final stretchDig = hDig > 0 ? px(150) / hDig : 1.0;
+      final stretchDig = hDig > 0 ? px(135) / hDig : 1.0;
       final baselineY =
           yCenter + ((baseDig - hDig / 2) * stretchDig) / scale;
       var x = xRight - total;
@@ -822,7 +822,7 @@ class _GondolaPreviewPainter extends CustomPainter {
             const Color(0xFF000000));
         valorCommaX = _commaXFromRight(valor, tx(345), px(tamValor));
 
-        final tamCifrao = _ajustarTexto(cifrao, 60.0, 30.0, 170.0);
+        final tamCifrao = tamValor;
         final wValor = _largura(valor, px(tamValor),
             fontFamily: 'HelveticaNeueCondensed');
         final temDe = cifrao.toUpperCase().startsWith('DE');
