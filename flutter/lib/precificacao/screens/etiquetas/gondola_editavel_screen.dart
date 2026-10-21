@@ -729,8 +729,8 @@ class _GondolaPreviewPainter extends CustomPainter {
       }
     }
 
-    void drawValorEsticado(
-        String v, double xRight, double yCenter, double tam, Color color) {
+    void drawValorEsticado(String v, double xRight, double yCenter,
+        double tam, Color color, double targetHeight) {
       final segs = <String>[];
       final buf = StringBuffer();
       bool? lastDigit;
@@ -764,7 +764,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       final hDig = tpDig.height;
       final baseDig =
           tpDig.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final stretchDig = hDig > 0 ? px(80) / hDig : 1.0;
+      final stretchDig = hDig > 0 ? px(targetHeight) / hDig : 1.0;
       final baselineY =
           yCenter + ((baseDig - hDig / 2) * stretchDig) / scale;
       var x = xRight - total;
@@ -778,7 +778,7 @@ class _GondolaPreviewPainter extends CustomPainter {
               : 0.0;
           draw(segs[i], x + shift, ty(yCenter), tam, TextAlign.left, color,
               centerY: true,
-              targetHeight: 80,
+              targetHeight: targetHeight,
               fontFamily: 'HelveticaNeueCondensed');
         } else {
           draw(segs[i], x, ty(baselineY), tam * 0.97, TextAlign.left, color,
@@ -848,8 +848,11 @@ class _GondolaPreviewPainter extends CustomPainter {
             : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
         final tamValor = _ajustarTexto(valor, maxValor, 50, ehDepor ? 180.0 : 280.0);
         valorTam = tamValor;
+        final tamBoxV = (tamValor * 0.5).clamp(20.0, 60.0);
+        final tamPrincipalV = (tamBoxV * 1.8).clamp(40.0, 70.0);
+        final alturaBox = tamPrincipalV * 1.2;
         drawValorEsticado(valor, tx(345), _boxCy, tamValor,
-            const Color(0xFF000000));
+            const Color(0xFF000000), alturaBox);
         valorCommaX = _commaXFromRight(valor, tx(345), px(tamValor));
 
         final tamCifrao = tamValor;
@@ -868,12 +871,12 @@ class _GondolaPreviewPainter extends CustomPainter {
           draw('De', deLeft, ty(_boxCy), tamCifrao, TextAlign.left,
               const Color(0xFF000000),
               centerY: true,
-              targetHeight: 80,
+              targetHeight: alturaBox,
               fontFamily: 'HelveticaNeueCondensed');
           draw('R\$', deLeft + wDe + px(6), ty(_boxCy), tamCifrao,
               TextAlign.left, const Color(0xFF000000),
               centerY: true,
-              targetHeight: 80,
+              targetHeight: alturaBox,
               fontFamily: 'HelveticaNeueCondensed');
         } else {
           final cifraoRight = (tx(345) - wValor - px(12))
@@ -881,7 +884,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           draw('R\$', cifraoRight, ty(_boxCy), tamCifrao, TextAlign.right,
               const Color(0xFF000000),
               centerY: true,
-              targetHeight: 80,
+              targetHeight: alturaBox,
               fontFamily: 'HelveticaNeueCondensed');
         }
       } else {
