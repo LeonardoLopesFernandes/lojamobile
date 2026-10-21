@@ -767,6 +767,12 @@ class _GondolaPreviewPainter extends CustomPainter {
               fontFamily: 'HelveticaNeueCondensed');
         }
         x += widths[i];
+        if (isDigit &&
+            i + 1 < segs.length &&
+            !RegExp(r'[0-9]').hasMatch(segs[i + 1][0]) &&
+            segs[i].endsWith('7')) {
+          x -= px(tam * 0.08);
+        }
       }
     }
 
