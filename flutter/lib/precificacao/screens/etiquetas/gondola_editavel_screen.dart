@@ -828,10 +828,8 @@ class _GondolaPreviewPainter extends CustomPainter {
               fontFamily: 'HelveticaNeueCondensed');
           final wDeRs = wDe + px(6) + wRs;
           final valueLeft = tx(345) - wValor;
-          final espaco = valueLeft - tx(20);
-          final deLeft = espaco > wDeRs
-              ? tx(20) + (espaco - wDeRs) / 2
-              : (valueLeft - px(60) - wDeRs);
+          final deLeft =
+              (valueLeft - px(30) - wDeRs).clamp(tx(4), tx(345));
           draw('De', deLeft, ty(_boxCy), tamCifrao, TextAlign.left,
               const Color(0xFF000000),
               centerY: true,
