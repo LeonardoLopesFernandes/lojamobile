@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:barcode/barcode.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/core/session_manager.dart';
 import 'package:inventario/precificacao/models/models.dart';
@@ -799,8 +800,25 @@ class _GondolaPreviewPainter extends CustomPainter {
           const Color(0xFF000000));
     }
 
+    // Modelo comum: código de barras do EAN no lugar do valor
+    if (modo == 0 && ean.isNotEmpty) {
+      final bars = Barcode.code128().make(ean, width: 620, height: 90);
+      final paintBar = Paint()..color = const Color(0xFF000000);
+      final bx = _TW / 2 - 310;
+      final by = 175.0;
+      for (final b in bars) {
+        if (b is BarcodeBar && b.black) {
+          canvas.drawRect(
+            Rect.fromLTWH(tx(bx + b.left), ty(by + b.top), px(b.width),
+                px(b.height)),
+            paintBar,
+          );
+        }
+      }
+    }
+
     // Preço à vista (fora da caixa preta)
-    if (valor.isNotEmpty) {
+    if (valor.isNotEmpty && modo == 1) {
       final maxTam = modo == 0 ? 85.0 : 54.0;
       final minTam = modo == 0 ? 40.0 : 26.0;
       final maxLargura = modo == 0 ? _comumMax : _leftMax;
@@ -868,7 +886,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     }
 
     // R$/PCE + valor unitário (promocional: separados)
-    if (unidade.isNotEmpty) {
+    if (unidade.isNotEmpty && modo == 1) {
       if (modo == 1) {
         final idx = unidade.indexOf('R\$/PCE ');
         final numero = idx >= 0 ? unidade.substring(idx + 8).trim() : unidade;
