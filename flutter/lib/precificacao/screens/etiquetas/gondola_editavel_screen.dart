@@ -758,7 +758,12 @@ class _GondolaPreviewPainter extends CustomPainter {
       for (var i = 0; i < segs.length; i++) {
         final isDigit = RegExp(r'[0-9]').hasMatch(segs[i][0]);
         if (isDigit) {
-          draw(segs[i], x, ty(yCenter), tam, TextAlign.left, color,
+          final shift = (i + 1 < segs.length &&
+                  !RegExp(r'[0-9]').hasMatch(segs[i + 1][0]) &&
+                  segs[i].endsWith('7'))
+              ? px(tam * 0.14)
+              : 0.0;
+          draw(segs[i], x + shift, ty(yCenter), tam, TextAlign.left, color,
               centerY: true,
               targetHeight: 150,
               fontFamily: 'HelveticaNeueCondensed');
@@ -767,12 +772,6 @@ class _GondolaPreviewPainter extends CustomPainter {
               fontFamily: 'HelveticaNeueCondensed');
         }
         x += widths[i];
-        if (isDigit &&
-            i + 1 < segs.length &&
-            !RegExp(r'[0-9]').hasMatch(segs[i + 1][0]) &&
-            segs[i].endsWith('7')) {
-          x -= px(tam * 0.14);
-        }
       }
     }
 
