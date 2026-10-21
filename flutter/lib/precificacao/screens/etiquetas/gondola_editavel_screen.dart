@@ -348,7 +348,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
                 padding: const EdgeInsets.only(top: 10),
                 alignment: Alignment.center,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 820),
+                  constraints: const BoxConstraints(),
                   child: AspectRatio(
                     aspectRatio: 746 / 335,
                     child: template == null
@@ -379,7 +379,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
                   ),
                 ),
               ),
-              height: 10 + (MediaQuery.sizeOf(context).width - 40) * 335 / 746,
+              height: 10 + MediaQuery.sizeOf(context).width * 335 / 746,
             ),
           ),
           SliverToBoxAdapter(
@@ -820,7 +820,11 @@ class _GondolaPreviewPainter extends CustomPainter {
         final tamCifrao = _ajustarTexto(cifrao, 60.0, 30.0, 170.0);
         final wValor = _largura(valor, px(tamValor),
             fontFamily: 'HelveticaNeueCondensed');
-        draw(cifrao, tx(345) - wValor - px(12), ty(_boxCy), tamCifrao,
+        final wCifrao = _largura(cifrao, px(tamCifrao),
+            fontFamily: 'HelveticaNeueCondensed');
+        final cifraoRight = (tx(345) - wValor - px(12))
+            .clamp(tx(4) + wCifrao, tx(345));
+        draw(cifrao, cifraoRight, ty(_boxCy), tamCifrao,
             TextAlign.right, const Color(0xFF000000),
             centerY: true,
             fontFamily: 'HelveticaNeueCondensed');
