@@ -731,10 +731,11 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     // Preço à vista
     if (valor.isNotEmpty) {
+      final cifraoDraw = ehDepor ? cifrao.replaceFirst('De ', '') : cifrao;
       final maxTam = modo == 0 ? 85.0 : 54.0;
       final minTam = modo == 0 ? 40.0 : 26.0;
       final maxLargura = modo == 0 ? 700.0 : 330.0;
-      final tam = _ajustarValor(cifrao, valor, maxTam, minTam, maxLargura);
+      final tam = _ajustarValor(cifraoDraw, valor, maxTam, minTam, maxLargura);
       final baseline = modo == 0 ? 220.0 : (ehDepor ? _boxCy : 230.0);
       final centroX = modo == 0 ? _TW / 2 : _leftCx;
 
@@ -743,26 +744,27 @@ class _GondolaPreviewPainter extends CustomPainter {
           _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
           larguraValorPx = px(300);
         } else {
-          final maxValor = temMilhar
+          final maxValor = ehDepor
               ? 60.0
-              : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
+              : (temMilhar
+                  ? 60.0
+                  : (parteInteira.length >= 3 ? 75.0 : 110.0));
           final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
           draw(valor, tx(345), ty(baseline), tamValor, TextAlign.right,
               const Color(0xFF000000));
           larguraValorPx = _largura(valor, px(tamValor));
         }
-        final maxCifrao =
-            (ehDepor && (temMilhar || parteInteira.length >= 3)) ? 30.0 : 45.0;
-        final tamCifrao = _ajustarTexto(cifrao, maxCifrao, 26, 100);
-        draw(cifrao, tx(20), ty(baseline), tamCifrao, TextAlign.left,
+        final maxCifrao = ehDepor ? 30.0 : 45.0;
+        final tamCifrao = _ajustarTexto(cifraoDraw, maxCifrao, 26, 100);
+        draw(cifraoDraw, tx(20), ty(baseline), tamCifrao, TextAlign.left,
             const Color(0xFF000000));
       } else {
-        final cw = _largura(cifrao, tam);
+        final cw = _largura(cifraoDraw, tam);
         final vw2 = _largura(valor, tam);
         final gap = px(6);
         final total = cw + gap + vw2;
         final startX = tx(centroX) - total / 2;
-        draw(cifrao, startX, ty(baseline), tam, TextAlign.left,
+        draw(cifraoDraw, startX, ty(baseline), tam, TextAlign.left,
             const Color(0xFF000000));
         if (barcode) {
           _desenharBarcode(
