@@ -623,11 +623,8 @@ class _GondolaPreviewPainter extends CustomPainter {
   static const double _boxCy = 208;
   static const double _boxCx = (_boxLeft + _boxRight) / 2;
   static const double _leftCx = _boxLeft / 2;
-  static const double _leftMax = 330;
-  static const double _comumMax = 700;
   static const double _boxMax = 325;
 
-  
   double _largura(String text, double size, {String? fontFamily}) =>
       (TextPainter(
               text: TextSpan(
@@ -639,13 +636,6 @@ class _GondolaPreviewPainter extends CustomPainter {
               textDirection: TextDirection.ltr)
             ..layout())
           .width;
-
-  /// Posição X da vírgula de um número alinhado à direita em [rightX].
-  double _commaXFromRight(String texto, double rightX, double size) {
-    final i = texto.lastIndexOf(',');
-    if (i < 0) return rightX - _largura(texto, size) / 2;
-    return rightX - _largura(texto.substring(i), size);
-  }
 
   double _ajustarTexto(
       String texto, double maxTam, double minTam, double maxLargura) {
@@ -692,112 +682,38 @@ class _GondolaPreviewPainter extends CustomPainter {
     double ty(double y) => oy + y * scale;
 
     void draw(String text, double x, double y, double size, TextAlign align,
-        Color color,
-        {bool centerY = false,
-        double? targetHeight,
-        String? fontFamily}) {
+        Color color) {
       final tp = TextPainter(
         text: TextSpan(
-            text: text,
-            style: TextStyle(
-                fontFamily: fontFamily,
-                fontSize: px(size),
-                fontWeight: FontWeight.bold,
-                color: color)),
-        textDirection: TextDirection.ltr,
+          text: text,
+          style: TextStyle(
+              fontSize: px(size),
+              fontWeight: FontWeight.bold,
+              color: color),
+        ),
         textAlign: align,
-      )..layout();
-      final dx = align == TextAlign.center
-          ? x - tp.width / 2
-          : align == TextAlign.right
-              ? x - tp.width
-              : x;
-      final base = tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final dy = centerY ? y - tp.height / 2 : y - base;
-      final targetPx = targetHeight == null ? null : targetHeight * scale;
-      final stretchY = targetPx == null || tp.height <= 0
-          ? 1.0
-          : targetPx / tp.height;
-      if (stretchY != 1.0) {
-        canvas.save();
-        canvas.translate(dx, dy + tp.height / 2);
-        canvas.scale(1.0, stretchY);
-        tp.paint(canvas, Offset(0, -tp.height / 2));
-        canvas.restore();
-      } else {
-        tp.paint(canvas, Offset(dx, dy));
-      }
-    }
-
-    void drawValorEsticado(String v, double xRight, double yCenter,
-        double tam, Color color, double targetHeight) {
-      final segs = <String>[];
-      final buf = StringBuffer();
-      bool? lastDigit;
-      for (final ch in v.split('')) {
-        final isDigit = RegExp(r'[0-9]').hasMatch(ch);
-        if (lastDigit == null || isDigit == lastDigit) {
-          buf.write(ch);
-        } else {
-          segs.add(buf.toString());
-          buf.clear();
-          buf.write(ch);
-        }
-        lastDigit = isDigit;
-      }
-      if (buf.isNotEmpty) segs.add(buf.toString());
-      final widths = segs.map((s) {
-        final isDigit = RegExp(r'[0-9]').hasMatch(s[0]);
-        return _largura(s, px(isDigit ? tam : tam * 0.97),
-            fontFamily: 'HelveticaNeueCondensed');
-      }).toList();
-      final total = widths.fold(0.0, (a, b) => a + b);
-      final tpDig = TextPainter(
-        text: TextSpan(
-            text: '0',
-            style: TextStyle(
-                fontFamily: 'HelveticaNeueCondensed',
-                fontSize: px(tam),
-                fontWeight: FontWeight.bold)),
         textDirection: TextDirection.ltr,
       )..layout();
-      final hDig = tpDig.height;
-      final baseDig =
-          tpDig.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final stretchDig = hDig > 0 ? px(targetHeight) / hDig : 1.0;
-      final baselineY =
-          yCenter + ((baseDig - hDig / 2) * stretchDig) / scale;
-      var x = xRight - total;
-      for (var i = 0; i < segs.length; i++) {
-        final isDigit = RegExp(r'[0-9]').hasMatch(segs[i][0]);
-        if (isDigit) {
-          final shift = (i + 1 < segs.length &&
-                  !RegExp(r'[0-9]').hasMatch(segs[i + 1][0]) &&
-                  segs[i].endsWith('7'))
-              ? px(tam * 0.14)
-              : 0.0;
-          draw(segs[i], x + shift, ty(yCenter), tam, TextAlign.left, color,
-              centerY: true,
-              targetHeight: targetHeight,
-              fontFamily: 'HelveticaNeueCondensed');
-        } else {
-          draw(segs[i], x, ty(baselineY), tam * 0.97, TextAlign.left, color,
-              fontFamily: 'HelveticaNeueCondensed');
-        }
-        x += widths[i];
-      }
+      final left = align == TextAlign.center
+          ? x - tp.width / 2
+          : (align == TextAlign.right ? x - tp.width : x);
+      final base =
+          tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      tp.paint(canvas, Offset(left, y - base));
     }
 
-    var valorCommaX = 0.0;
-    double valorTam = 0;
+    var larguraValorPx = 0.0;
+    final ehDepor = cifrao.startsWith('De R\$');
+    final temMilhar = valor.contains('.');
+    final parteInteira = valor.split(',').first.replaceAll('.', '');
 
     // Código lateral (SAP) na vertical (promocional: mais ao topo).
     if (codigo.isNotEmpty) {
-      final sapY = modo == 1 ? 112.0 : _TH / 2 + 12;
+      final sapY = modo == 1 ? 100.0 : _TH / 2;
       canvas.save();
       canvas.translate(tx(18), ty(sapY));
       canvas.rotate(-1.5708);
-      draw(codigo, 0, 0, 16, TextAlign.center, const Color(0xFF000000));
+      draw(codigo, 0, 0, 22, TextAlign.center, const Color(0xFF000000));
       canvas.restore();
     }
 
@@ -806,114 +722,66 @@ class _GondolaPreviewPainter extends CustomPainter {
       draw(ean, tx(_TW / 2), ty(82), 23, TextAlign.center,
           const Color(0xFF000000));
     }
+
     // Descrição
     if (descricao.isNotEmpty) {
       draw(descricao, tx(_TW / 2), ty(114), 30, TextAlign.center,
           const Color(0xFF000000));
     }
 
-    // Modelo comum: código de barras do EAN no lugar do valor
-    if (barcode && ean.isNotEmpty) {
-      final bars = Barcode.code128().make(ean, width: 620, height: 90);
-      final paintBar = Paint()..color = const Color(0xFF000000);
-      final bx = _TW / 2 - 310;
-      final by = 175.0;
-      for (final b in bars) {
-        if (b is BarcodeBar && b.black) {
-          canvas.drawRect(
-            Rect.fromLTWH(tx(bx + b.left), ty(by + b.top), px(b.width),
-                px(b.height)),
-            paintBar,
-          );
-        }
-      }
-    }
-
-    // Preço à vista (fora da caixa preta)
-    if (!barcode && valor.isNotEmpty) {
+    // Preço à vista
+    if (valor.isNotEmpty) {
       final maxTam = modo == 0 ? 85.0 : 54.0;
       final minTam = modo == 0 ? 40.0 : 26.0;
-      final maxLargura = modo == 0 ? _comumMax : _leftMax;
+      final maxLargura = modo == 0 ? 700.0 : 330.0;
       final tam = _ajustarValor(cifrao, valor, maxTam, minTam, maxLargura);
-      final ehDepor = cifrao.startsWith('De R\$');
       final baseline = modo == 0 ? 220.0 : (ehDepor ? _boxCy : 230.0);
       final centroX = modo == 0 ? _TW / 2 : _leftCx;
 
       if (modo == 1) {
-        // R$ perto do SAP (esquerda) e valor grande quase na caixa (direita).
-        final temMilhar = valor.contains('.');
-        final parteInteira = valor.split(',').first.replaceAll('.', '');
-        final maxValor = temMilhar
-            ? 60.0
-            : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
-        final tamValor = _ajustarTexto(valor, maxValor, 50, ehDepor ? 180.0 : 280.0);
-        valorTam = tamValor;
-        final tamBoxV = (tamValor * 0.5).clamp(20.0, 60.0);
-        final tamPrincipalV = (tamBoxV * 1.8).clamp(40.0, 70.0);
-        final alturaBox = tamPrincipalV * 1.2;
-        drawValorEsticado(valor, tx(345), _boxCy, tamValor,
-            const Color(0xFF000000), alturaBox);
-        valorCommaX = _commaXFromRight(valor, tx(345), px(tamValor));
-
-        final tamCifrao = tamValor;
-        final wValor = _largura(valor, px(tamValor),
-            fontFamily: 'HelveticaNeueCondensed');
-        final temDe = cifrao.toUpperCase().startsWith('DE');
-        final wRs = _largura('R\$', px(tamCifrao),
-            fontFamily: 'HelveticaNeueCondensed');
-        if (temDe) {
-          final wDe = _largura('De', px(tamCifrao),
-              fontFamily: 'HelveticaNeueCondensed');
-          final wDeRs = wDe + px(6) + wRs;
-          final valueLeft = tx(345) - wValor;
-          final deLeft =
-              (valueLeft - px(30) - wDeRs).clamp(tx(4), tx(345));
-          draw('De', deLeft, ty(_boxCy), tamCifrao, TextAlign.left,
-              const Color(0xFF000000),
-              centerY: true,
-              targetHeight: alturaBox,
-              fontFamily: 'HelveticaNeueCondensed');
-          draw('R\$', deLeft + wDe + px(6), ty(_boxCy), tamCifrao,
-              TextAlign.left, const Color(0xFF000000),
-              centerY: true,
-              targetHeight: alturaBox,
-              fontFamily: 'HelveticaNeueCondensed');
+        if (barcode) {
+          _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
+          larguraValorPx = px(300);
         } else {
-          final cifraoRight = (tx(345) - wValor - px(12))
-              .clamp(tx(4) + wRs, tx(345));
-          draw('R\$', cifraoRight, ty(_boxCy), tamCifrao, TextAlign.right,
-              const Color(0xFF000000),
-              centerY: true,
-              targetHeight: alturaBox,
-              fontFamily: 'HelveticaNeueCondensed');
+          final maxValor = temMilhar
+              ? 60.0
+              : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
+          final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
+          draw(valor, tx(345), ty(baseline), tamValor, TextAlign.right,
+              const Color(0xFF000000));
+          larguraValorPx = _largura(valor, px(tamValor));
         }
+        final maxCifrao =
+            (ehDepor && (temMilhar || parteInteira.length >= 3)) ? 30.0 : 45.0;
+        final tamCifrao = _ajustarTexto(cifrao, maxCifrao, 26, 100);
+        draw(cifrao, tx(20), ty(baseline), tamCifrao, TextAlign.left,
+            const Color(0xFF000000));
       } else {
-        final cw = _largura(cifrao, px(tam));
-        final vw2 = _largura(valor, px(tam));
+        final cw = _largura(cifrao, tam);
+        final vw2 = _largura(valor, tam);
         final gap = px(6);
         final total = cw + gap + vw2;
         final startX = tx(centroX) - total / 2;
         draw(cifrao, startX, ty(baseline), tam, TextAlign.left,
             const Color(0xFF000000));
-        draw(valor, startX + cw + gap, ty(baseline), tam, TextAlign.left,
-            const Color(0xFF000000));
+        if (barcode) {
+          _desenharBarcode(
+              canvas, startX + cw + gap, ty(_boxCy - 45), total - cw - gap);
+        } else {
+          draw(valor, startX + cw + gap, ty(baseline), tam, TextAlign.left,
+              const Color(0xFF000000));
+        }
       }
     }
 
-    // R$/PCE + valor unitário (promocional: separados)
-    if (!barcode && unidade.isNotEmpty) {
+    // R$/PCE + valor unitário (promocional: separados).
+    if (unidade.isNotEmpty) {
       if (modo == 1) {
-        final idx = unidade.indexOf('R\$/PCE ');
-        final numero = idx >= 0 ? unidade.substring(idx + 8).trim() : unidade;
-        draw('R\$/PCE', tx(30), ty(270), 15, TextAlign.left,
+        final numero = unidade.split('R\$/PCE ').last.trim();
+        draw('R\$/PCE', tx(30), ty(262), 15, TextAlign.left,
             const Color(0xFF000000));
-        // Alinha a vírgula do valor unitário com a vírgula do valor acima.
-        final uAp = numero.contains(',')
-            ? numero.substring(numero.lastIndexOf(','))
-            : numero;
-        final uRight = valorCommaX + _largura(uAp, px(15));
-        draw('R\$' + numero, uRight, ty(270), 15, TextAlign.right,
-            const Color(0xFF000000));
+        draw('R\$' + numero, tx(345) - larguraValorPx, ty(262), 15,
+            TextAlign.left, const Color(0xFF000000));
       } else {
         draw(unidade, tx(_TW / 2), ty(252), 15, TextAlign.center,
             const Color(0xFF000000));
@@ -922,31 +790,36 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     // Caixa preta (promocional)
     if (modo == 1) {
-      final tamBox = valorTam > 0 ? (valorTam * 0.5).clamp(20.0, 60.0) : 54.0;
-      final tamPrincipal = (tamBox * 1.8).clamp(40.0, 70.0);
-      final tamPequeno = (tamPrincipal * 0.45).clamp(12.0, 28.0);
       if (promoLinha0.isNotEmpty) {
-        final tam = _ajustarTexto(promoLinha0, tamPequeno, 10, _boxMax);
-        draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), tam, TextAlign.center,
-            Colors.white, fontFamily: 'HelveticaNeueCondensed');
+        final t0 = _ajustarTexto(promoLinha0, 17, 10, _boxMax);
+        draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), t0, TextAlign.center,
+            const Color(0xFFFFE600));
       }
       if (promoLinha1.isNotEmpty) {
-        final tam = _ajustarTexto(promoLinha1, tamPrincipal, 24, _boxMax);
-        draw(promoLinha1, tx(_boxCx), ty(_boxCy), tam, TextAlign.center,
-            Colors.white,
-            centerY: true,
-            targetHeight: promoLinha1.startsWith('Por R\$') ? tam * 1.5 : null,
-            fontFamily: 'HelveticaNeueCondensed');
+        final t1 = _ajustarTexto(promoLinha1, 54, 24, _boxMax);
+        draw(promoLinha1, tx(_boxCx), ty(_boxCy), t1, TextAlign.center,
+            const Color(0xFFFFE600));
       }
       if (promoLinha2.isNotEmpty) {
-        final tam = _ajustarTexto(promoLinha2, tamPequeno, 10, _boxMax);
-        draw(promoLinha2, tx(_boxCx), ty(262), tam, TextAlign.center,
-            Colors.white, fontFamily: 'HelveticaNeueCondensed');
+        final t2 = _ajustarTexto(promoLinha2, 17, 10, _boxMax);
+        draw(promoLinha2, tx(_boxCx), ty(252), t2, TextAlign.center,
+            const Color(0xFFFFE600));
       }
     }
   }
 
-  
+  void _desenharBarcode(Canvas canvas, double x, double y, double largura) {
+    if (ean.isEmpty || largura <= 0) return;
+    final elems = Barcode.code128()
+        .make(ean, width: largura, height: largura * 90 / 620);
+    for (final el in elems) {
+      if (el is! BarcodeBar || !el.black) continue;
+      canvas.drawRect(
+          Rect.fromLTWH(x + el.left, y + el.top, el.width, el.height),
+          Paint()..color = const Color(0xFF000000));
+    }
+  }
+
   bool shouldRepaint(covariant _GondolaPreviewPainter old) =>
       old.template != template ||
       old.barcode != barcode ||
