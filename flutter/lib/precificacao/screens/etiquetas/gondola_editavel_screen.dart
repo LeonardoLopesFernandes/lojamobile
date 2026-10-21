@@ -824,10 +824,21 @@ class _GondolaPreviewPainter extends CustomPainter {
             fontFamily: 'HelveticaNeueCondensed');
         final cifraoRight = (tx(345) - wValor - px(12))
             .clamp(tx(4) + wCifrao, tx(345));
-        draw(cifrao, cifraoRight, ty(_boxCy), tamCifrao,
-            TextAlign.right, const Color(0xFF000000),
-            centerY: true,
+        final temDe = cifrao.toUpperCase().startsWith('DE');
+        const rsTxt = 'R\$';
+        final wRs = _largura(rsTxt, px(tamCifrao),
             fontFamily: 'HelveticaNeueCondensed');
+        draw(rsTxt, cifraoRight, ty(_boxCy), tamCifrao, TextAlign.right,
+            const Color(0xFF000000),
+            centerY: true,
+            targetHeight: 150,
+            fontFamily: 'HelveticaNeueCondensed');
+        if (temDe) {
+          final deTam = (tamCifrao * 0.7).clamp(28.0, 48.0);
+          draw('De', cifraoRight - wRs - px(6), ty(_boxCy), deTam,
+              TextAlign.right, const Color(0xFF000000),
+              centerY: true, fontFamily: 'HelveticaNeueCondensed');
+        }
       } else {
         final cw = _largura(cifrao, px(tam));
         final vw2 = _largura(valor, px(tam));
