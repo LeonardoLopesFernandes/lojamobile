@@ -779,7 +779,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       canvas.save();
       canvas.translate(tx(18), ty(sapY));
       canvas.rotate(-1.5708);
-      draw(codigo, 0, 0, 22, TextAlign.center, const Color(0xFF000000));
+      draw(codigo, 0, 0, 16, TextAlign.center, const Color(0xFF000000));
       canvas.restore();
     }
 
@@ -835,10 +835,11 @@ class _GondolaPreviewPainter extends CustomPainter {
             targetHeight: 150,
             fontFamily: 'HelveticaNeueCondensed');
         if (temDe) {
-          final deTam = (tamCifrao * 0.7).clamp(28.0, 48.0);
-          draw('De', cifraoRight - wRs - px(6), ty(_boxCy), deTam,
+          draw('De', cifraoRight - wRs - px(6), ty(_boxCy), tamCifrao,
               TextAlign.right, const Color(0xFF000000),
-              centerY: true, fontFamily: 'HelveticaNeueCondensed');
+              centerY: true,
+              targetHeight: 150,
+              fontFamily: 'HelveticaNeueCondensed');
         }
       } else {
         final cw = _largura(cifrao, px(tam));
