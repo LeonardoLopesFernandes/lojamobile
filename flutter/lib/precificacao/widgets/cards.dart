@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/models/models.dart';
 
@@ -38,12 +39,75 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         height: 18,
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(9)),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(30)),
         alignment: Alignment.center,
         child: Text(text,
             style: const TextStyle(
                 color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
       );
+}
+
+Future<void> _copiarEan(BuildContext context, String ean) async {
+  await Clipboard.setData(ClipboardData(text: ean));
+  if (!context.mounted) return;
+  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+    SnackBar(content: Text('EAN copiado: $ean'), duration: const Duration(seconds: 2)),
+  );
+}
+
+/// Barra verde com o badge de tipo encostado à direita (GreenBadgeContainer + WhiteTypeBadge).
+class _GreenTypeBar extends StatelessWidget {
+  final String? promo;
+  final String? price;
+  final String badge;
+  final Color badgeColor;
+  const _GreenTypeBar({
+    required this.promo,
+    required this.price,
+    required this.badge,
+    required this.badgeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final txt = promo ?? price ?? '';
+    return Container(
+      height: 28,
+      decoration: BoxDecoration(
+        color: _green,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(txt,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: _green),
+              borderRadius:
+                  const BorderRadius.horizontal(right: Radius.circular(12)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            alignment: Alignment.center,
+            child: Text(badge,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: badgeColor)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Card da home (EtiquetasFragment) -> item_etiqueta.xml
@@ -648,14 +712,16 @@ class _PriceTagCardState extends State<PriceTagCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(widget.tag.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: _descDark)),
                 ),
                 SizedBox(
-                  width: 30,
-                  height: 30,
+                  width: 26,
+                  height: 26,
                   child: Container(
                     decoration: BoxDecoration(
                       color: _qtyGray,
@@ -669,7 +735,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                       keyboardType: TextInputType.number,
                       maxLength: 2,
                       style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.bold, color: _descDark),
+                          fontSize: 12, fontWeight: FontWeight.bold, color: _descDark2),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         isCollapsed: true,
@@ -690,67 +756,25 @@ class _PriceTagCardState extends State<PriceTagCard> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'EAN: ${widget.tag.ean} • Dep: ${widget.tag.department}',
-                    style: const TextStyle(fontSize: 10, color: _eanGray),
+                  child: GestureDetector(
+                    onTap: () => _copiarEan(context, widget.tag.ean),
+                    child: Text(
+                      'EAN: ${widget.tag.ean}',
+                      style: const TextStyle(fontSize: 10, color: _eanGray),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 _statusBadge(),
               ],
             ),
-            if (showPromo || showPrice) ...[
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(showPromo ? b.promo! : b.price!,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(b.badge,
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: b.badgeColor)),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(b.badge,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  ],
-                ),
-              ),
-            ],
+            const SizedBox(height: 6),
+            _GreenTypeBar(
+              promo: showPromo ? b.promo : null,
+              price: showPrice ? b.price : null,
+              badge: b.badge,
+              badgeColor: b.badgeColor,
+            ),
           ],
         ),
       ),
@@ -886,14 +910,16 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(widget.item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: _descDark)),
                 ),
                 SizedBox(
-                  width: 30,
-                  height: 30,
+                  width: 26,
+                  height: 26,
                   child: Container(
                     decoration: BoxDecoration(
                       color: _qtyGray,
@@ -907,7 +933,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                       keyboardType: TextInputType.number,
                       maxLength: 2,
                       style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.bold, color: _descDark),
+                          fontSize: 12, fontWeight: FontWeight.bold, color: _descDark2),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         isCollapsed: true,
@@ -928,67 +954,25 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'EAN: ${widget.item.ean} • Dep: ${widget.item.department}',
-                    style: const TextStyle(fontSize: 10, color: _eanGray),
+                  child: GestureDetector(
+                    onTap: () => _copiarEan(context, widget.item.ean),
+                    child: Text(
+                      'Dep: ${widget.item.department} • EAN: ${widget.item.ean}',
+                      style: const TextStyle(fontSize: 10, color: _eanGray),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 _statusBadge(),
               ],
             ),
-            if (showPromo || showPrice) ...[
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(showPromo ? b.promo! : b.price!,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(b.badge,
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: b.badgeColor)),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(b.badge,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  ],
-                ),
-              ),
-            ],
+            const SizedBox(height: 6),
+            _GreenTypeBar(
+              promo: showPromo ? b.promo : null,
+              price: showPrice ? b.price : null,
+              badge: b.badge,
+              badgeColor: b.badgeColor,
+            ),
           ],
         ),
       ),
