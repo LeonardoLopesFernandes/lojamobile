@@ -133,6 +133,7 @@ class MyApp extends StatelessWidget {
                     ?.cast<prec_models.PrintingData>() ??
                 [],
             printerId: args?['printerId'] as String? ?? 'ZEBRA_1',
+            barcode: args?['barcode'] as bool? ?? false,
           );
         },
         '/modelo_editavel': (ctx) => const ModeloEditavelScreen(),

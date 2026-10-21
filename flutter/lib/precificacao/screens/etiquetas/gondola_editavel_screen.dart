@@ -61,8 +61,12 @@ bool _ehDeporParcelado(PrintingData d) {
 class GondolaEditavelScreen extends StatefulWidget {
   final List<PrintingData> items;
   final String printerId;
+  final bool barcode;
   const GondolaEditavelScreen(
-      {super.key, required this.items, required this.printerId});
+      {super.key,
+      required this.items,
+      required this.printerId,
+      this.barcode = false});
 
   
   State<GondolaEditavelScreen> createState() => _GondolaEditavelScreenState();
@@ -252,6 +256,9 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
               startAt: d.price?.startAt ?? '',
               endAt: d.price?.endAt ?? ''));
     }
+    if (widget.barcode) {
+      novo = novo.copyWith(template: Constants.signTemplateCodigoBarras);
+    }
     _items[_index] = novo;
   }
 
@@ -309,7 +316,9 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
     final isParcelado = _ehParcelado(d);
     final isDepor = _ehDepor(d);
     final promocional = isLeve || isParcelado || isDepor;
-    final template = promocional ? _templatePromocional : _templateComum;
+    final template = widget.barcode
+        ? _templateComum
+        : (promocional ? _templatePromocional : _templateComum);
 
     return Scaffold(
       backgroundColor: const Color(0xFFEDEFF2),
@@ -357,7 +366,8 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
                         : CustomPaint(
                             painter: _GondolaPreviewPainter(
                               template: template,
-                              modo: promocional ? 1 : 0,
+                              modo: widget.barcode ? 0 : (promocional ? 1 : 0),
+                              barcode: widget.barcode,
                               codigo: _sapController.text.trim().isEmpty
                                   ? (d.codSap.isNotEmpty
                                       ? d.codSap
@@ -579,6 +589,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
 class _GondolaPreviewPainter extends CustomPainter {
   final ui.Image template;
   final int modo;
+  final bool barcode;
   final String codigo;
   final String ean;
   final String descricao;
@@ -592,6 +603,7 @@ class _GondolaPreviewPainter extends CustomPainter {
   const _GondolaPreviewPainter({
     required this.template,
     required this.modo,
+    required this.barcode,
     required this.codigo,
     required this.ean,
     required this.descricao,
@@ -801,7 +813,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     }
 
     // Modelo comum: código de barras do EAN no lugar do valor
-    if (modo == 0 && ean.isNotEmpty) {
+    if (barcode && ean.isNotEmpty) {
       final bars = Barcode.code128().make(ean, width: 620, height: 90);
       final paintBar = Paint()..color = const Color(0xFF000000);
       final bx = _TW / 2 - 310;
@@ -818,7 +830,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     }
 
     // Preço à vista (fora da caixa preta)
-    if (valor.isNotEmpty && modo == 1) {
+    if (!barcode && valor.isNotEmpty) {
       final maxTam = modo == 0 ? 85.0 : 54.0;
       final minTam = modo == 0 ? 40.0 : 26.0;
       final maxLargura = modo == 0 ? _comumMax : _leftMax;
@@ -886,7 +898,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     }
 
     // R$/PCE + valor unitário (promocional: separados)
-    if (unidade.isNotEmpty && modo == 1) {
+    if (!barcode && unidade.isNotEmpty) {
       if (modo == 1) {
         final idx = unidade.indexOf('R\$/PCE ');
         final numero = idx >= 0 ? unidade.substring(idx + 8).trim() : unidade;
@@ -934,6 +946,7 @@ class _GondolaPreviewPainter extends CustomPainter {
   
   bool shouldRepaint(covariant _GondolaPreviewPainter old) =>
       old.template != template ||
+      old.barcode != barcode ||
       old.descricao != descricao ||
       old.valor != valor ||
       old.promoLinha0 != promoLinha0 ||
