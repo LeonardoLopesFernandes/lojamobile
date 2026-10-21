@@ -820,23 +820,33 @@ class _GondolaPreviewPainter extends CustomPainter {
         final tamCifrao = _ajustarTexto(cifrao, 60.0, 30.0, 170.0);
         final wValor = _largura(valor, px(tamValor),
             fontFamily: 'HelveticaNeueCondensed');
-        final wCifrao = _largura(cifrao, px(tamCifrao),
-            fontFamily: 'HelveticaNeueCondensed');
         final temDe = cifrao.toUpperCase().startsWith('DE');
-        final gap = temDe ? px(60) : px(12);
-        final cifraoRight = (tx(345) - wValor - gap)
-            .clamp(tx(4) + wCifrao, tx(345));
-        const rsTxt = 'R\$';
-        final wRs = _largura(rsTxt, px(tamCifrao),
-            fontFamily: 'HelveticaNeueCondensed');
-        draw(rsTxt, cifraoRight, ty(_boxCy), tamCifrao, TextAlign.right,
-            const Color(0xFF000000),
-            centerY: true,
-            targetHeight: 150,
+        final wRs = _largura('R\$', px(tamCifrao),
             fontFamily: 'HelveticaNeueCondensed');
         if (temDe) {
-          draw('De', cifraoRight - wRs - px(6), ty(_boxCy), tamCifrao,
-              TextAlign.right, const Color(0xFF000000),
+          final wDe = _largura('De', px(tamCifrao),
+              fontFamily: 'HelveticaNeueCondensed');
+          final wDeRs = wDe + px(6) + wRs;
+          final valueLeft = tx(345) - wValor;
+          final espaco = valueLeft - tx(20);
+          final deLeft = espaco > wDeRs
+              ? tx(20) + (espaco - wDeRs) / 2
+              : (valueLeft - px(60) - wDeRs);
+          draw('De', deLeft, ty(_boxCy), tamCifrao, TextAlign.left,
+              const Color(0xFF000000),
+              centerY: true,
+              targetHeight: 150,
+              fontFamily: 'HelveticaNeueCondensed');
+          draw('R\$', deLeft + wDe + px(6), ty(_boxCy), tamCifrao,
+              TextAlign.left, const Color(0xFF000000),
+              centerY: true,
+              targetHeight: 150,
+              fontFamily: 'HelveticaNeueCondensed');
+        } else {
+          final cifraoRight = (tx(345) - wValor - px(12))
+              .clamp(tx(4) + wRs, tx(345));
+          draw('R\$', cifraoRight, ty(_boxCy), tamCifrao, TextAlign.right,
+              const Color(0xFF000000),
               centerY: true,
               targetHeight: 150,
               fontFamily: 'HelveticaNeueCondensed');
