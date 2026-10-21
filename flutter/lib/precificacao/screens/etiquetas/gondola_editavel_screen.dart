@@ -729,6 +729,8 @@ class _GondolaPreviewPainter extends CustomPainter {
           const Color(0xFF000000));
     }
 
+    var comumUnitCenter = _TW / 2;
+
     // Preço à vista
     if (valor.isNotEmpty) {
       final cifraoDraw = ehDepor ? cifrao.replaceFirst('De ', '') : cifrao;
@@ -759,20 +761,20 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw(cifraoDraw, tx(20), ty(baseline), tamCifrao, TextAlign.left,
             const Color(0xFF000000));
       } else {
-        final cw = _largura(cifraoDraw, tam);
-        final vw2 = _largura(valor, tam);
-        final gap = px(6);
-        final total = cw + gap + vw2;
-        final startX = tx(centroX) - total / 2;
-        draw(cifraoDraw, startX, ty(baseline), tam, TextAlign.left,
+        final cifraoW = _largura(cifraoDraw, px(tam)) / scale;
+        final valorW = _largura(valor, px(tam)) / scale;
+        draw(cifraoDraw, tx(centroX), ty(baseline), tam, TextAlign.center,
             const Color(0xFF000000));
         if (barcode) {
+          final bw = _largura(valor, px(tam));
           _desenharBarcode(
-              canvas, startX + cw + gap, ty(_boxCy - 45), total - cw - gap);
+              canvas, tx(_TW - 30) - bw, ty(_boxCy - 45), bw);
         } else {
-          draw(valor, startX + cw + gap, ty(baseline), tam, TextAlign.left,
+          draw(valor, tx(_TW - 30), ty(baseline), tam, TextAlign.right,
               const Color(0xFF000000));
         }
+        comumUnitCenter =
+            ((centroX + cifraoW / 2) + (_TW - 30 - valorW)) / 2;
       }
     }
 
@@ -785,7 +787,7 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw('R\$' + numero, tx(345) - larguraValorPx, ty(262), 15,
             TextAlign.left, const Color(0xFF000000));
       } else {
-        draw(unidade, tx(_TW / 2), ty(252), 15, TextAlign.center,
+        draw(unidade, tx(comumUnitCenter), ty(252), 15, TextAlign.center,
             const Color(0xFF000000));
       }
     }
