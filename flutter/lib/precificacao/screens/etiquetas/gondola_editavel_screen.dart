@@ -764,7 +764,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       final hDig = tpDig.height;
       final baseDig =
           tpDig.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final stretchDig = hDig > 0 ? px(135) / hDig : 1.0;
+      final stretchDig = hDig > 0 ? px(80) / hDig : 1.0;
       final baselineY =
           yCenter + ((baseDig - hDig / 2) * stretchDig) / scale;
       var x = xRight - total;
@@ -778,7 +778,7 @@ class _GondolaPreviewPainter extends CustomPainter {
               : 0.0;
           draw(segs[i], x + shift, ty(yCenter), tam, TextAlign.left, color,
               centerY: true,
-              targetHeight: 135,
+              targetHeight: 80,
               fontFamily: 'HelveticaNeueCondensed');
         } else {
           draw(segs[i], x, ty(baselineY), tam * 0.97, TextAlign.left, color,
@@ -868,12 +868,12 @@ class _GondolaPreviewPainter extends CustomPainter {
           draw('De', deLeft, ty(_boxCy), tamCifrao, TextAlign.left,
               const Color(0xFF000000),
               centerY: true,
-              targetHeight: 135,
+              targetHeight: 80,
               fontFamily: 'HelveticaNeueCondensed');
           draw('R\$', deLeft + wDe + px(6), ty(_boxCy), tamCifrao,
               TextAlign.left, const Color(0xFF000000),
               centerY: true,
-              targetHeight: 135,
+              targetHeight: 80,
               fontFamily: 'HelveticaNeueCondensed');
         } else {
           final cifraoRight = (tx(345) - wValor - px(12))
@@ -881,7 +881,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           draw('R\$', cifraoRight, ty(_boxCy), tamCifrao, TextAlign.right,
               const Color(0xFF000000),
               centerY: true,
-              targetHeight: 135,
+              targetHeight: 80,
               fontFamily: 'HelveticaNeueCondensed');
         }
       } else {
