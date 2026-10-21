@@ -811,7 +811,7 @@ class _GondolaPreviewPainter extends CustomPainter {
         final maxValor = temMilhar
             ? 60.0
             : (ehDepor || parteInteira.length >= 3 ? 75.0 : 110.0);
-        final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
+        final tamValor = _ajustarTexto(valor, maxValor, 50, ehDepor ? 180.0 : 280.0);
         valorTam = tamValor;
         drawValorEsticado(valor, tx(345), _boxCy, tamValor,
             const Color(0xFF000000));
@@ -823,8 +823,9 @@ class _GondolaPreviewPainter extends CustomPainter {
         final wCifrao = _largura(cifrao, px(tamCifrao),
             fontFamily: 'HelveticaNeueCondensed');
         final temDe = cifrao.toUpperCase().startsWith('DE');
-        final gap = temDe ? px(115) : px(12);
-        final cifraoRight = tx(345) - wValor - gap;
+        final gap = temDe ? px(60) : px(12);
+        final cifraoRight = (tx(345) - wValor - gap)
+            .clamp(tx(4) + wCifrao, tx(345));
         const rsTxt = 'R\$';
         final wRs = _largura(rsTxt, px(tamCifrao),
             fontFamily: 'HelveticaNeueCondensed');
