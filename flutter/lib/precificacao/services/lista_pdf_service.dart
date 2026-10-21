@@ -199,12 +199,26 @@ class ListaPdfService {
               cell(pw.Text(t.quantity.toString(), style: cellStyle, textAlign: pw.TextAlign.center)),
               cell(pw.Text(t.ean, style: cellStyle, textAlign: pw.TextAlign.center)),
               cell(pw.Text(t.description, style: cellStyle, textAlign: pw.TextAlign.center)),
-              cell(pw.BarcodeWidget(
-                barcode: Barcode.code128(),
-                data: t.ean,
+              cell(pw.SizedBox(
                 width: 175,
-                height: 34,
-                drawText: false,
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    pw.Text(t.description,
+                        style: cellStyle, textAlign: pw.TextAlign.center),
+                    pw.SizedBox(height: 2),
+                    pw.BarcodeWidget(
+                      barcode: Barcode.code128(),
+                      data: t.ean,
+                      width: 175,
+                      height: 34,
+                      drawText: false,
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(t.ean,
+                        style: cellStyle, textAlign: pw.TextAlign.center),
+                  ],
+                ),
               )),
             ],
           ),
