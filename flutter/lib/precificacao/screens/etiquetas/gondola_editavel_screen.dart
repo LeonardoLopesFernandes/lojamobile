@@ -823,9 +823,8 @@ class _GondolaPreviewPainter extends CustomPainter {
         final wCifrao = _largura(cifrao, px(tamCifrao),
             fontFamily: 'HelveticaNeueCondensed');
         final temDe = cifrao.toUpperCase().startsWith('DE');
-        final gap = temDe ? px(90) : px(12);
-        final cifraoRight = (tx(345) - wValor - gap)
-            .clamp(tx(4) + wCifrao, tx(345));
+        final gap = temDe ? px(115) : px(12);
+        final cifraoRight = tx(345) - wValor - gap;
         const rsTxt = 'R\$';
         final wRs = _largura(rsTxt, px(tamCifrao),
             fontFamily: 'HelveticaNeueCondensed');
