@@ -259,7 +259,7 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
       return;
     }
     if (_modo == 'Código de barras') {
-      await _abrirEdicao(selected, barcode: true);
+      await ListaPdfService.compartilharRelatorioEtiquetas(selected);
       return;
     }
     final printingDataList = <PrintingData>[];
@@ -313,6 +313,10 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
 
   Future<void> _imprimirItem(PriceTag tag) async {
     // Imprime/remove apenas o item tocado (fiel ao Compose).
+    if (_modo == 'Código de barras') {
+      await ListaPdfService.compartilharRelatorioEtiquetas([tag]);
+      return;
+    }
     final pd = tag.printingData;
     if (pd == null) {
       ToastUtils.show(context, 'Dados de impressão não disponíveis');
