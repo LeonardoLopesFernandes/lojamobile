@@ -760,12 +760,12 @@ class _GondolaPreviewPainter extends CustomPainter {
           const Color(0xFF000000));
     }
 
-    var comumUnitCenter = _TW / 2;
+    var comumValorW = 0.0;
 
     // Preço à vista
     if (valor.isNotEmpty) {
       final cifraoDraw = ehDepor ? cifrao.replaceFirst('De ', '') : cifrao;
-      final maxTam = modo == 0 ? 85.0 : 54.0;
+      final maxTam = modo == 0 ? 120.0 : 54.0;
       final minTam = modo == 0 ? 40.0 : 26.0;
       final maxLargura = modo == 0 ? 700.0 : 330.0;
       final tam = _ajustarValor(cifraoDraw, valor, maxTam, minTam, maxLargura);
@@ -785,7 +785,6 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw(cifraoDraw, tx(20), ty(baseline), tamCifrao, TextAlign.left,
             const Color(0xFF000000));
       } else {
-        final cifraoW = _largura(cifraoDraw, px(tam)) / scale;
         final valorW = _largura(valor, px(tam)) / scale;
         draw(cifraoDraw, tx(centroX), ty(baseline), tam, TextAlign.center,
             const Color(0xFF000000));
@@ -797,8 +796,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           draw(valor, tx(_TW - 30), ty(baseline), tam, TextAlign.right,
               const Color(0xFF000000));
         }
-        comumUnitCenter =
-            ((centroX + cifraoW / 2) + (_TW - 30 - valorW)) / 2;
+        comumValorW = valorW;
       }
     }
 
@@ -811,8 +809,11 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw('R\$' + numero, tx(345) - larguraValorPx / 2, ty(298), 15,
             TextAlign.center, const Color(0xFF000000));
       } else {
-        draw(unidade, tx(comumUnitCenter), ty(252), 15, TextAlign.center,
+        final numero = unidade.split('R\$/PCE ').last.trim();
+        draw('R\$/PCE', tx(_TW / 2), ty(300), 15, TextAlign.center,
             const Color(0xFF000000));
+        draw('R\$' + numero, tx(_TW - 30) - comumValorW / 2, ty(300), 15,
+            TextAlign.center, const Color(0xFF000000));
       }
     }
 
