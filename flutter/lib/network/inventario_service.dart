@@ -90,6 +90,13 @@ class InventarioService {
     final json = await client.get(
         'web/cycle-count/product/store/$storeId',
         query: query) as Map<String, dynamic>;
+    if (json['errorCode'] == 'CYCLECOUNT_ADD_ITEM_DEPARTMENT_BLOCKED') {
+      final blocks = json['blocks'];
+      final nome = (blocks is List && blocks.isNotEmpty)
+          ? (blocks.first['name']?.toString() ?? '')
+          : '';
+      throw DepartmentBlockedException(nome);
+    }
     return Product.fromJson(json);
   }
 
@@ -318,4 +325,13 @@ class InventarioService {
   Future<void> processBreakage(String breakageId) async {
     await client.put('web/breakage/$breakageId/process');
   }
+}
+
+/// Produto bloqueado para inventário (departamento não permitido).
+class DepartmentBlockedException implements Exception {
+  final String departmentName;
+  DepartmentBlockedException(this.departmentName);
+
+  @override
+  String toString() => 'Departamento bloqueado: $departmentName';
 }

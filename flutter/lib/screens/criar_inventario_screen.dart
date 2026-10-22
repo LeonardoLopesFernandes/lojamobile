@@ -77,12 +77,29 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
         ean: ehEan ? valor : null,
         sapCode: ehEan ? null : valor,
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _adicionando = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Item não encontrado'),
-          backgroundColor: Colors.red));
+      if (e is DepartmentBlockedException) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('Departamento bloqueado para inventário'),
+            content: Text(
+                'Este item pertence ao ${e.departmentName} e não pode ser adicionado ao inventário. Informe outro EAN.'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK')),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Item não encontrado'),
+            backgroundColor: Colors.red));
+      }
       return;
     }
     if (!mounted) return;
@@ -100,10 +117,10 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
       );
       _buscaController.clear();
       await _carregar();
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Falha ao adicionar item: $e'),
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao adicionar item'),
           backgroundColor: Colors.red));
     }
   }
