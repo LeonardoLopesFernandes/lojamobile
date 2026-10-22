@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/models/models.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
+import 'package:inventario/network/inventario_service.dart';
+import 'package:inventario/network/session_manager.dart';
 import 'compose_avulsa.dart';
 
 String _brl(double v) {
@@ -55,17 +57,32 @@ Widget _qtyBox(TextEditingController c, ValueChanged<int> onChange) {
   );
 }
 
-Widget _eanLinha(BuildContext context, String texto, String ean) {
+Widget _eanLinha(BuildContext context, String texto, String ean,
+    {double? saldo}) {
   return GestureDetector(
     onTap: () async {
       await Clipboard.setData(ClipboardData(text: ean));
       if (context.mounted) ToastUtils.show(context, 'EAN copiado: $ean');
     },
-    child: Text(
-      texto,
+    child: Text.rich(
+      TextSpan(
+        style: const TextStyle(fontSize: 10, color: Color(0xFF757575)),
+        children: [
+          TextSpan(text: texto),
+          if (saldo != null)
+            TextSpan(
+              text: ' | SALDO: ${saldo.toInt()}',
+              style: TextStyle(
+                color: saldo < 0
+                    ? const Color(0xFFD81B3A)
+                    : const Color(0xFF2E7D32),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 10, color: Color(0xFF757575)),
     ),
   );
 }
@@ -144,12 +161,27 @@ class AvulsaEtiquetaCard extends StatefulWidget {
 class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
   late TextEditingController _qty;
   int _lastQty = 0;
+  double? _saldo;
 
   @override
   void initState() {
     super.initState();
     _lastQty = widget.tag.quantity;
     _qty = TextEditingController(text: widget.tag.quantity.toString());
+    _carregarSaldo();
+  }
+
+  Future<void> _carregarSaldo() async {
+    try {
+      final session = await SessionManager.create();
+      final store = session.getUserStore() ?? Constants.defaultStore;
+      final p = await InventarioService.forSession(session).getProductStore(
+        storeId: store,
+        ean: widget.tag.ean,
+        sapCode: widget.tag.sap,
+      );
+      if (mounted) setState(() => _saldo = p.stock);
+    } catch (_) {}
   }
 
   @override
@@ -290,7 +322,8 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                     children: [
                       _eanLinha(context,
                           'DEP: $deptNum | EAN: ${item.ean} / SAP: ${item.sap}',
-                          item.ean),
+                          item.ean,
+                          saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
                         _greenBadgeComLeve(p)
@@ -404,12 +437,27 @@ class AvulsaPapeletaCard extends StatefulWidget {
 class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
   late TextEditingController _qty;
   int _lastQty = 0;
+  double? _saldo;
 
   @override
   void initState() {
     super.initState();
     _lastQty = widget.item.quantity;
     _qty = TextEditingController(text: widget.item.quantity.toString());
+    _carregarSaldo();
+  }
+
+  Future<void> _carregarSaldo() async {
+    try {
+      final session = await SessionManager.create();
+      final store = session.getUserStore() ?? Constants.defaultStore;
+      final p = await InventarioService.forSession(session).getProductStore(
+        storeId: store,
+        ean: widget.item.ean,
+        sapCode: widget.item.sap,
+      );
+      if (mounted) setState(() => _saldo = p.stock);
+    } catch (_) {}
   }
 
   @override
@@ -541,7 +589,8 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                     children: [
                       _eanLinha(context,
                           'DEP: $deptNum | EAN: ${item.ean} / SAP: ${item.sap}',
-                          item.ean),
+                          item.ean,
+                          saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
                         _greenBadgeComLeve(p)
