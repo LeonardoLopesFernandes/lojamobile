@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/inventario.dart';
 import '../network/inventario_service.dart';
+import '../widgets/inventario_item_card.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
 import 'scanner_ean_screen.dart';
@@ -488,54 +489,10 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final item = itens[i];
-        return InkWell(
-          borderRadius: BorderRadius.circular(8),
+        return InventarioItemCard(
+          item: item,
           onTap: () => _editarItem(item),
           onLongPress: () => _removerItem(item),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(Constants.borderColor)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.description,
-                          style: const TextStyle(
-                              color: Color(Constants.invTextDark),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15)),
-                      const SizedBox(height: 4),
-                      Text('EAN ${item.ean}   •   SAP ${item.sapCode}',
-                          style: const TextStyle(
-                              color: Color(Constants.invTextSecondary),
-                              fontSize: 12)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  children: [
-                    const Text('Contado',
-                        style: TextStyle(
-                            color: Color(Constants.invTextSecondary),
-                            fontSize: 11)),
-                    const SizedBox(height: 2),
-                    Text('${item.countedQuantity}',
-                        style: const TextStyle(
-                            color: Color(Constants.invTextDark),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
-            ),
-          ),
         );
       },
     );

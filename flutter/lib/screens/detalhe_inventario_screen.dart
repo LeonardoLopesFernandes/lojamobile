@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/inventario.dart';
 import '../network/inventario_service.dart';
+import '../widgets/inventario_item_card.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
 
@@ -118,7 +119,10 @@ class _DetalheInventarioScreenState extends State<DetalheInventarioScreen> {
               child: Center(child: Text('Nenhum item neste inventário')),
             )
           else
-            ...d.items.map((i) => _ItemCard(item: i)),
+            ...d.items.map((i) => InventarioItemCard(
+                  item: i,
+                  margin: const EdgeInsets.only(bottom: 12),
+                )),
         ],
       ),
     );
@@ -228,77 +232,6 @@ class _DetalheInventarioScreenState extends State<DetalheInventarioScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 12)),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ItemCard extends StatelessWidget {
-  final InventoryItem item;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-
-  const _ItemCard({required this.item, this.onTap, this.onLongPress});
-
-  @override
-  Widget build(BuildContext context) {
-    final dif = item.diferenca;
-    final corDif =
-        dif < 0 ? Colors.red : const Color(Constants.invTextDark);
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.description,
-                style: const TextStyle(
-                    color: Color(Constants.invTextDark),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15)),
-            const SizedBox(height: 6),
-            Text('EAN ${item.ean}   •   SAP ${item.sapCode}',
-                style: const TextStyle(
-                    color: Color(Constants.invTextSecondary), fontSize: 12)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _qtdCol('Esperado', item.expectedQuantity.toString(),
-                    const Color(Constants.invTextDark)),
-                _qtdCol('Contado', item.countedQuantity.toString(),
-                    const Color(Constants.invTextDark)),
-                _qtdCol('Dif.', dif.toString(), corDif),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _qtdCol(String label, String valor, Color valorCor) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Color(Constants.invTextSecondary), fontSize: 12)),
-          const SizedBox(height: 2),
-          Text(valor,
-              style: TextStyle(
-                  color: valorCor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
         ],
       ),
     );
