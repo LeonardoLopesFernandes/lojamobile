@@ -100,10 +100,10 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
       );
       _buscaController.clear();
       await _carregar();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Falha ao adicionar item'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Falha ao adicionar item: $e'),
           backgroundColor: Colors.red));
     }
   }
