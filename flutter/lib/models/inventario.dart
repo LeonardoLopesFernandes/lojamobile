@@ -70,7 +70,7 @@ class Inventory {
 
   factory Inventory.fromJson(Map<String, dynamic> json) {
     return Inventory(
-      id: json['id']?.toString() ?? '',
+      id: (json['inventoryId'] ?? json['id'])?.toString() ?? '',
       inventoryNumber: json['inventoryNumber']?.toString() ?? '',
       reference: json['reference']?.toString() ?? '',
       createdAt: json['createdAt']?.toString() ?? '',
@@ -167,7 +167,7 @@ class InventoryDetail {
 
   factory InventoryDetail.fromJson(Map<String, dynamic> json) {
     return InventoryDetail(
-      id: json['id']?.toString() ?? '',
+      id: (json['inventoryId'] ?? json['id'])?.toString() ?? '',
       inventoryNumber: json['inventoryNumber']?.toString() ?? '',
       reference: json['reference']?.toString() ?? '',
       statusCode: _statusCodeOf(json['status']),
