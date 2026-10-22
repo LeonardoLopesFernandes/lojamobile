@@ -88,7 +88,7 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
             backgroundColor: Colors.white,
             title: const Text('Departamento bloqueado para inventário'),
             content: Text(
-                'Este item pertence ao ${e.departmentName} e não pode ser adicionado ao inventário. Informe outro EAN.'),
+                'Este item pertence ao ${e.departmentName.isEmpty ? 'departamento bloqueado' : e.departmentName} e não pode ser adicionado ao inventário. Informe outro EAN/SAP.'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),

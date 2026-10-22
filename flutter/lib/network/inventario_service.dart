@@ -115,13 +115,21 @@ class InventarioService {
         return null;
       }
     }
-    if (obj is Map &&
-        obj['errorCode'] == 'CYCLECOUNT_ADD_ITEM_DEPARTMENT_BLOCKED') {
+    if (obj is Map) {
       final blocks = obj['blocks'];
-      if (blocks is List && blocks.isNotEmpty) {
-        return blocks.first['name']?.toString() ?? '';
+      if (blocks is List) {
+        for (final b in blocks) {
+          if (b is Map &&
+              (b['type']?.toString().toUpperCase() == 'DEPARTMENT')) {
+            return b['name']?.toString() ?? '';
+          }
+        }
       }
-      return '';
+      final ec = obj['errorCode']?.toString().toUpperCase() ?? '';
+      final msg = obj['message']?.toString().toUpperCase() ?? '';
+      if (ec.contains('BLOCKED') || msg.contains('DEPARTMENT')) {
+        return '';
+      }
     }
     return null;
   }
