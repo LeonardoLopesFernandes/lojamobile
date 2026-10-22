@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'api_client.dart';
 import '../utils/constants.dart';
 import '../models/inventario.dart';
@@ -87,17 +89,41 @@ class InventarioService {
     final query = <String, String>{};
     if (ean != null && ean.isNotEmpty) query['ean'] = ean;
     if (sapCode != null && sapCode.isNotEmpty) query['sapCode'] = sapCode;
-    final json = await client.get(
-        'web/cycle-count/product/store/$storeId',
-        query: query) as Map<String, dynamic>;
-    if (json['errorCode'] == 'CYCLECOUNT_ADD_ITEM_DEPARTMENT_BLOCKED') {
-      final blocks = json['blocks'];
-      final nome = (blocks is List && blocks.isNotEmpty)
-          ? (blocks.first['name']?.toString() ?? '')
-          : '';
-      throw DepartmentBlockedException(nome);
+    dynamic data;
+    try {
+      data = await client.get('web/cycle-count/product/store/$storeId',
+          query: query);
+    } on ApiException catch (e) {
+      final bloqueado = _parseBlocked(e.body);
+      if (bloqueado != null) throw DepartmentBlockedException(bloqueado);
+      rethrow;
     }
+    final bloqueado = _parseBlocked(data);
+    if (bloqueado != null) throw DepartmentBlockedException(bloqueado);
+    final json =
+        data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
     return Product.fromJson(json);
+  }
+
+  /// Nome do departamento se for resposta de bloqueio; senão null.
+  static String? _parseBlocked(dynamic data) {
+    dynamic obj = data;
+    if (data is String) {
+      try {
+        obj = jsonDecode(data);
+      } catch (_) {
+        return null;
+      }
+    }
+    if (obj is Map &&
+        obj['errorCode'] == 'CYCLECOUNT_ADD_ITEM_DEPARTMENT_BLOCKED') {
+      final blocks = obj['blocks'];
+      if (blocks is List && blocks.isNotEmpty) {
+        return blocks.first['name']?.toString() ?? '';
+      }
+      return '';
+    }
+    return null;
   }
 
   /// Adiciona um item ao inventário (draft).
