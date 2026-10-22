@@ -832,7 +832,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       }
       if (promoLinha1.isNotEmpty) {
         drawEscalado(promoLinha1, tx(_boxCx),
-            ty(ehParc ? _boxCy + 10 : _boxCy), 75.0, TextAlign.center,
+            ty(ehParc ? _boxCy + 22 : _boxCy + 12), 75.0, TextAlign.center,
             const Color(0xFFFFFFFF), px(310));
       }
       if (promoLinha2.isNotEmpty) {
