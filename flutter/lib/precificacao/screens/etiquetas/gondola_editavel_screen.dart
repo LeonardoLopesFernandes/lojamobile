@@ -177,7 +177,10 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
     final eanEdit = _eanController.text.trim();
     PrintingData novo = d.copyWith(
         description: desc.isNotEmpty ? desc : d.description,
-        ean: eanEdit.isNotEmpty ? eanEdit : d.ean);
+        ean: eanEdit.isNotEmpty ? eanEdit : d.ean,
+        codSap: _sapController.text.trim().isNotEmpty
+            ? _sapController.text.trim()
+            : d.codSap);
     if (_ehLeveGanhe(d)) {
       final qty = int.tryParse(_qtdController.text) ?? d.takeAndWin?.qty ?? 1;
       final total =
@@ -687,6 +690,7 @@ class _GondolaPreviewPainter extends CustomPainter {
         text: TextSpan(
           text: text,
           style: TextStyle(
+              fontFamily: 'HelveticaNeueCondensed',
               fontSize: px(size),
               fontWeight: FontWeight.bold,
               color: color),
@@ -746,11 +750,9 @@ class _GondolaPreviewPainter extends CustomPainter {
           _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
           larguraValorPx = px(300);
         } else {
-          final maxValor = ehDepor
+          final maxValor = temMilhar
               ? 60.0
-              : (temMilhar
-                  ? 60.0
-                  : (parteInteira.length >= 3 ? 75.0 : 110.0));
+              : (parteInteira.length >= 3 ? 75.0 : 110.0);
           final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
           draw(valor, tx(345), ty(baseline), tamValor, TextAlign.right,
               const Color(0xFF000000));
