@@ -751,7 +751,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           larguraValorPx = px(300);
         } else {
           final maxValor = temMilhar
-              ? 60.0
+              ? 54.0
               : (parteInteira.length >= 3 ? 75.0 : 110.0);
           final tamValor = _ajustarTexto(valor, maxValor, 50, 280);
           draw(valor, tx(345), ty(baseline), tamValor, TextAlign.right,
@@ -784,10 +784,10 @@ class _GondolaPreviewPainter extends CustomPainter {
     if (unidade.isNotEmpty) {
       if (modo == 1) {
         final numero = unidade.split('R\$/PCE ').last.trim();
-        draw('R\$/PCE', tx(30), ty(262), 15, TextAlign.left,
+        draw('R\$/PCE', tx(20), ty(313), 15, TextAlign.left,
             const Color(0xFF000000));
-        draw('R\$' + numero, tx(345) - larguraValorPx, ty(262), 15,
-            TextAlign.left, const Color(0xFF000000));
+        draw('R\$' + numero, tx(345) - larguraValorPx / 2, ty(313), 15,
+            TextAlign.center, const Color(0xFF000000));
       } else {
         draw(unidade, tx(comumUnitCenter), ty(252), 15, TextAlign.center,
             const Color(0xFF000000));
