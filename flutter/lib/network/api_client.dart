@@ -41,7 +41,8 @@ class ApiClient {
       {Map<String, dynamic>? body, bool authenticated = true}) async {
     final uri = Uri.parse(baseUrl + path);
     final response = await http.post(uri,
-        headers: buildHeaders(), body: jsonEncode(body));
+        headers: buildHeaders(),
+        body: body == null ? null : jsonEncode(body));
     return _process(response);
   }
 

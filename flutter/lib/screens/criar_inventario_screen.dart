@@ -95,6 +95,7 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
         ean: p.ean,
         sapCode: p.sapCode,
         description: p.description,
+        expectedQuantity: p.quantity.toInt(),
         countedQuantity: qtd,
       );
       _buscaController.clear();
