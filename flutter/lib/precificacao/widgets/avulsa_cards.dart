@@ -238,7 +238,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       return (
         leve: null,
         valor:
-            'De R\$${_num(precoNormal)} | Por R\$${_num(precoPromo)} | ${inst.installmentQuantity}x de R\$${_num(valorParcCalc)}',
+            'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${inst.installmentQuantity}x de R\$${_num(valorParcCalc)}',
         tipo: 'parcelado',
         cor: _orangeBadge,
       );
