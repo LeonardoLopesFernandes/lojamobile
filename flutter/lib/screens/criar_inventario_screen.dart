@@ -19,6 +19,7 @@ class CriarInventarioScreen extends StatefulWidget {
 
 class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
   final TextEditingController _buscaController = TextEditingController();
+  String _buscaTipo = 'EAN';
   SessionManager? _session;
   InventarioService? _service;
 
@@ -71,11 +72,11 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
     setState(() => _adicionando = true);
     Product p;
     try {
-      final ehEan = valor.length >= 12;
+      final buscandoSap = _buscaTipo == 'SAP';
       p = await _service!.getProduct(
         storeId: _storeId,
-        ean: ehEan ? valor : null,
-        sapCode: ehEan ? null : valor,
+        ean: buscandoSap ? null : valor,
+        sapCode: buscandoSap ? valor : null,
       );
     } catch (e) {
       if (!mounted) return;
@@ -242,6 +243,7 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
       MaterialPageRoute(builder: (_) => const ScannerEANScreen()),
     );
     if (ean != null && ean.isNotEmpty) {
+      setState(() => _buscaTipo = 'EAN');
       _buscaController.text = ean;
       _buscar();
     }
@@ -369,6 +371,22 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
+                ChoiceChip(
+                  label: const Text('EAN'),
+                  selected: _buscaTipo == 'EAN',
+                  onSelected: (_) => setState(() => _buscaTipo = 'EAN'),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('SAP'),
+                  selected: _buscaTipo == 'SAP',
+                  onSelected: (_) => setState(() => _buscaTipo = 'SAP'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
                 Expanded(
                   child: TextField(
                     controller: _buscaController,
@@ -376,7 +394,7 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _buscar(),
                     decoration: InputDecoration(
-                      hintText: 'EAN / SAP',
+                      hintText: _buscaTipo == 'SAP' ? 'SAP' : 'EAN',
                       hintStyle: TextStyle(color: Colors.grey.shade600),
                       prefixIcon:
                           const Icon(Icons.search, color: Color(0xFF9E9E9E)),
