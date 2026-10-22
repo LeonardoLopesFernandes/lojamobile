@@ -227,6 +227,7 @@ class _AvulsaFabScannerState extends State<AvulsaFabScanner>
         child: Container(
           width: 56,
           height: 56,
+          alignment: Alignment.center,
           decoration: const BoxDecoration(
             color: avulsaRed,
             shape: BoxShape.circle,
