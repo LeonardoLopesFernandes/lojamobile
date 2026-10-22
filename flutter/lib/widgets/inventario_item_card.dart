@@ -20,6 +20,7 @@ class InventarioItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dif = item.diferenca;
+    final difNeg = dif < 0;
     return Padding(
       padding: margin,
       child: InkWell(
@@ -79,10 +80,19 @@ class InventarioItemCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _metricTile('DIF.', dif > 0 ? '+$dif' : '$dif',
-                        const Color(0xFFFFFBEB),
-                        const Color(0xFFFDE68A),
-                        const Color(0xFF78350F),
-                        highlight: true),
+                        difNeg
+                            ? const Color(0xFFFEF2F2)
+                            : const Color(0xFFFFFBEB),
+                        difNeg
+                            ? const Color(0xFFFECACA)
+                            : const Color(0xFFFDE68A),
+                        difNeg
+                            ? const Color(0xFFB91C1C)
+                            : const Color(0xFF78350F),
+                        highlight: true,
+                        labelColor: difNeg
+                            ? const Color(0xFFB91C1C)
+                            : const Color(0xFFB45309)),
                   ),
                 ],
               ),
@@ -100,6 +110,7 @@ class InventarioItemCard extends StatelessWidget {
     Color borderColor,
     Color textColor, {
     bool highlight = false,
+    Color? labelColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -114,8 +125,8 @@ class InventarioItemCard extends StatelessWidget {
               style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
-                  color:
-                      highlight ? const Color(0xFFB45309) : Colors.grey.shade500,
+                  color: labelColor ??
+                      (highlight ? const Color(0xFFB45309) : Colors.grey.shade500),
                   letterSpacing: 0.5)),
           const SizedBox(height: 2),
           Text(value,
