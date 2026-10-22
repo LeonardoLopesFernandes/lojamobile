@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/models/models.dart';
-import 'package:inventario/precificacao/network/api_client.dart';
-import 'package:inventario/precificacao/network/api_service.dart';
+import 'package:inventario/network/inventario_service.dart';
+import 'package:inventario/network/session_manager.dart';
 
 const Color _greenCheckbox = Color(0xFF1B5E20);
 const Color _red = Color(0xFFD32F2F);
@@ -142,11 +142,14 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
 
   Future<void> _carregarSaldo() async {
     try {
-      final api = ApiService(ApiClient.instance.getSlApiService());
-      final store = ApiClient.instance.sessionManager.getUserStore() ??
-          Constants.defaultStore;
-      final s = await api.getProductStock(store, ean: widget.tag.ean);
-      if (mounted) setState(() => _saldo = s);
+      final session = await SessionManager.create();
+      final store = session.getUserStore() ?? Constants.defaultStore;
+      final p = await InventarioService.forSession(session).getProductStore(
+        storeId: store,
+        ean: widget.tag.ean,
+        sapCode: widget.tag.sap,
+      );
+      if (mounted) setState(() => _saldo = p.stock);
     } catch (_) {}
   }
 
@@ -390,11 +393,14 @@ class _PapeletaCardState extends State<PapeletaCard> {
 
   Future<void> _carregarSaldo() async {
     try {
-      final api = ApiService(ApiClient.instance.getSlApiService());
-      final store = ApiClient.instance.sessionManager.getUserStore() ??
-          Constants.defaultStore;
-      final s = await api.getProductStock(store, ean: widget.item.ean);
-      if (mounted) setState(() => _saldo = s);
+      final session = await SessionManager.create();
+      final store = session.getUserStore() ?? Constants.defaultStore;
+      final p = await InventarioService.forSession(session).getProductStore(
+        storeId: store,
+        ean: widget.item.ean,
+        sapCode: widget.item.sap,
+      );
+      if (mounted) setState(() => _saldo = p.stock);
     } catch (_) {}
   }
 
