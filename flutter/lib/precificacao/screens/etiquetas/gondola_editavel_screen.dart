@@ -767,8 +767,8 @@ class _GondolaPreviewPainter extends CustomPainter {
     if (valor.isNotEmpty) {
       final cifraoDraw = ehDepor ? cifrao.replaceFirst('De ', '') : cifrao;
       final tam = modo == 0 ? 110.0 : 54.0;
-      final baseline = modo == 0 ? 228.0 : (ehDepor ? _boxCy : 230.0);
-      final centroX = modo == 0 ? _TW / 2 - 40 : _leftCx;
+      final baseline = modo == 0 ? 240.0 : (ehDepor ? _boxCy : 230.0);
+      final centroX = modo == 0 ? _TW / 2 - 80 : _leftCx;
 
       if (modo == 1) {
         if (barcode) {
@@ -832,12 +832,12 @@ class _GondolaPreviewPainter extends CustomPainter {
       }
       if (promoLinha1.isNotEmpty) {
         drawEscalado(promoLinha1, tx(_boxCx),
-            ty(ehParc ? _boxCy + 6 : _boxCy), 60.0, TextAlign.center,
-            const Color(0xFFFFFFFF), px(280));
+            ty(ehParc ? _boxCy + 10 : _boxCy), 75.0, TextAlign.center,
+            const Color(0xFFFFFFFF), px(310));
       }
       if (promoLinha2.isNotEmpty) {
         final t2 = _ajustarTexto(promoLinha2, 17, 10, _boxMax);
-        draw(promoLinha2, tx(_boxCx), ty(ehParc ? 260 : 252), t2,
+        draw(promoLinha2, tx(_boxCx), ty(ehParc ? 268 : 252), t2,
             TextAlign.center, const Color(0xFFFFFFFF));
       }
     }
