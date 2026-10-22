@@ -761,14 +761,12 @@ class _GondolaPreviewPainter extends CustomPainter {
     }
 
     var comumValorW = 0.0;
+    var comumCifraoX = _TW / 2;
 
     // Preço à vista
     if (valor.isNotEmpty) {
       final cifraoDraw = ehDepor ? cifrao.replaceFirst('De ', '') : cifrao;
-      final maxTam = modo == 0 ? 120.0 : 54.0;
-      final minTam = modo == 0 ? 40.0 : 26.0;
-      final maxLargura = modo == 0 ? 700.0 : 330.0;
-      final tam = _ajustarValor(cifraoDraw, valor, maxTam, minTam, maxLargura);
+      final tam = modo == 0 ? 110.0 : 54.0;
       final baseline = modo == 0 ? 220.0 : (ehDepor ? _boxCy : 230.0);
       final centroX = modo == 0 ? _TW / 2 : _leftCx;
 
@@ -778,7 +776,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           larguraValorPx = px(300);
         } else {
           larguraValorPx = drawEscalado(valor, tx(345), ty(baseline), 110.0,
-              TextAlign.right, const Color(0xFF000000), px(320));
+              TextAlign.right, const Color(0xFF000000), px(240));
         }
         final maxCifrao = ehDepor ? 30.0 : 45.0;
         final tamCifrao = _ajustarTexto(cifraoDraw, maxCifrao, 26, 100);
@@ -786,21 +784,24 @@ class _GondolaPreviewPainter extends CustomPainter {
             const Color(0xFF000000));
       } else {
         final cifraoW = _largura(cifraoDraw, px(tam)) / scale;
-        final valorW = _largura(valor, px(tam)) / scale;
+        double valorW;
+        if (barcode) {
+          final bw = _largura(valor, px(tam));
+          _desenharBarcode(
+              canvas, tx(_TW - 30) - bw, ty(_boxCy - 45), bw);
+          valorW = bw / scale;
+        } else {
+          final valorWpx = drawEscalado(valor, tx(_TW - 30), ty(baseline), tam,
+              TextAlign.right, const Color(0xFF000000), px(240));
+          valorW = valorWpx / scale;
+        }
         final valorLeft = (_TW - 30) - valorW;
         final cifraoCenterMax = valorLeft - 10 - cifraoW / 2;
         final cifraoX = cifraoCenterMax < centroX ? cifraoCenterMax : centroX;
         draw(cifraoDraw, tx(cifraoX), ty(baseline), tam, TextAlign.center,
             const Color(0xFF000000));
-        if (barcode) {
-          final bw = _largura(valor, px(tam));
-          _desenharBarcode(
-              canvas, tx(_TW - 30) - bw, ty(_boxCy - 45), bw);
-        } else {
-          draw(valor, tx(_TW - 30), ty(baseline), tam, TextAlign.right,
-              const Color(0xFF000000));
-        }
         comumValorW = valorW;
+        comumCifraoX = cifraoX;
       }
     }
 
@@ -808,15 +809,15 @@ class _GondolaPreviewPainter extends CustomPainter {
     if (unidade.isNotEmpty) {
       if (modo == 1) {
         final numero = unidade.split('R\$/PCE ').last.trim();
-        draw('R\$/PCE', tx(20), ty(298), 15, TextAlign.left,
+        draw('R\$/PCE', tx(20), ty(290), 15, TextAlign.left,
             const Color(0xFF000000));
-        draw('R\$' + numero, tx(345) - larguraValorPx / 2, ty(298), 15,
+        draw('R\$' + numero, tx(345) - larguraValorPx / 2, ty(290), 15,
             TextAlign.center, const Color(0xFF000000));
       } else {
         final numero = unidade.split('R\$/PCE ').last.trim();
-        draw('R\$/PCE', tx(_TW / 2), ty(300), 15, TextAlign.center,
+        draw('R\$/PCE', tx(comumCifraoX), ty(290), 15, TextAlign.center,
             const Color(0xFF000000));
-        draw('R\$' + numero, tx(_TW - 30) - comumValorW / 2, ty(300), 15,
+        draw('R\$' + numero, tx(_TW - 30) - comumValorW / 2, ty(290), 15,
             TextAlign.center, const Color(0xFF000000));
       }
     }
