@@ -785,8 +785,12 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw(cifraoDraw, tx(20), ty(baseline), tamCifrao, TextAlign.left,
             const Color(0xFF000000));
       } else {
+        final cifraoW = _largura(cifraoDraw, px(tam)) / scale;
         final valorW = _largura(valor, px(tam)) / scale;
-        draw(cifraoDraw, tx(centroX), ty(baseline), tam, TextAlign.center,
+        final valorLeft = (_TW - 30) - valorW;
+        final cifraoCenterMax = valorLeft - 10 - cifraoW / 2;
+        final cifraoX = cifraoCenterMax < centroX ? cifraoCenterMax : centroX;
+        draw(cifraoDraw, tx(cifraoX), ty(baseline), tam, TextAlign.center,
             const Color(0xFF000000));
         if (barcode) {
           final bw = _largura(valor, px(tam));
