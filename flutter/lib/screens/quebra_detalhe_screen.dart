@@ -450,18 +450,51 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final it = _itens[i];
+        final motivo = it.reason;
+        final lower = motivo.toLowerCase();
+        final isAvaria = lower.contains('avaria');
+        final isValidade =
+            lower.contains('validade') || lower.contains('vencimento');
+        final badgeBg = isAvaria
+            ? const Color(0xFFFEF2F2)
+            : isValidade
+                ? const Color(0xFFF3E8FF)
+                : const Color(0xFFFFFBEB);
+        final badgeColor = isAvaria
+            ? const Color(0xFFB91C1C)
+            : isValidade
+                ? const Color(0xFF7E22CE)
+                : const Color(0xFFB45309);
+        final badgeBorder = isAvaria
+            ? const Color(0xFFFECACA)
+            : isValidade
+                ? const Color(0xFFE9D5FF)
+                : const Color(0xFFFDE68A);
+        final badgeIcon = isAvaria
+            ? Icons.warning_amber_rounded
+            : isValidade
+                ? Icons.calendar_today_rounded
+                : Icons.info_outline;
         return InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           onTap: _somenteLeitura ? null : () => _editarItem(it),
           onLongPress: _somenteLeitura ? null : () => _menuItem(it),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(Constants.borderColor)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x05000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!_somenteLeitura)
                   Checkbox(
@@ -481,42 +514,96 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                     children: [
                       Text(it.description,
                           style: const TextStyle(
-                              color: Color(Constants.invTextDark),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15)),
-                      const SizedBox(height: 4),
-                      Text('EAN ${it.ean}   •   SAP ${it.sapCode}',
-                          style: const TextStyle(
-                              color: Color(Constants.invTextSecondary),
-                              fontSize: 12)),
-                      if (it.reason.isNotEmpty)
-                        Text('Motivo: ${it.reason}',
-                            style: const TextStyle(
-                                color: Color(Constants.invTextSecondary),
-                                fontSize: 12)),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF111827),
+                              height: 1.3)),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          _codigoChip('EAN: ${it.ean}'),
+                          _codigoChip('SAP: ${it.sapCode}'),
+                        ],
+                      ),
+                      if (motivo.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: badgeBg,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: badgeBorder),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(badgeIcon, size: 12, color: badgeColor),
+                              const SizedBox(width: 4),
+                              Text('Motivo: $motivo',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: badgeColor)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  children: [
-                    const Text('Quebra',
-                        style: TextStyle(
-                            color: Color(Constants.invTextSecondary),
-                            fontSize: 11)),
-                    const SizedBox(height: 2),
-                    Text('${it.quantity}',
-                        style: const TextStyle(
-                            color: Color(Constants.invTextDark),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                  ],
+                Container(
+                  constraints: const BoxConstraints(minWidth: 64),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('QUEBRA',
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFB45309),
+                              letterSpacing: 0.5)),
+                      const SizedBox(height: 2),
+                      Text('${it.quantity}',
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF78350F))),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _codigoChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 10,
+              fontFamily: 'monospace',
+              color: Color(0xFF4B5563),
+              fontWeight: FontWeight.w500)),
     );
   }
 
