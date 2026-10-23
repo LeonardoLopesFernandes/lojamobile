@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/inventario.dart';
 import '../models/quebra.dart';
 import '../network/inventario_service.dart';
@@ -313,8 +314,11 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                       IconButton(
                         onPressed: _baixarExcel,
                         tooltip: 'Gerar Excel',
-                        icon: const Icon(Icons.table_chart,
-                            color: Color(0xFF107C41)),
+                        icon: SvgPicture.asset(
+                          'assets/drawables/ic_excel.svg',
+                          width: 24,
+                          height: 24,
+                        ),
                       ),
                     ],
                   ),
