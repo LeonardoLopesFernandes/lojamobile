@@ -15,6 +15,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _apelidoController = TextEditingController();
   File? _fotoPerfil;
   SessionManager? _session;
 
@@ -27,12 +29,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _init() async {
     final session = await SessionManager.create();
     if (!mounted) return;
-    setState(() => _session = session);
+    setState(() {
+      _session = session;
+      _nomeController.text = session.getUserName() ?? '';
+      _apelidoController.text = session.getApelido() ?? '';
+    });
     final path = session.getProfilePhoto();
     if (path != null) {
       final f = File(path);
       if (f.existsSync()) setState(() => _fotoPerfil = f);
     }
+  }
+
+  Future<void> _salvarPerfil() async {
+    final session = _session ?? await SessionManager.create();
+    session.saveUserName(_nomeController.text.trim());
+    session.saveApelido(_apelidoController.text.trim());
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Dados salvos')),
+    );
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _apelidoController.dispose();
+    super.dispose();
   }
 
   Future<void> _escolherFoto() async {
@@ -155,17 +179,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final loja = session?.getUserStore() ?? 'L291';
                     return Column(
                       children: [
-                        Text(
-                          nome,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: brandRed,
-                            height: 1.4,
+                        TextField(
+                          controller: _nomeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nome',
+                            prefixIcon:
+                                Icon(Icons.person_outline, color: brandRed),
+                          ),
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _apelidoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Apelido',
+                            prefixIcon:
+                                Icon(Icons.badge_outlined, color: brandRed),
+                          ),
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _salvarPerfil,
+                            icon: const Icon(Icons.save_outlined,
+                                color: brandRed),
+                            label: const Text('Salvar',
+                                style: TextStyle(
+                                    color: brandRed,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             const Icon(Icons.email_outlined,

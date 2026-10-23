@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../widgets/truck_loader.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../network/session_manager.dart';
@@ -300,8 +301,23 @@ class _CarregamentoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(Constants.primaryRed),
-      child: const Center(
-        child: TruckLoader(status: 'Autenticando...'),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Lottie.asset(
+              'assets/lottie/recebimento_loading.json',
+              width: 220,
+              height: 198,
+              repeat: true,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Autenticando...',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ],
+        ),
       ),
     );
   }

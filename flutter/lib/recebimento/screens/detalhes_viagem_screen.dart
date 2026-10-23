@@ -491,18 +491,85 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
               DialogProtocoloSucesso(protocolo: resp.protocolo ?? "Gerado"),
         );
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("❌ ${resp.message ?? 'Falha'}")));
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Falha ao gerar protocolo'),
+            content: Text(resp.message ?? 'Falha'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK')),
+            ],
+          ),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("❌ $e")));
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Erro ao gerar protocolo'),
+          content: Text('$e'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK')),
+          ],
+        ),
+      );
     }
   }
 
   void _solicitarLiberacao() async {
     final nota = _brlogNota;
     if (nota == null) return;
+    final d = _detalhes;
+
+    if (_bauAutorizado) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Abertura de baú já autorizada"),
+          content: Text(
+            "Viagem: ${d?.viagemId ?? '-'}\n"
+            "Placa: ${d?.placaVeiculo ?? '-'}\n"
+            "Status: ${d?.status ?? '-'}",
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("OK")),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Autorizar a abertura do baú?"),
+        content: Text(
+          "Viagem: ${d?.viagemId ?? '-'}\n"
+          "Data: ${d?.viagemData ?? '-'}\n"
+          "Placa: ${d?.placaVeiculo ?? '-'}\n"
+          "Origem: ${d?.origem ?? '-'}\n"
+          "Pedido: ${nota.codPedido ?? '-'}",
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancelar")),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text("Autorizar")),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
     final codEmpresa = _session.getBrlogCodEmpresaUsuario();
     if (nota.codPedido == null ||
         nota.codPedidoDestino == null ||
@@ -526,8 +593,23 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
         setState(() {
           _bauAutorizado = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("✅ Liberação autorizada!")));
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Abertura de baú autorizada"),
+            content: Text(
+              "Viagem: ${d?.viagemId ?? '-'}\n"
+              "Placa: ${d?.placaVeiculo ?? '-'}\n"
+              "Pedido: ${nota.codPedido ?? '-'}",
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("OK")),
+            ],
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text("❌ ${resp.mensagem ?? 'Não autorizado'})")));

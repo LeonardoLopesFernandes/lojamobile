@@ -10,7 +10,7 @@ import '../utils/currency_formatter.dart';
 import '../network/api_service.dart';
 
 class ExcelDownloader {
-  static const MethodChannel _channel = MethodChannel('com.ir/media');
+  static const MethodChannel _channel = MethodChannel('com.recebimento/media');
 
   /// Baixa o Excel da viagem (streaming) e salva na pasta Downloads nativa.
   static Future<String> gerarExcel({
@@ -181,10 +181,11 @@ class ExcelDownloader {
   static Future<pw.ThemeData?> _loadPdfTheme() async {
     if (_pdfTheme != null) return _pdfTheme;
     try {
-      return _pdfTheme = pw.ThemeData.withFont(
-        base: pw.Font.helvetica(),
-        bold: pw.Font.helveticaBold(),
-      );
+      final base =
+          pw.Font.ttf(await rootBundle.load('assets/fonts/helvetica.ttf'));
+      final bold = pw.Font.ttf(
+          await rootBundle.load('assets/fonts/helvetica_bold.ttf'));
+      return _pdfTheme = pw.ThemeData.withFont(base: base, bold: bold);
     } catch (_) {
       return null;
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:convert';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
@@ -207,29 +208,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    const SizedBox(height: 48),
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Image.asset(
-                          'assets/drawables/ic_caminhao.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'recebimento',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    const SizedBox(height: 32),
+                    Lottie.asset(
+                      'assets/lottie/recebimento_loading.json',
+                      width: 220,
+                      height: 198,
+                      repeat: true,
                     ),
                     const SizedBox(height: 6),
                     const Text(

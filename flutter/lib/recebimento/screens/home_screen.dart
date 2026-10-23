@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -101,23 +102,32 @@ class HomeScreen extends StatelessWidget {
 }
 
 Future<void> _mostrarDialogoSaida(BuildContext context) async {
-  final sair = await showDialog<bool>(
+  final acao = await showDialog<String>(
     context: context,
     builder: (_) => AlertDialog(
       backgroundColor: Colors.white,
-      title: const Text('Sair do aplicativo'),
-      content: const Text('Deseja realmente sair do aplicativo?'),
+      title: const Text('Sair do recebimento'),
+      content:
+          const Text('Voltar para a tela de gestão ou sair do aplicativo?'),
       actions: [
         TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Não')),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar')),
         TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sim')),
+            onPressed: () => Navigator.of(context).pop('gestao'),
+            child: const Text('Gestão')),
+        TextButton(
+            onPressed: () => Navigator.of(context).pop('sair'),
+            child: const Text('Sair do app')),
       ],
     ),
   );
-  if (sair == true) SystemNavigator.pop();
+  if (!context.mounted) return;
+  if (acao == 'sair') {
+    await SystemNavigator.pop();
+  } else if (acao == 'gestao') {
+    Navigator.of(context).popUntil((r) => r.isFirst);
+  }
 }
 
 class _HomeBody extends StatelessWidget {
@@ -186,7 +196,7 @@ class _HomeBody extends StatelessWidget {
           ),
         ],
       ),
-      ),
+    ),
     );
   }
 
@@ -271,12 +281,32 @@ class _HomeBody extends StatelessWidget {
 
 
 
-class _Header extends StatelessWidget {
+class _Header extends StatefulWidget {
+  @override
+  State<_Header> createState() => _HeaderState();
+}
+
+class _HeaderState extends State<_Header> {
+  String? _foto;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarFoto();
+  }
+
+  Future<void> _carregarFoto() async {
+    final session = await SessionManager.create();
+    if (!mounted) return;
+    setState(() => _foto = session.getProfilePhoto());
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MainProvider>(context);
+    final vermelho = const Color(Constants.primaryRed);
     return Container(
-      color: const Color(Constants.primaryRed),
+      color: Colors.white,
       height: 120,
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Row(
@@ -287,12 +317,11 @@ class _Header extends StatelessWidget {
             child: Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F1F1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.local_shipping,
-                  color: Colors.white, size: 26),
+              child: Icon(Icons.local_shipping, color: vermelho, size: 26),
             ),
           ),
           const SizedBox(width: 12),
@@ -301,25 +330,31 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Recebimento Centralizado',
+                Text('Recebimento Centralizado',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: vermelho,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 Text(provider.subtitle,
                     style: const TextStyle(
-                        color: Color(0xB3FFFFFF),
+                        color: Color(0xFF9E9E9E),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5)),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white, size: 28),
-            onPressed: () {
-              Navigator.of(context).pushNamed('/profile');
+          InkWell(
+            onTap: () async {
+              await Navigator.of(context).pushNamed('/profile');
+              _carregarFoto();
             },
+            child: CircleAvatar(
+              radius: 22,
+              backgroundColor: const Color(0xFFF1F1F1),
+              backgroundImage: _foto != null ? FileImage(File(_foto!)) : null,
+              child: _foto == null ? Icon(Icons.person, color: vermelho) : null,
+            ),
           ),
         ],
       ),

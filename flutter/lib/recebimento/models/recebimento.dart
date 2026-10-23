@@ -256,9 +256,11 @@ class ProtocoloResponse {
   ProtocoloResponse({this.protocolo, required this.success, this.message});
 
   factory ProtocoloResponse.fromJson(Map<String, dynamic> json) {
+    final protocolo = json['protocolo'] as String?;
     return ProtocoloResponse(
-      protocolo: json['protocolo'],
-      success: json['success'] ?? false,
+      protocolo: protocolo,
+      success: (json['success'] as bool?) ??
+          (protocolo != null && protocolo.isNotEmpty),
       message: json['message'],
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../utils/constants.dart';
 
 class DialogProtocoloSucesso extends StatelessWidget {
@@ -19,7 +20,12 @@ class DialogProtocoloSucesso extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('✅', style: TextStyle(fontSize: 48)),
+            Lottie.asset(
+              'assets/lottie/check.json',
+              width: 84,
+              height: 84,
+              repeat: false,
+            ),
             const SizedBox(height: 12),
             const Text('Protocolo gerado com sucesso',
                 textAlign: TextAlign.center,
