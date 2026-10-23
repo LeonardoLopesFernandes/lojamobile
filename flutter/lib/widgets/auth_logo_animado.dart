@@ -13,10 +13,14 @@ const String _path2 =
 class AuthLogoAnimado extends StatefulWidget {
   final double size;
   final Color color;
+  final List<String> paths;
+  final double translateY;
   const AuthLogoAnimado({
     super.key,
     this.size = 140,
     this.color = Colors.white,
+    this.paths = const [_path1, _path2],
+    this.translateY = 480,
   });
 
   @override
@@ -38,11 +42,12 @@ class _AuthLogoAnimadoState extends State<AuthLogoAnimado>
       duration: const Duration(milliseconds: 3200),
     )..repeat();
     final m = Matrix4.identity()
-      ..translate(0.0, 480.0)
+      ..translate(0.0, widget.translateY)
       ..scale(0.1, -0.1);
-    _path = Path()
-      ..addPath(parseSvgPathData(_path1).transform(m.storage), Offset.zero)
-      ..addPath(parseSvgPathData(_path2).transform(m.storage), Offset.zero);
+    _path = Path();
+    for (final p in widget.paths) {
+      _path.addPath(parseSvgPathData(p).transform(m.storage), Offset.zero);
+    }
     _metrics = _path.computeMetrics().toList();
     _total = _metrics.fold(0.0, (s, mt) => s + mt.length);
   }

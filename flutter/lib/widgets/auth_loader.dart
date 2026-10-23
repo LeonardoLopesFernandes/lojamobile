@@ -7,11 +7,13 @@ import 'auth_logo_animado.dart';
 class AuthLoader extends StatelessWidget {
   final String titulo;
   final String? subtitulo;
+  final Widget? logo;
 
   const AuthLoader({
     super.key,
     this.titulo = 'Loja Mobile',
     this.subtitulo = 'Autenticando...',
+    this.logo,
   });
 
   @override
@@ -22,7 +24,7 @@ class AuthLoader extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AuthLogoAnimado(size: 140),
+            logo ?? const AuthLogoAnimado(size: 140),
             const SizedBox(height: 28),
             Text(
               titulo,
