@@ -395,7 +395,9 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _buscar(),
                     decoration: InputDecoration(
-                      hintText: _buscaTipo == 'SAP' ? 'SAP' : 'EAN',
+                      hintText: _buscaTipo == 'SAP'
+                          ? 'Digite o SAP'
+                          : 'Digite o EAN',
                       hintStyle: TextStyle(color: Colors.grey.shade600),
                       prefixIcon:
                           const Icon(Icons.search, color: Color(0xFF9E9E9E)),

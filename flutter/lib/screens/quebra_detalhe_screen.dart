@@ -365,7 +365,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _buscar(),
                 decoration: InputDecoration(
-                  hintText: _porSap ? 'SAP' : 'EAN',
+                  hintText: _porSap ? 'Digite o SAP' : 'Digite o EAN',
                   hintStyle: const TextStyle(color: Colors.grey),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   border: InputBorder.none,
