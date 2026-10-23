@@ -21,6 +21,8 @@ class CriarInventarioScreen extends StatefulWidget {
 class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
   final TextEditingController _buscaController = TextEditingController();
   String _buscaTipo = 'EAN';
+  final Set<String> _selecionados = {};
+  bool _painelExpandido = false;
   SessionManager? _session;
   InventarioService? _service;
 
@@ -436,18 +438,169 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: itens.isEmpty ? null : _processar,
-        backgroundColor: itens.isEmpty
-            ? Colors.grey
-            : const Color(Constants.primaryRed),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        icon: const Icon(Icons.check),
-        label: const Text('PROCESSAR',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+      bottomNavigationBar: _painelInferior(),
+    );
+  }
+
+  Future<void> _removerSelecionados() async {
+    final id = widget.inventoryId;
+    if (id == null || _selecionados.isEmpty) return;
+    try {
+      await _service!.removeItems(id, _selecionados.toList());
+      setState(() => _selecionados.clear());
+      await _carregar();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao excluir itens'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _descartar() async {
+    final id = widget.inventoryId;
+    if (id == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('Descartar inventário'),
+        content: const Text('Deseja descartar (excluir) este inventário?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Não')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Sim')),
+        ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+    if (ok != true) return;
+    try {
+      await _service!.deleteCycleCount(id);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao descartar o inventário'),
+          backgroundColor: Colors.red));
+    }
+  }
+
+  Widget _painelInferior() {
+    final itens = _draft?.items ?? const <InventoryItem>[];
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 10, offset: Offset(0, -5)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _painelExpandido = !_painelExpandido),
+            onVerticalDragEnd: (d) {
+              final v = d.primaryVelocity ?? 0;
+              if (v < -100) {
+                setState(() => _painelExpandido = true);
+              } else if (v > 100) {
+                setState(() => _painelExpandido = false);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            child: _painelExpandido
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(Constants.primaryRed),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              disabledForegroundColor: Colors.grey.shade600,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: itens.isEmpty ? null : _processar,
+                            child: const Text('Processar inventário',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  const Color(Constants.primaryRed),
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: _selecionados.isEmpty
+                                ? null
+                                : _removerSelecionados,
+                            child: const Text('Excluir itens selecionados',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  const Color(Constants.primaryRed),
+                              side: const BorderSide(
+                                  color: Color(Constants.primaryRed)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: _descartar,
+                            child: const Text('Descartar inventário',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
     );
   }
 
@@ -489,10 +642,31 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final item = itens[i];
-        return InventarioItemCard(
-          item: item,
-          onTap: () => _editarItem(item),
-          onLongPress: () => _removerItem(item),
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Checkbox(
+                value: _selecionados.contains(item.id),
+                activeColor: const Color(Constants.primaryRed),
+                onChanged: (v) => setState(() {
+                  if (v == true) {
+                    _selecionados.add(item.id);
+                  } else {
+                    _selecionados.remove(item.id);
+                  }
+                }),
+              ),
+            ),
+            Expanded(
+              child: InventarioItemCard(
+                item: item,
+                onTap: () => _editarItem(item),
+                onLongPress: () => _removerItem(item),
+              ),
+            ),
+          ],
         );
       },
     );
