@@ -10,7 +10,7 @@ import '../utils/currency_formatter.dart';
 import '../network/api_service.dart';
 
 class ExcelDownloader {
-  static const MethodChannel _channel = MethodChannel('com.recebimento/media');
+  static const MethodChannel _channel = MethodChannel('com.ir/media');
 
   /// Baixa o Excel da viagem (streaming) e salva na pasta Downloads nativa.
   static Future<String> gerarExcel({
