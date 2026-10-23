@@ -115,10 +115,15 @@ class _HomeHubScreenState extends State<HomeHubScreen> {
 
   List<_Hub> get _filtrados {
     final q = _buscaController.text.trim().toLowerCase();
-    if (q.isEmpty) return _hubs;
-    return _hubs
-        .where((h) => h.title.toLowerCase().contains(q))
-        .toList();
+    final base = q.isEmpty
+        ? _hubs
+        : _hubs.where((h) => h.title.toLowerCase().contains(q)).toList();
+    final ordem = _favoritos.toList();
+    final favs = base.where((h) => _favoritos.contains(h.id)).toList()
+      ..sort((a, b) =>
+          ordem.indexOf(a.id).compareTo(ordem.indexOf(b.id)));
+    final outros = base.where((h) => !_favoritos.contains(h.id)).toList();
+    return [...favs, ...outros];
   }
 
   Future<void> _confirmarSaida() async {
@@ -201,7 +206,6 @@ class _HomeHubScreenState extends State<HomeHubScreen> {
                   const SizedBox(height: 4),
                   TextField(
                     controller: _buscaController,
-                    autofocus: true,
                     onChanged: (_) => setState(() {}),
                     style: const TextStyle(color: Colors.white),
                     cursorColor: Colors.white,

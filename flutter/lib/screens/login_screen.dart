@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../network/session_manager.dart';
 import '../utils/constants.dart';
 import '../utils/app_version.dart';
 import '../widgets/auth_logo_animado.dart';
@@ -12,43 +11,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
-  bool _senhaVisivel = false;
-  bool _salvarCredenciais = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _preencherCredenciais();
-  }
-
-  Future<void> _preencherCredenciais() async {
-    final session = await SessionManager.create();
-    _emailController.text = session.getUserEmail() ?? '';
-    _senhaController.text = session.getSavedPassword() ?? '';
-    _salvarCredenciais = session.hasSavedCredentials();
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _entrar() async {
-    final email = _emailController.text.trim();
-    final senha = _senhaController.text;
-    final session = await SessionManager.create();
-    if (_salvarCredenciais && email.isNotEmpty) {
-      session.saveCredentials(email, senha);
-    } else if (!_salvarCredenciais) {
-      session.clearCredentials();
-    }
-    if (!mounted) return;
-    Navigator.of(context).pushNamed(
-      '/login_webview',
-      arguments: {
-        'autoLogin': true,
-        'email': email,
-        'senha': senha,
-      },
-    );
+  void _entrar() {
+    Navigator.of(context).pushNamed('/login_webview');
   }
 
   @override
@@ -65,130 +29,36 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 48),
                     const AuthLogoAnimado(size: 150),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 24),
                     const Text(
-                      'Loja Mobile',
+                      'americanas.io',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Para ter acesso ao app, vamos manter os '
-                      'fluxos de autenticação segura.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                    const SizedBox(height: 28),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _entrar,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF1F1F1F),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text('E-mail',
-                              style: TextStyle(
-                                  color: Color(0xFF49454F),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              hintText: 'Email Microsoft',
-                              hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text('Senha',
-                              style: TextStyle(
-                                  color: Color(0xFF49454F),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          TextField(
-                            controller: _senhaController,
-                            obscureText: !_senhaVisivel,
-                            decoration: InputDecoration(
-                              hintText: 'Senha',
-                              hintStyle:
-                                  const TextStyle(color: Color(0xFF9CA3AF)),
-                              border: const OutlineInputBorder(),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              suffixIcon: IconButton(
-                                icon: Icon(_senhaVisivel
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
-                                onPressed: () => setState(
-                                    () => _senhaVisivel = !_senhaVisivel),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _entrar,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color(Constants.primaryRed),
-                              foregroundColor: Colors.white,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              textStyle: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _MicrosoftLogo(size: 20),
-                                SizedBox(width: 10),
-                                Text('Login Microsoft'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    InkWell(
-                      onTap: () => setState(
-                          () => _salvarCredenciais = !_salvarCredenciais),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          textStyle: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              _salvarCredenciais
-                                  ? Icons.check_box
-                                  : Icons.check_box_outline_blank,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Salvar credenciais e ativar login automático',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 13),
-                            ),
+                            _MicrosoftLogo(size: 20),
+                            SizedBox(width: 10),
+                            Text('Login'),
                           ],
                         ),
                       ),
