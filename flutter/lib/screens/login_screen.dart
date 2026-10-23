@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             _MicrosoftLogo(size: 20),
                             SizedBox(width: 10),
-                            Text('Login'),
+                            Text('Login Microsoft'),
                           ],
                         ),
                       ),
