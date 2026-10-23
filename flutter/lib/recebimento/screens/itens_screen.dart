@@ -62,7 +62,11 @@ class _ItensScreenState extends State<ItensScreen> {
         itens: _todos,
       );
       _snackCom(const Icon(Icons.check_box, color: Colors.white, size: 20),
-          'Excel salvo: $path');
+          'Excel salvo: $path',
+          action: SnackBarAction(
+              label: 'Abrir',
+              onPressed: () => ExcelDownloader.abrirArquivo(
+                  path, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')));
     } catch (e) {
       _snack("❌ $e");
     }
@@ -86,7 +90,11 @@ class _ItensScreenState extends State<ItensScreen> {
         total: _soma,
       );
       _snackCom(const Icon(Icons.check_box, color: Colors.white, size: 20),
-          'PDF salvo: $path');
+          'PDF salvo: $path',
+          action: SnackBarAction(
+              label: 'Abrir',
+              onPressed: () =>
+                  ExcelDownloader.abrirArquivo(path, 'application/pdf')));
     } catch (e) {
       _snack("❌ $e");
     }
@@ -97,7 +105,7 @@ class _ItensScreenState extends State<ItensScreen> {
         .showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  void _snackCom(Widget icone, String msg) {
+  void _snackCom(Widget icone, String msg, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(
         children: [
@@ -106,6 +114,7 @@ class _ItensScreenState extends State<ItensScreen> {
           Expanded(child: Text(msg)),
         ],
       ),
+      action: action,
     ));
   }
 

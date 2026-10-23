@@ -69,6 +69,22 @@ class MainActivity : FlutterActivity() {
                             result.error("SAVE_FAILED", e.message, null)
                         }
                     }
+                    "openFile" -> {
+                        val path = call.argument<String>("path")
+                        val mime = call.argument<String>("mime")
+                            ?: call.argument<String>("mimeType")
+                            ?: "application/octet-stream"
+                        if (path == null) {
+                            result.error("NO_PATH", "path nulo", null)
+                            return@setMethodCallHandler
+                        }
+                        try {
+                            openFile(Uri.parse(path), mime)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("OPEN_FAILED", e.message, null)
+                        }
+                    }
                     "renderPdfToRgba" -> {
                         val bytes = call.argument<ByteArray>("bytes")
                         val w = call.argument<Int>("w") ?: 0

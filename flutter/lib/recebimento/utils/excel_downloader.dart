@@ -225,6 +225,16 @@ class ExcelDownloader {
     return file.path;
   }
 
+  /// Abre um arquivo já baixado no visualizador.
+  static Future<void> abrirArquivo(String caminho, String mimeType) async {
+    try {
+      await _channel.invokeMethod('openFile', {
+        'path': caminho,
+        'mimeType': mimeType,
+      });
+    } on PlatformException catch (_) {}
+  }
+
   static String _short(String v) => v.length > 7 ? v.substring(v.length - 7) : v;
 
   static String _timestamp() {

@@ -455,7 +455,10 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
         const Icon(Icons.check_box, color: Colors.white, size: 20),
         const SizedBox(width: 10),
         Expanded(child: Text("Excel salvo: $path")),
-      ])));
+      ]), action: SnackBarAction(
+          label: 'Abrir',
+          onPressed: () => ExcelDownloader.abrirArquivo(
+              path, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))));
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("❌ $e")));
