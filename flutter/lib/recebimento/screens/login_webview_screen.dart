@@ -8,6 +8,9 @@ import '../network/api_service.dart';
 import '../network/api_client.dart';
 import '../utils/constants.dart';
 import '../utils/log_helper.dart';
+import '../utils/recebimento_logo_paths.dart';
+import '../../widgets/auth_loader.dart';
+import '../../widgets/auth_logo_animado.dart';
 
 /// URL de login SAML do minhaloja (fiel ao LoginWebViewActivity.carregarLogin).
 /// prompt=select_account mostra a tela "Escolher uma conta" com as contas
@@ -301,22 +304,13 @@ class _CarregamentoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: const Color(Constants.primaryRed),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Lottie.asset(
-              'assets/lottie/recebimento_loading.json',
-              width: 220,
-              height: 198,
-              repeat: true,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Autenticando...',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
+      child: const AuthLoader(
+        titulo: 'Recebimento',
+        subtitulo: 'Autenticando...',
+        logo: AuthLogoAnimado(
+          size: 140,
+          paths: recebimentoPaths,
+          translateY: 2048,
         ),
       ),
     );
