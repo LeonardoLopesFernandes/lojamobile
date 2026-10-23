@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'api_client.dart';
 import '../utils/constants.dart';
@@ -353,6 +354,12 @@ class InventarioService {
     await client.put('web/breakage/$breakageId/open', body: {
       'items': items.map((e) => {'id': e.id, 'reasonId': ''}).toList(),
     });
+  }
+
+  /// Excel (xlsx) do relatório da quebra.
+  Future<Uint8List> baixarRelatorioQuebra(String breakageId) async {
+    final bytes = await client.getBytes('web/breakage/$breakageId/report');
+    return Uint8List.fromList(bytes);
   }
 
   /// Finaliza (processa) a quebra aberta: PUT /web/breakage/{id}/process.

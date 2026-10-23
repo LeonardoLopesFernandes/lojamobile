@@ -4,6 +4,7 @@ import '../models/quebra.dart';
 import '../network/inventario_service.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
+import '../recebimento/utils/excel_downloader.dart';
 import '../widgets/dialog_adicionar_quebra.dart';
 import 'scanner_ean_screen.dart';
 
@@ -299,11 +300,53 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                   _campoBusca(),
                 ],
                 const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+                  child: Row(
+                    children: [
+                      Text('Itens (${_itens.length})',
+                          style: const TextStyle(
+                              color: Color(Constants.invTextDark),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16)),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: _baixarExcel,
+                        tooltip: 'Gerar Excel',
+                        icon: const Icon(Icons.table_chart,
+                            color: Color(0xFF107C41)),
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(child: _corpo()),
                 if (!_somenteLeitura) _painelInferior(),
               ],
             ),
     );
+  }
+
+  Future<void> _baixarExcel() async {
+    final service = _service;
+    if (service == null) return;
+    try {
+      final bytes = await service.baixarRelatorioQuebra(widget.breakageId);
+      final nome = 'quebra_${widget.breakageId}.xlsx';
+      final caminho = await ExcelDownloader.salvarArquivoEmDownloads(
+        nome: nome,
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        bytes: bytes,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Excel salvo: $caminho'),
+          backgroundColor: const Color(Constants.badgeGreen)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao gerar o Excel'), backgroundColor: Colors.red));
+    }
   }
 
   Widget _seletorEanSap() {
