@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/inventario.dart';
 import '../models/quebra.dart';
@@ -270,7 +269,6 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_somenteLeitura) return _buildCupertino();
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
       appBar: AppBar(
@@ -305,140 +303,6 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                 if (!_somenteLeitura) _painelInferior(),
               ],
             ),
-    );
-  }
-
-  Widget _buildCupertino() {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Quebra'),
-        previousPageTitle: '',
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.chevron_left,
-              color: CupertinoColors.activeBlue, size: 22),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      child: SafeArea(child: _corpoIOS()),
-    );
-  }
-
-  Widget _corpoIOS() {
-    if (_carregando) {
-      return const Center(child: CupertinoActivityIndicator());
-    }
-    if (_itens.isEmpty) {
-      return const Center(child: Text('Nenhum item nesta quebra'));
-    }
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _avisoConsulta(),
-        ),
-        const SizedBox(height: 16),
-        CupertinoListSection.insetGrouped(
-          header: Text('ITENS (${_itens.length})'),
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          children: _itens.map((it) => _iosQuebraTile(it)).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _iosQuebraTile(BreakageItem it) {
-    final lower = it.reason.toLowerCase();
-    final isAvaria = lower.contains('avaria');
-    final isValidade =
-        lower.contains('validade') || lower.contains('vencimento');
-    final badgeBg = isAvaria
-        ? const Color(0xFFFEF2F2)
-        : isValidade
-            ? const Color(0xFFF3E8FF)
-            : const Color(0xFFFFFBEB);
-    final badgeBorder = isAvaria
-        ? const Color(0xFFFECACA)
-        : isValidade
-            ? const Color(0xFFE9D5FF)
-            : const Color(0xFFFDE68A);
-    final badgeColor = isAvaria
-        ? const Color(0xFFB91C1C)
-        : isValidade
-            ? const Color(0xFF7E22CE)
-            : const Color(0xFFB45309);
-    return Padding(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(it.description,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.label,
-                        height: 1.2)),
-                const SizedBox(height: 4),
-                Text('EAN: ${it.ean} • SAP: ${it.sapCode}',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                        color: CupertinoColors.secondaryLabel)),
-                if (it.reason.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: badgeBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: badgeBorder),
-                    ),
-                    child: Text('Motivo: ${it.reason}',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: badgeColor)),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            constraints: const BoxConstraints(minWidth: 56),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey6,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('QUEBRA',
-                    style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.secondaryLabel,
-                        letterSpacing: 0.5)),
-                const SizedBox(height: 2),
-                Text('${it.quantity}',
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                        color: CupertinoColors.label)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -538,18 +402,19 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFFFE082)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          Icon(CupertinoIcons.info, color: Color(0xFFD97706), size: 18),
+          Icon(Icons.warning_amber_rounded, color: Color(0xFFB26A00), size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Quebra processada. Os dados estão disponíveis apenas para consulta.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+              style: TextStyle(color: Color(0xFF7A5200), fontSize: 13),
             ),
           ),
         ],
