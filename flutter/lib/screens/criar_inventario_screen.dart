@@ -141,8 +141,8 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        constraints: const BoxConstraints(maxWidth: 480),
         title: const Text(
           'Adicionar itens ao inventário rotativo',
           style: TextStyle(
@@ -155,21 +155,21 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
+              Text(p.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(Constants.invTextDark))),
+              const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(p.description,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Color(Constants.invTextDark))),
-                        const SizedBox(height: 4),
                         Text('EAN: ${p.ean}',
                             style: const TextStyle(
                                 color: Color(Constants.invTextSecondary),
@@ -178,50 +178,48 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
                             style: const TextStyle(
                                 color: Color(Constants.invTextSecondary),
                                 fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Quantidade atual',
+                        const SizedBox(height: 6),
+                        Text('Estoque: ${p.stock.toStringAsFixed(0)}',
                             style: TextStyle(
-                                color: Color(Constants.invTextSecondary),
-                                fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text('${p.stock.toStringAsFixed(0)}',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                                 color: p.stock < 0
                                     ? Colors.red
-                                    : const Color(Constants.invTextDark))),
+                                    : const Color(Constants.invTextSecondary))),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Quantidade atual',
+                          style: TextStyle(
+                              color: Color(Constants.invTextSecondary),
+                              fontSize: 12)),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: 120,
+                        child: TextField(
+                          controller: controller,
+                          keyboardType: TextInputType.number,
+                          autofocus: true,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(Constants.invTextDark)),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
-              const SizedBox(height: 24),
-              const Text('Indique abaixo a nova quantidade.',
-                  style: TextStyle(
-                      color: Color(Constants.invTextDark), fontSize: 14)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Nova quantidade',
-                  border: OutlineInputBorder(),
-                ),
               ),
             ],
           ),
