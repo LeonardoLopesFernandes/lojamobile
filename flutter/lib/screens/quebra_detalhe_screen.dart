@@ -31,6 +31,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   bool _porSap = false;
   bool _somenteLeitura = false;
   bool _carregando = true;
+  bool _painelExpandido = false;
 
   @override
   void initState() {
@@ -311,15 +312,16 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                               fontWeight: FontWeight.bold,
                               fontSize: 16)),
                       const Spacer(),
-                      IconButton(
-                        onPressed: _baixarExcel,
-                        tooltip: 'Gerar Excel',
-                        icon: SvgPicture.asset(
-                          'assets/drawables/ic_excel.svg',
-                          width: 24,
-                          height: 24,
+                      if (_somenteLeitura)
+                        IconButton(
+                          onPressed: _baixarExcel,
+                          tooltip: 'Gerar Excel',
+                          icon: SvgPicture.asset(
+                            'assets/drawables/ic_excel.svg',
+                            width: 24,
+                            height: 24,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -656,7 +658,6 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
 
   Widget _painelInferior() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -668,71 +669,109 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _painelExpandido = !_painelExpandido),
+            onVerticalDragEnd: (d) {
+              final v = d.primaryVelocity ?? 0;
+              if (v < -100) {
+                setState(() => _painelExpandido = true);
+              } else if (v > 100) {
+                setState(() => _painelExpandido = false);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(Constants.primaryRed),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey.shade300,
-                disabledForegroundColor: Colors.grey.shade600,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24)),
-              ),
-              onPressed: _itens.isEmpty
-                  ? null
-                  : (_status == 'OPEN' ? _processarQuebra : _abrirQuebra),
-              child: Text(
-                  _status == 'OPEN' ? 'Finalizar quebra' : 'Abrir quebra',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w500)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(Constants.primaryRed),
-                side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24)),
-              ),
-              onPressed:
-                  _selecionados.isEmpty ? null : _removerSelecionados,
-              child: const Text('Remover itens selecionados',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(Constants.primaryRed),
-                side: const BorderSide(
-                    color: Color(Constants.primaryRed)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24)),
-              ),
-              onPressed: _descartarQuebra,
-              child: const Text('Descartar quebra',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            child: _painelExpandido
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(Constants.primaryRed),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              disabledForegroundColor: Colors.grey.shade600,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: _itens.isEmpty
+                                ? null
+                                : (_status == 'OPEN'
+                                    ? _processarQuebra
+                                    : _abrirQuebra),
+                            child: Text(
+                                _status == 'OPEN'
+                                    ? 'Finalizar quebra'
+                                    : 'Abrir quebra',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  const Color(Constants.primaryRed),
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: _selecionados.isEmpty
+                                ? null
+                                : _removerSelecionados,
+                            child: const Text('Remover itens selecionados',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  const Color(Constants.primaryRed),
+                              side: const BorderSide(
+                                  color: Color(Constants.primaryRed)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24)),
+                            ),
+                            onPressed: _descartarQuebra,
+                            child: const Text('Descartar quebra',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w500)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),
