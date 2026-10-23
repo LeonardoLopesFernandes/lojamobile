@@ -81,7 +81,7 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
   void _carregarRastreioBRLog() {
     final numero = _pegarNumeroViagem();
     final nota = _session.getBrlogNotas().cast<BrasilRiskNota?>().firstWhere(
-        (n) => n?.numeroViagem == numero,
+        (n) => _semZeros(n?.numeroViagem) == numero,
         orElse: () => null);
     if (nota == null) {
       setState(() => _brlogNota = null);
@@ -115,8 +115,11 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
 
   String _pegarNumeroViagem() {
     final id = _detalhes?.viagemId ?? _viagemId;
-    return id.length > 7 ? id.substring(id.length - 7) : id;
+    final curto = id.length > 7 ? id.substring(id.length - 7) : id;
+    return curto.replaceFirst(RegExp(r'^0+'), '');
   }
+
+  String _semZeros(String? v) => (v ?? '').replaceFirst(RegExp(r'^0+'), '');
 
   String _formatarDataBr(String iso) {
     try {
@@ -130,7 +133,7 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
   String _formatarDataViagem(String iso) {
     try {
       final d = DateTime.parse(iso.replaceAll('Z', ''));
-      return DateFormat("dd/MM/yyyy HH:mm").format(d);
+      return DateFormat("dd/MM/yyyy HH:mm:ss").format(d);
     } catch (_) {
       return iso;
     }
@@ -552,8 +555,8 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text("Autorizar a abertura do baú?"),
         content: Text(
-          "Viagem: ${d?.viagemId ?? '-'}\n"
-          "Data: ${d?.viagemData ?? '-'}\n"
+          "Viagem: ${_pegarNumeroViagem()}\n"
+          "Data: ${_formatarDataViagem(d?.viagemData ?? '')}\n"
           "Placa: ${d?.placaVeiculo ?? '-'}\n"
           "Origem: ${d?.origem ?? '-'}\n"
           "Pedido: ${nota.codPedido ?? '-'}",
@@ -578,7 +581,7 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
           content: Text("Dados do pedido indisponíveis para liberação.")));
       return;
     }
-    final dataCadastro = DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now());
+    final dataCadastro = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now());
     try {
       final resp = await _brLog.autorizarAberturaBau(AutorizarAberturaBauRequest(
         codPedido: nota.codPedido!,
