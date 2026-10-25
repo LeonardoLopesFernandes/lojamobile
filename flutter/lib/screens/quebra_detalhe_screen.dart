@@ -36,7 +36,6 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   bool _somenteLeitura = false;
   bool _carregando = true;
   bool _painelExpandido = false;
-  bool _mostrarBusca = false;
 
   @override
   void initState() {
@@ -501,13 +500,10 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                   : Column(
                       children: [
                         _resumoQuebra(),
-                        _barraAcoesCadastro(),
-                        if (_mostrarBusca) ...[
-                          Container(
-                              color: Colors.white, child: _seletorEanSap()),
-                          const SizedBox(height: 16),
-                          _campoBusca(),
-                        ],
+                        Container(
+                            color: Colors.white, child: _seletorEanSap()),
+                        const SizedBox(height: 16),
+                        _campoBusca(),
                         const SizedBox(height: 12),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
@@ -765,41 +761,6 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _focarBusca() {
-    setState(() => _mostrarBusca = true);
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _buscaFocus.requestFocus());
-  }
-
-  Widget _barraAcoesCadastro() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton.icon(
-            onPressed: _focarBusca,
-            icon: const Icon(Icons.add,
-                color: Color(Constants.primaryRed), size: 18),
-            label: const Text('ADICIONAR ITEM',
-                style: TextStyle(
-                    color: Color(Constants.primaryRed),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
-          ),
-          TextButton.icon(
-            onPressed: _selecionados.isEmpty ? null : _removerSelecionados,
-            icon: const Icon(Icons.delete_outline,
-                color: Colors.grey, size: 18),
-            label: const Text('EXCLUIR ITENS',
-                style: TextStyle(color: Colors.grey, fontSize: 13)),
-          ),
-        ],
       ),
     );
   }
