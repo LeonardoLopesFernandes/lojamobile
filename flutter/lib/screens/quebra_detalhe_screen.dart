@@ -24,6 +24,7 @@ class QuebraDetalheScreen extends StatefulWidget {
 
 class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   final TextEditingController _buscaController = TextEditingController();
+  final FocusNode _buscaFocus = FocusNode();
   SessionManager? _session;
   InventarioService? _service;
   List<BreakageReason> _reasons = const [];
@@ -35,6 +36,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   bool _somenteLeitura = false;
   bool _carregando = true;
   bool _painelExpandido = false;
+  bool _mostrarBusca = false;
 
   @override
   void initState() {
@@ -378,6 +380,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   @override
   void dispose() {
     _buscaController.dispose();
+    _buscaFocus.dispose();
     super.dispose();
   }
 
@@ -434,7 +437,9 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
             ),
         ],
       ),
-      bottomNavigationBar: aberta ? _barraAberta() : null,
+      bottomNavigationBar: aberta
+          ? _barraAberta()
+          : (_somenteLeitura ? null : _barraCadastro()),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
           : aberta
@@ -445,38 +450,57 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                     Expanded(child: _corpoAberta()),
                   ],
                 )
-              : Column(
-                  children: [
-                    _resumoQuebra(),
-                    if (_somenteLeitura) ...[
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _avisoConsulta(),
-                      ),
-                      const SizedBox(height: 12),
-                    ] else ...[
-                      Container(color: Colors.white, child: _seletorEanSap()),
-                      const SizedBox(height: 16),
-                      _campoBusca(),
-                    ],
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
-                      child: Row(
-                        children: [
-                          Text('Itens (${_itens.length})',
-                              style: const TextStyle(
-                                  color: Color(Constants.invTextDark),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16)),
+              : _somenteLeitura
+                  ? Column(
+                      children: [
+                        _resumoQuebra(),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _avisoConsulta(),
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+                          child: Row(
+                            children: [
+                              Text('Itens (${_itens.length})',
+                                  style: const TextStyle(
+                                      color: Color(Constants.invTextDark),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                        Expanded(child: _corpo()),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _resumoQuebra(),
+                        _barraAcoesCadastro(),
+                        if (_mostrarBusca) ...[
+                          Container(
+                              color: Colors.white, child: _seletorEanSap()),
+                          const SizedBox(height: 16),
+                          _campoBusca(),
                         ],
-                      ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+                          child: Row(
+                            children: [
+                              Text('Itens (${_itens.length})',
+                                  style: const TextStyle(
+                                      color: Color(Constants.invTextDark),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                        Expanded(child: _corpoCadastro()),
+                      ],
                     ),
-                    Expanded(child: _corpo()),
-                    if (!_somenteLeitura) _painelInferior(),
-                  ],
-                ),
     );
   }
 
@@ -558,6 +582,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
               ),
               child: TextField(
                 controller: _buscaController,
+                focusNode: _buscaFocus,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _buscar(),
@@ -713,6 +738,138 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                         color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _focarBusca() {
+    setState(() => _mostrarBusca = true);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _buscaFocus.requestFocus());
+  }
+
+  Widget _barraAcoesCadastro() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton.icon(
+            onPressed: _focarBusca,
+            icon: const Icon(Icons.add,
+                color: Color(Constants.primaryRed), size: 18),
+            label: const Text('ADICIONAR ITEM',
+                style: TextStyle(
+                    color: Color(Constants.primaryRed),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
+          ),
+          TextButton.icon(
+            onPressed: _selecionados.isEmpty ? null : _removerSelecionados,
+            icon: const Icon(Icons.delete_outline,
+                color: Colors.grey, size: 18),
+            label: const Text('EXCLUIR ITENS',
+                style: TextStyle(color: Colors.grey, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _corpoCadastro() {
+    if (_itens.isEmpty) {
+      return const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Color(0xFFBDBDBD),
+            child: Icon(Icons.sentiment_satisfied,
+                size: 36, color: Colors.white),
+          ),
+          SizedBox(height: 16),
+          Text('Adicione itens para iniciar a quebra',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(Constants.invTextSecondary))),
+          SizedBox(height: 8),
+          Text('Utilize o EAN para adicionar itens e quantidades.',
+              style: TextStyle(fontSize: 13, color: Colors.grey)),
+        ],
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: _itens.length,
+      itemBuilder: (_, i) {
+        final it = _itens[i];
+        return _ItemCadastroCard(
+          key: ValueKey(it.id),
+          item: it,
+          reasons: _reasons,
+          selected: _selecionados.contains(it.id),
+          onSelected: (v) => setState(() {
+            if (v) {
+              _selecionados.add(it.id);
+            } else {
+              _selecionados.remove(it.id);
+            }
+          }),
+          onQuantity: (q) => _salvarItem(it.copyWith(quantity: q)),
+          onReason: (r) =>
+              _salvarItem(it.copyWith(reason: r.label, reasonId: r.id)),
+          onDelete: () => _removerItem(it),
+        );
+      },
+    );
+  }
+
+  Widget _barraCadastro() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.white,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _descartarQuebra,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: const BorderSide(color: Colors.grey),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('DESCARTAR QUEBRA',
+                    style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _itens.isEmpty ? null : _abrirQuebra,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(Constants.primaryRed),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+                child: const Text('ABRIR QUEBRA',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12)),
               ),
             ),
           ],
@@ -1474,6 +1631,222 @@ class _ItemAbertoCardState extends State<_ItemAbertoCard> {
         const SizedBox(height: 2),
         Text(valor,
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+}
+
+/// Card de item da tela "Cadastrar quebra": SAP/EAN/Saldo, quantidade e
+/// motivo editáveis e ação de remover o item.
+class _ItemCadastroCard extends StatefulWidget {
+  final BreakageItem item;
+  final List<BreakageReason> reasons;
+  final bool selected;
+  final ValueChanged<bool> onSelected;
+  final ValueChanged<int> onQuantity;
+  final ValueChanged<BreakageReason> onReason;
+  final VoidCallback onDelete;
+
+  const _ItemCadastroCard({
+    super.key,
+    required this.item,
+    required this.reasons,
+    required this.selected,
+    required this.onSelected,
+    required this.onQuantity,
+    required this.onReason,
+    required this.onDelete,
+  });
+
+  @override
+  State<_ItemCadastroCard> createState() => _ItemCadastroCardState();
+}
+
+class _ItemCadastroCardState extends State<_ItemCadastroCard> {
+  late final TextEditingController _qtd;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtd = TextEditingController(text: '${widget.item.quantity}');
+  }
+
+  @override
+  void didUpdateWidget(covariant _ItemCadastroCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item.quantity != oldWidget.item.quantity &&
+        _qtd.text != '${widget.item.quantity}') {
+      _qtd.text = '${widget.item.quantity}';
+    }
+  }
+
+  @override
+  void dispose() {
+    _qtd.dispose();
+    super.dispose();
+  }
+
+  void _commitQuantidade() {
+    var valor = int.tryParse(_qtd.text.trim());
+    if (valor == null || valor < 1) {
+      _qtd.text = '${widget.item.quantity}';
+      return;
+    }
+    final maximo = widget.item.stock > 0 ? widget.item.stock : valor;
+    if (valor > maximo) valor = maximo;
+    _qtd.text = '$valor';
+    if (valor != widget.item.quantity) widget.onQuantity(valor);
+  }
+
+  String? get _reasonIdSelecionado {
+    for (final r in widget.reasons) {
+      if (r.id == widget.item.reasonId) return r.id;
+    }
+    final label = widget.item.reason.trim().toLowerCase();
+    for (final r in widget.reasons) {
+      if (r.label.trim().toLowerCase() == label) return r.id;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final reasonId = _reasonIdSelecionado;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: Checkbox(
+                    value: widget.selected,
+                    activeColor: const Color(Constants.primaryRed),
+                    onChanged: (v) => widget.onSelected(v ?? false),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(item.description,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.black87)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      color: Colors.grey, size: 18),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: widget.onDelete,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _detalhe('Cód. SAP', item.sapCode),
+                  _detalhe('EAN', item.ean),
+                  _detalhe('Saldo Físico', '${item.stock}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SizedBox(
+                  width: 90,
+                  child: TextField(
+                    controller: _qtd,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(fontSize: 13),
+                    onSubmitted: (_) => _commitQuantidade(),
+                    onTapOutside: (_) {
+                      FocusScope.of(context).unfocus();
+                      _commitQuantidade();
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Qtd. quebra',
+                      labelStyle: TextStyle(fontSize: 10),
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: reasonId,
+                    isExpanded: true,
+                    style: const TextStyle(
+                        fontSize: 13, color: Colors.black87),
+                    decoration: const InputDecoration(
+                      labelText: 'Motivo da quebra',
+                      labelStyle: TextStyle(fontSize: 10),
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    ),
+                    items: widget.reasons
+                        .map((r) => DropdownMenuItem<String>(
+                              value: r.id,
+                              child: Text(r.label),
+                            ))
+                        .toList(),
+                    onChanged: (id) {
+                      if (id == null) return;
+                      for (final r in widget.reasons) {
+                        if (r.id == id) {
+                          widget.onReason(r);
+                          break;
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detalhe(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 9,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87)),
       ],
     );
   }
