@@ -49,6 +49,21 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
 
   int get _totalQtd => _itens.fold(0, (soma, e) => soma + e.quantity);
 
+  bool get _todosSelecionados =>
+      _itens.isNotEmpty && _selecionados.length == _itens.length;
+
+  void _toggleSelecionarTodos() {
+    setState(() {
+      if (_todosSelecionados) {
+        _selecionados.clear();
+      } else {
+        _selecionados
+          ..clear()
+          ..addAll(_itens.map((e) => e.id));
+      }
+    });
+  }
+
   double get _totalValor =>
       _itens.fold(0.0, (soma, e) => soma + e.costPrice * e.quantity);
 
@@ -158,6 +173,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
         _itens = d.items;
         _breakage = d.breakage;
         _status = d.breakage.status.toUpperCase();
+        _selecionados.removeWhere((id) => !d.items.any((e) => e.id == id));
         if (reasons.isNotEmpty) _reasons = reasons;
       });
     } catch (_) {}
@@ -391,23 +407,30 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
       backgroundColor:
           aberta ? const Color(0xFFF1F5F9) : const Color(0xFFF8F8F8),
       appBar: AppBar(
-        backgroundColor: aberta ? const Color(0xFF0F172A) : Colors.white,
+        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: IconThemeData(
-            color:
-                aberta ? Colors.white : const Color(Constants.invTextDark)),
+        iconTheme: const IconThemeData(color: Color(Constants.invTextDark)),
         title: Text(
             aberta
                 ? 'Quebra aberta'
                 : (_somenteLeitura ? 'Quebra' : 'Cadastrar quebra'),
-            style: TextStyle(
-                color: aberta
-                    ? Colors.white
-                    : const Color(Constants.invTextDark),
+            style: const TextStyle(
+                color: Color(Constants.invTextDark),
                 fontSize: 18,
                 fontWeight: FontWeight.w500)),
         actions: [
+          if (aberta)
+            IconButton(
+              tooltip:
+                  _todosSelecionados ? 'Desmarcar todos' : 'Selecionar todos',
+              onPressed: _itens.isEmpty ? null : _toggleSelecionarTodos,
+              icon: Icon(
+                  _todosSelecionados
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
+                  color: const Color(Constants.invTextDark)),
+            ),
           if (aberta)
             Center(
               child: Padding(

@@ -197,11 +197,12 @@ class _QuebraScreenState extends State<QuebraScreen> {
       final now = DateTime.now();
       final page = await service.getBreakages(
         year: now.year,
-        month: now.month,
         store: _storeId,
         offset: reset ? 0 : _offset,
         limit: 50,
-        mainPageFilter: true,
+        // O site só usa mainPageFilter na tela "Cadastrar e processar".
+        // Em "Consultar quebras" precisa vir tudo (inclusive PROCESSED/CLOSED).
+        mainPageFilter: widget.apenasConsulta ? null : true,
       );
       if (!mounted) return;
       setState(() {
