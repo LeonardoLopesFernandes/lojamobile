@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/quebra.dart';
+import '../network/api_client.dart';
 import '../network/inventario_service.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
@@ -45,10 +46,40 @@ class _QuebraScreenState extends State<QuebraScreen> {
 
   String get _storeId => _session?.getUserStore() ?? Constants.defaultStore;
 
+  /// Id de uma quebra pendente/aberta do usuário, se existir.
+  String? _pendingId(dynamic data) {
+    if (data is! Map) return null;
+    final aberta = data['openBreakageId']?.toString();
+    if (aberta != null && aberta.isNotEmpty) return aberta;
+    final breakage = data['breakage'];
+    if (breakage is Map) {
+      final id = breakage['id']?.toString();
+      if (id != null && id.isNotEmpty) return id;
+    }
+    return null;
+  }
+
   Future<void> _novaQuebra() async {
     final service = _service;
     final session = _session;
     if (service == null) return;
+    // Recupera a quebra pendente do usuário antes de criar outra (o site faz
+    // o mesmo; a BFF recusa uma segunda com "Já existe uma quebra aberta").
+    try {
+      final pendente = await service.getPendingBreakage(
+          email: session?.getUserEmail() ?? '', store: _storeId);
+      final id = _pendingId(pendente);
+      if (id != null) {
+        if (!mounted) return;
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => QuebraDetalheScreen(breakageId: id),
+        ));
+        _carregar(reset: true);
+        return;
+      }
+    } catch (_) {
+      // sem pendente ou falha ao consultar: segue com a criação
+    }
     try {
       final b = await service.createBreakage(
         storeId: _storeId,
@@ -60,10 +91,51 @@ class _QuebraScreenState extends State<QuebraScreen> {
         builder: (_) => QuebraDetalheScreen(breakageId: b.id),
       ));
       _carregar(reset: true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final msg = e.body.toLowerCase().contains('quebra aberta')
+          ? 'Já existe uma quebra aberta para este usuário.'
+          : 'Falha ao criar quebra';
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red));
+      _carregar(reset: true);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Falha ao criar quebra'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _reabrirQuebra(Breakage b) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('Reabrir quebra'),
+        content: Text(
+            'Deseja reabrir a quebra de ${b.user}? Ela voltará para "Aberta".'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Não')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Sim')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _service!.reopenBreakage(b.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Quebra reaberta com sucesso'),
+          backgroundColor: Color(Constants.badgeGreen)));
+      _carregar(reset: true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao reabrir quebra'), backgroundColor: Colors.red));
     }
   }
 
@@ -129,6 +201,7 @@ class _QuebraScreenState extends State<QuebraScreen> {
         store: _storeId,
         offset: reset ? 0 : _offset,
         limit: 50,
+        mainPageFilter: true,
       );
       if (!mounted) return;
       setState(() {
@@ -346,25 +419,33 @@ class _QuebraScreenState extends State<QuebraScreen> {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, i) {
           final b = lista[i];
-          Widget? menu;
-          if (!b.processado && !widget.apenasConsulta) {
-            menu = PopupMenuButton<String>(
-              color: Colors.white,
-              icon: const Icon(Icons.more_vert,
-                  color: Color(Constants.invTextDark), size: 20),
-              onSelected: (v) {
-                if (v == 'detalhes') {
-                  _abrirDetalhe(b);
-                } else if (v == 'remover') {
-                  _removerQuebra(b);
-                }
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'detalhes', child: Text('Detalhes')),
-                PopupMenuItem(value: 'remover', child: Text('Remover quebra')),
-              ],
-            );
-          }
+          final entradas = <PopupMenuEntry<String>>[
+            const PopupMenuItem(value: 'detalhes', child: Text('Detalhes')),
+            if (b.canRemove)
+              const PopupMenuItem(
+                  value: 'remover', child: Text('Remover quebra')),
+            if (b.canReopen)
+              const PopupMenuItem(
+                  value: 'reabrir', child: Text('Reabrir quebra')),
+          ];
+          final mostraMenu = widget.apenasConsulta || !b.processado;
+          final Widget? menu = mostraMenu && entradas.length > 1
+              ? PopupMenuButton<String>(
+                  color: Colors.white,
+                  icon: const Icon(Icons.more_vert,
+                      color: Color(Constants.invTextDark), size: 20),
+                  onSelected: (v) {
+                    if (v == 'detalhes') {
+                      _abrirDetalhe(b);
+                    } else if (v == 'remover') {
+                      _removerQuebra(b);
+                    } else if (v == 'reabrir') {
+                      _reabrirQuebra(b);
+                    }
+                  },
+                  itemBuilder: (_) => entradas,
+                )
+              : null;
           return InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () => _abrirDetalhe(b),

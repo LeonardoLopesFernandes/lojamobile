@@ -53,13 +53,35 @@ class Breakage {
         itemsQuantity: (j['itemsQuantity'] as num?)?.toInt() ?? 0,
       );
 
-  bool get processado => status.toUpperCase() == 'PROCESSED';
+  String get _statusUpper => status.toUpperCase();
+
+  bool get isProcessed => _statusUpper == 'PROCESSED';
+  bool get isOpen => _statusUpper == 'OPEN';
+  bool get isPending => _statusUpper == 'PENDING' || _statusUpper == 'ABERTA';
+  bool get isClosed => _statusUpper == 'CLOSED' || _statusUpper == 'ERROR';
+
+  /// Status em que o site permite remover a quebra.
+  bool get canRemove => isPending || isOpen || isClosed;
+
+  /// Status em que o site permite reabrir (volta para "Aberta").
+  bool get canReopen => isClosed;
+
+  /// Processada/fechada: não pode mais alterar itens.
+  bool get isReadOnly => isProcessed || isClosed;
+
+  /// Mantido para compatibilidade com a tela de lista.
+  bool get processado => isProcessed;
 
   String get statusLabel {
-    switch (status.toUpperCase()) {
+    switch (_statusUpper) {
       case 'PROCESSED':
-        return 'Processado';
+        return 'Processada';
+      case 'CLOSED':
+        return 'Fechada';
+      case 'ERROR':
+        return 'Processada com erro';
       case 'PENDING':
+        return 'Pendente';
       case 'ABERTA':
       case 'OPEN':
         return 'Aberta';
@@ -108,6 +130,7 @@ class BreakageItem {
   final int quantity;
   final double costPrice;
   final String reason;
+  final String reasonId;
 
   BreakageItem({
     required this.id,
@@ -119,6 +142,7 @@ class BreakageItem {
     required this.quantity,
     required this.costPrice,
     required this.reason,
+    this.reasonId = '',
   });
 
   factory BreakageItem.fromJson(Map<String, dynamic> j) => BreakageItem(
@@ -131,6 +155,28 @@ class BreakageItem {
         quantity: (j['quantity'] as num?)?.toInt() ?? 0,
         costPrice: (j['costPrice'] as num?)?.toDouble() ?? 0,
         reason: j['reason']?.toString() ?? '',
+        reasonId: j['reasonId']?.toString() ?? '',
+      );
+
+  BreakageItem withReasonId(String newReasonId) =>
+      copyWith(reasonId: newReasonId);
+
+  BreakageItem copyWith({
+    int? quantity,
+    String? reason,
+    String? reasonId,
+  }) =>
+      BreakageItem(
+        id: id,
+        user: user,
+        sapCode: sapCode,
+        ean: ean,
+        description: description,
+        stock: stock,
+        quantity: quantity ?? this.quantity,
+        costPrice: costPrice,
+        reason: reason ?? this.reason,
+        reasonId: reasonId ?? this.reasonId,
       );
 }
 
@@ -145,13 +191,26 @@ class BreakageDetail {
     required this.reasons,
   });
 
-  factory BreakageDetail.fromJson(Map<String, dynamic> j) => BreakageDetail(
-        breakage: Breakage.fromJson(_map(j['breakage'])),
-        items: (j['data'] as List? ?? const [])
-            .map((e) => BreakageItem.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-        reasons: (j['reasons'] as List? ?? const [])
-            .map((e) => BreakageReason.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
+  factory BreakageDetail.fromJson(Map<String, dynamic> j) {
+    final reasons = (j['reasons'] as List? ?? const [])
+        .map((e) => BreakageReason.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    // A API de detalhe manda apenas o label do motivo em cada item. Para o
+    // "abrir quebra" (que exige reasonId) resolvemos o id pelo label.
+    final byLabel = <String, String>{
+      for (final r in reasons)
+        if (r.label.trim().isNotEmpty) r.label.trim().toLowerCase(): r.id,
+    };
+    final items = (j['data'] as List? ?? const []).map((e) {
+      final item = BreakageItem.fromJson(Map<String, dynamic>.from(e));
+      if (item.reasonId.isNotEmpty) return item;
+      final id = byLabel[item.reason.trim().toLowerCase()];
+      return id == null ? item : item.withReasonId(id);
+    }).toList();
+    return BreakageDetail(
+      breakage: Breakage.fromJson(_map(j['breakage'])),
+      items: items,
+      reasons: reasons,
+    );
+  }
 }

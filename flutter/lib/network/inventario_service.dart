@@ -10,6 +10,9 @@ import '../models/quebra.dart';
 class InventarioService {
   final ApiClient client;
 
+  /// Abrir/processar quebra aciona a integração com o SAP e pode demorar.
+  static const Duration _quebraFinishTimeout = Duration(seconds: 120);
+
   InventarioService(this.client);
 
   /// Client já configurado para o sl-bff.
@@ -331,29 +334,54 @@ class InventarioService {
     await client.delete('web/breakage/$breakageId');
   }
 
-  /// Altera quantidade/motivo de um item da quebra.
-  Future<List<BreakageItem>?> updateBreakageItem(
+  /// Altera só a quantidade de um item (endpoint da tela de cadastro).
+  Future<void> updateBreakageItemQuantity(
     String breakageId,
-    String itemId, {
-    required int quantity,
-    required String reasonId,
-  }) async {
-    final data = await client.put('web/breakage/$breakageId/items/$itemId',
-        body: {'quantity': quantity, 'reasonId': reasonId});
-    if (data is Map && data['data'] is List) {
-      return (data['data'] as List)
-          .map((e) => BreakageItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    }
-    return null;
+    String itemId,
+    int quantity,
+  ) async {
+    await client.put('web/breakage/$breakageId/items/$itemId/quantity',
+        body: {'quantity': quantity});
   }
 
-  /// Abre (finaliza) a quebra: PUT /web/breakage/{id}/open com os itens.
+  /// Altera quantidade/motivo dos itens da quebra (aberta ou pendente).
+  /// O BFF espera a lista COMPLETA em `PUT /web/breakage/{id}` no formato
+  /// `{items:[{id, quantity, reason}]}`, onde `reason` é o **id** do motivo.
+  Future<void> updateBreakageItems(
+      String breakageId, List<BreakageItem> items) async {
+    await client.put('web/breakage/$breakageId', body: {
+      'items': items
+          .map((e) => {
+                'id': e.id,
+                'quantity': e.quantity,
+                'reason': e.reasonId,
+              })
+          .toList(),
+    });
+  }
+
+  /// Abre (envia) a quebra: PUT /web/breakage/{id}/open com itens e motivos.
+  /// Mandamos o reasonId resolvido quando existir (o site manda "" quando não).
   Future<void> openBreakage(
       String breakageId, List<BreakageItem> items) async {
-    await client.put('web/breakage/$breakageId/open', body: {
-      'items': items.map((e) => {'id': e.id, 'reasonId': ''}).toList(),
-    });
+    await client.put(
+      'web/breakage/$breakageId/open',
+      body: {
+        'items': items
+            .map((e) => {'id': e.id, 'reasonId': e.reasonId})
+            .toList(),
+      },
+      timeout: _quebraFinishTimeout,
+    );
+  }
+
+  /// Reabre uma quebra fechada/com erro: PUT /open com a lista de itens vazia.
+  Future<void> reopenBreakage(String breakageId) async {
+    await client.put(
+      'web/breakage/$breakageId/open',
+      body: {'items': <dynamic>[]},
+      timeout: _quebraFinishTimeout,
+    );
   }
 
   /// Excel (xlsx) do relatório da quebra.
@@ -364,7 +392,8 @@ class InventarioService {
 
   /// Finaliza (processa) a quebra aberta: PUT /web/breakage/{id}/process.
   Future<void> processBreakage(String breakageId) async {
-    await client.put('web/breakage/$breakageId/process');
+    await client.put('web/breakage/$breakageId/process',
+        timeout: _quebraFinishTimeout);
   }
 }
 

@@ -5,8 +5,10 @@ import '../models/quebra.dart';
 import '../network/inventario_service.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
+import '../utils/date_format.dart';
 import '../recebimento/utils/excel_downloader.dart';
 import '../widgets/dialog_adicionar_quebra.dart';
+import '../widgets/dialog_abrir_quebra.dart';
 import 'scanner_ean_screen.dart';
 
 class QuebraDetalheScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   InventarioService? _service;
   List<BreakageReason> _reasons = const [];
   List<BreakageItem> _itens = [];
+  Breakage? _breakage;
   final Set<String> _selecionados = {};
   bool _buscando = false;
   bool _porSap = false;
@@ -42,19 +45,34 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
 
   String _status = 'PENDING';
 
+  int get _totalQtd => _itens.fold(0, (soma, e) => soma + e.quantity);
+
+  double get _totalValor =>
+      _itens.fold(0.0, (soma, e) => soma + e.costPrice * e.quantity);
+
+  String _brl(double valor) =>
+      'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+
   Future<void> _init() async {
     final session = await SessionManager.create();
     final service = InventarioService.forSession(session);
     List<BreakageItem> itens = [];
     List<BreakageReason> reasons = const [];
+    Breakage? breakage;
     bool somenteLeitura = false;
     String status = 'PENDING';
     try {
       final d = await service.getBreakageDetail(widget.breakageId);
       itens = d.items;
       reasons = d.reasons;
+      breakage = d.breakage;
       status = d.breakage.status.toUpperCase();
-      somenteLeitura = status == 'PROCESSED';
+      somenteLeitura = d.breakage.isReadOnly;
+      if (reasons.isEmpty) {
+        try {
+          reasons = await service.getBreakageReasons();
+        } catch (_) {}
+      }
     } catch (_) {
       try {
         reasons = await service.getBreakageReasons();
@@ -66,6 +84,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
       _service = service;
       _itens = itens;
       _reasons = reasons;
+      _breakage = breakage;
       _status = status;
       _somenteLeitura = somenteLeitura;
       _carregando = false;
@@ -98,7 +117,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
         produto: produto, motivos: _reasons);
     if (res == null) return;
     try {
-      final itens = await _service!.addBreakageItem(
+      await _service!.addBreakageItem(
         widget.breakageId,
         ean: produto.ean,
         sapCode: produto.sapCode,
@@ -107,8 +126,8 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
         quantity: res.quantidade,
         reasonId: res.motivo.id,
       );
+      await _recarregarItens();
       if (!mounted) return;
-      setState(() => _itens = itens);
       _buscaController.clear();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Item adicionado à quebra'),
@@ -119,6 +138,27 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
           content: Text('Falha ao adicionar item'),
           backgroundColor: Colors.red));
     }
+  }
+
+  /// Recarrega o detalhe para trazer o motivo (label) de cada item, usado
+  /// para resolver o reasonId no "Abrir quebra".
+  Future<void> _recarregarItens() async {
+    try {
+      final d = await _service!.getBreakageDetail(widget.breakageId);
+      var reasons = d.reasons;
+      if (reasons.isEmpty) {
+        try {
+          reasons = await _service!.getBreakageReasons();
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() {
+        _itens = d.items;
+        _breakage = d.breakage;
+        _status = d.breakage.status.toUpperCase();
+        if (reasons.isNotEmpty) _reasons = reasons;
+      });
+    } catch (_) {}
   }
 
   Future<void> _escanear() async {
@@ -148,14 +188,26 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
     );
     if (res == null) return;
     try {
-      final lista = await _service!.updateBreakageItem(
-        widget.breakageId,
-        it.id,
-        quantity: res.quantidade,
-        reasonId: res.motivo.id,
-      );
-      if (!mounted) return;
-      setState(() => _itens = lista ?? _itens);
+      // O PUT /web/breakage/{id} substitui a lista inteira; vai com todos os
+      // itens e com o reasonId resolvido para não perder os motivos.
+      final porLabel = <String, String>{
+        for (final r in _reasons)
+          if (r.label.trim().isNotEmpty) r.label.trim().toLowerCase(): r.id,
+      };
+      final atualizados = _itens.map((e) {
+        final novo = e.id == it.id
+            ? e.copyWith(
+                quantity: res.quantidade,
+                reason: res.motivo.label,
+                reasonId: res.motivo.id,
+              )
+            : e;
+        if (novo.reasonId.isNotEmpty) return novo;
+        final id = porLabel[novo.reason.trim().toLowerCase()];
+        return id == null ? novo : novo.withReasonId(id);
+      }).toList();
+      await _service!.updateBreakageItems(widget.breakageId, atualizados);
+      await _recarregarItens();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -231,27 +283,28 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
     }
   }
 
+  /// Resolve o reasonId de cada item pelo label do motivo (a API de detalhe
+  /// só devolve o label). Necessário porque o /open exige o motivo.
+  List<BreakageItem> _itensComMotivo() {
+    final porLabel = <String, String>{
+      for (final r in _reasons)
+        if (r.label.trim().isNotEmpty) r.label.trim().toLowerCase(): r.id,
+    };
+    return _itens.map((e) {
+      if (e.reasonId.isNotEmpty) return e;
+      final id = porLabel[e.reason.trim().toLowerCase()];
+      return id == null ? e : e.withReasonId(id);
+    }).toList();
+  }
+
   Future<void> _abrirQuebra() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Abrir quebra'),
-        content: const Text(
-            'Deseja abrir (processar) a quebra? Depois não será possível alterar os itens.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Não')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sim')),
-        ],
-      ),
-    );
+    // A BFF aceita reasonId vazio (o próprio site manda "" quando não há
+    // motivo local). Mandamos o id resolvido quando possível, sem bloquear.
+    final itens = _itensComMotivo();
+    final ok = await mostrarDialogoAbrirQuebra(context);
     if (ok != true) return;
     try {
-      await _service!.openBreakage(widget.breakageId, _itens);
+      await _service!.openBreakage(widget.breakageId, itens);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Quebra aberta com sucesso'),
@@ -289,6 +342,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                _resumoQuebra(),
                 if (_somenteLeitura) ...[
                   const SizedBox(height: 12),
                   Padding(
@@ -471,6 +525,96 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
     );
   }
 
+  Widget _resumoQuebra() {
+    final b = _breakage;
+    final nome = (b != null && b.user.isNotEmpty)
+        ? b.user
+        : (_session?.getUserName() ?? '');
+    final loja = (b != null && b.store.isNotEmpty)
+        ? b.store
+        : (_session?.getUserStore() ?? '');
+    final data = b != null ? formatDataBr(b.date) : '';
+    final subtitulo = [
+      data,
+      loja,
+      if (_itens.isNotEmpty) '$_totalQtd un.',
+    ].where((e) => e.trim().isNotEmpty).join('  •  ');
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x05000000),
+              blurRadius: 6,
+              offset: Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            radius: 20,
+            backgroundColor: Color(0xFFFEF2F2),
+            child: Icon(Icons.person,
+                color: Color(Constants.primaryRed), size: 22),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(nome.isEmpty ? 'Usuário' : nome,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827))),
+                if (subtitulo.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(subtitulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF6B7280))),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('VALOR TOTAL',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFB45309),
+                        letterSpacing: 0.5)),
+                const SizedBox(height: 2),
+                Text(_brl(_totalValor),
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF78350F))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _corpo() {
     if (_itens.isEmpty) {
       return Column(
@@ -575,6 +719,12 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                           _codigoChip('EAN: ${it.ean}'),
                           _codigoChip('SAP: ${it.sapCode}'),
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Saldo ${it.stock}  •  Valor ${_brl(it.costPrice)}  •  Total ${_brl(it.costPrice * it.quantity)}',
+                        style: const TextStyle(
+                            fontSize: 11, color: Color(0xFF6B7280)),
                       ),
                       if (motivo.isNotEmpty) ...[
                         const SizedBox(height: 10),
