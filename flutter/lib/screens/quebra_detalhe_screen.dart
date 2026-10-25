@@ -1728,8 +1728,18 @@ class _ItemCadastroCardState extends State<_ItemCadastroCard> {
                           color: Colors.black87)),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.grey, size: 18),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.pressed) ||
+                          states.contains(WidgetState.hovered)) {
+                        return const Color(0xFFDC2626);
+                      }
+                      return Colors.grey;
+                    }),
+                    overlayColor: WidgetStateProperty.all(
+                        const Color(0x14DC2626)),
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: widget.onDelete,
