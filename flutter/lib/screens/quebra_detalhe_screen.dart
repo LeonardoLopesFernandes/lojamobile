@@ -284,17 +284,75 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   }
 
   /// Resolve o reasonId de cada item pelo label do motivo (a API de detalhe
-  /// só devolve o label). Necessário porque o /open exige o motivo.
-  List<BreakageItem> _itensComMotivo() {
+  /// só devolve o label).
+  List<BreakageItem> _comMotivos(List<BreakageItem> items) {
     final porLabel = <String, String>{
       for (final r in _reasons)
         if (r.label.trim().isNotEmpty) r.label.trim().toLowerCase(): r.id,
     };
-    return _itens.map((e) {
+    return items.map((e) {
       if (e.reasonId.isNotEmpty) return e;
       final id = porLabel[e.reason.trim().toLowerCase()];
       return id == null ? e : e.withReasonId(id);
     }).toList();
+  }
+
+  List<BreakageItem> _itensComMotivo() => _comMotivos(_itens);
+
+  /// Persiste a alteração de um item (quantidade/motivo) na quebra aberta.
+  Future<void> _salvarItem(BreakageItem novo) async {
+    final anterior = _itens;
+    final lista =
+        _itens.map((e) => e.id == novo.id ? novo : e).toList(growable: false);
+    setState(() => _itens = lista);
+    try {
+      await _service!
+          .updateBreakageItems(widget.breakageId, _comMotivos(lista));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _itens = anterior);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao salvar item'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _alterarMotivosSelecionados() async {
+    if (_selecionados.isEmpty) return;
+    final motivo = await showDialog<BreakageReason>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Alterar motivo'),
+        children: _reasons
+            .map((r) => SimpleDialogOption(
+                  onPressed: () => Navigator.of(ctx).pop(r),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Text(r.label),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+    if (motivo == null) return;
+    final lista = _itens
+        .map((e) => _selecionados.contains(e.id)
+            ? e.copyWith(reason: motivo.label, reasonId: motivo.id)
+            : e)
+        .toList(growable: false);
+    try {
+      await _service!
+          .updateBreakageItems(widget.breakageId, _comMotivos(lista));
+      if (!mounted) return;
+      setState(() => _itens = lista);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Motivos alterados'),
+          backgroundColor: Color(Constants.badgeGreen)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Falha ao alterar motivos'),
+          backgroundColor: Colors.red));
+    }
   }
 
   Future<void> _abrirQuebra() async {
@@ -325,64 +383,100 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final aberta = _status == 'OPEN';
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor:
+          aberta ? const Color(0xFFF1F5F9) : const Color(0xFFF8F8F8),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: aberta ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: Color(Constants.invTextDark)),
-        title: Text(_somenteLeitura ? 'Quebra' : 'Cadastrar quebra',
-            style: const TextStyle(
-                color: Color(Constants.invTextDark),
+        iconTheme: IconThemeData(
+            color:
+                aberta ? Colors.white : const Color(Constants.invTextDark)),
+        title: Text(
+            aberta
+                ? 'Quebra aberta'
+                : (_somenteLeitura ? 'Quebra' : 'Cadastrar quebra'),
+            style: TextStyle(
+                color: aberta
+                    ? Colors.white
+                    : const Color(Constants.invTextDark),
                 fontSize: 18,
                 fontWeight: FontWeight.w500)),
+        actions: [
+          if (aberta)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4C0519).withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF881337)),
+                  ),
+                  child: Text(_brl(_totalValor),
+                      style: const TextStyle(
+                          color: Color(0xFFFDA4AF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+          if (_somenteLeitura)
+            IconButton(
+              onPressed: _baixarExcel,
+              tooltip: 'Gerar Excel',
+              icon: SvgPicture.asset('assets/drawables/ic_excel.svg',
+                  width: 24, height: 24),
+            ),
+        ],
       ),
+      bottomNavigationBar: aberta ? _barraAberta() : null,
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _resumoQuebra(),
-                if (_somenteLeitura) ...[
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _avisoConsulta(),
-                  ),
-                  const SizedBox(height: 12),
-                ] else ...[
-                  Container(color: Colors.white, child: _seletorEanSap()),
-                  const SizedBox(height: 16),
-                  _campoBusca(),
-                ],
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
-                  child: Row(
-                    children: [
-                      Text('Itens (${_itens.length})',
-                          style: const TextStyle(
-                              color: Color(Constants.invTextDark),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16)),
-                      const Spacer(),
-                      if (_somenteLeitura)
-                        IconButton(
-                          onPressed: _baixarExcel,
-                          tooltip: 'Gerar Excel',
-                          icon: SvgPicture.asset(
-                            'assets/drawables/ic_excel.svg',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ),
+          : aberta
+              ? Column(
+                  children: [
+                    _resumoQuebra(mostrarValor: false),
+                    const SizedBox(height: 8),
+                    Expanded(child: _corpoAberta()),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _resumoQuebra(),
+                    if (_somenteLeitura) ...[
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _avisoConsulta(),
+                      ),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      Container(color: Colors.white, child: _seletorEanSap()),
+                      const SizedBox(height: 16),
+                      _campoBusca(),
                     ],
-                  ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+                      child: Row(
+                        children: [
+                          Text('Itens (${_itens.length})',
+                              style: const TextStyle(
+                                  color: Color(Constants.invTextDark),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                    Expanded(child: _corpo()),
+                    if (!_somenteLeitura) _painelInferior(),
+                  ],
                 ),
-                Expanded(child: _corpo()),
-                if (!_somenteLeitura) _painelInferior(),
-              ],
-            ),
     );
   }
 
@@ -525,7 +619,109 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
     );
   }
 
-  Widget _resumoQuebra() {
+  Widget _corpoAberta() {
+    if (_itens.isEmpty) {
+      return const Center(
+        child: Text('Nenhum item na quebra',
+            style: TextStyle(fontSize: 15, color: Colors.grey)),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      itemCount: _itens.length,
+      itemBuilder: (_, i) {
+        final it = _itens[i];
+        return _ItemAbertoCard(
+          key: ValueKey(it.id),
+          item: it,
+          reasons: _reasons,
+          selected: _selecionados.contains(it.id),
+          onSelected: (v) => setState(() {
+            if (v) {
+              _selecionados.add(it.id);
+            } else {
+              _selecionados.remove(it.id);
+            }
+          }),
+          onQuantity: (q) => _salvarItem(it.copyWith(quantity: q)),
+          onReason: (r) =>
+              _salvarItem(it.copyWith(reason: r.label, reasonId: r.id)),
+        );
+      },
+    );
+  }
+
+  Widget _barraAberta() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      color: Colors.white,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _selecionados.isEmpty ? null : _removerSelecionados,
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('EXCLUIR ITENS',
+                    style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87)),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _selecionados.isEmpty
+                    ? null
+                    : _alterarMotivosSelecionados,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F172A),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text('ALTERAR MOTIVOS',
+                    style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _itens.isEmpty ? null : _processarQuebra,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE11D48),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text('PROCESSAR',
+                    style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _resumoQuebra({bool mostrarValor = true}) {
     final b = _breakage;
     final nome = (b != null && b.user.isNotEmpty)
         ? b.user
@@ -584,32 +780,34 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFBEB),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+          if (mostrarValor) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('VALOR TOTAL',
+                      style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFB45309),
+                          letterSpacing: 0.5)),
+                  const SizedBox(height: 2),
+                  Text(_brl(_totalValor),
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF78350F))),
+                ],
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('VALOR TOTAL',
-                    style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFB45309),
-                        letterSpacing: 0.5)),
-                const SizedBox(height: 2),
-                Text(_brl(_totalValor),
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF78350F))),
-              ],
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -992,5 +1190,291 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
           content: Text('Falha ao descartar quebra'),
           backgroundColor: Colors.red));
     }
+  }
+}
+
+/// Card de item na tela "Quebra aberta" (mesmo layout do site): permite
+/// alterar a quantidade e o motivo, e mostra saldo, consolidada e valor.
+class _ItemAbertoCard extends StatefulWidget {
+  final BreakageItem item;
+  final List<BreakageReason> reasons;
+  final bool selected;
+  final ValueChanged<bool> onSelected;
+  final ValueChanged<int> onQuantity;
+  final ValueChanged<BreakageReason> onReason;
+
+  const _ItemAbertoCard({
+    super.key,
+    required this.item,
+    required this.reasons,
+    required this.selected,
+    required this.onSelected,
+    required this.onQuantity,
+    required this.onReason,
+  });
+
+  @override
+  State<_ItemAbertoCard> createState() => _ItemAbertoCardState();
+}
+
+class _ItemAbertoCardState extends State<_ItemAbertoCard> {
+  late final TextEditingController _qtd;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtd = TextEditingController(text: '${widget.item.quantity}');
+  }
+
+  @override
+  void didUpdateWidget(covariant _ItemAbertoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item.quantity != oldWidget.item.quantity &&
+        _qtd.text != '${widget.item.quantity}') {
+      _qtd.text = '${widget.item.quantity}';
+    }
+  }
+
+  @override
+  void dispose() {
+    _qtd.dispose();
+    super.dispose();
+  }
+
+  void _commitQuantidade() {
+    var valor = int.tryParse(_qtd.text.trim());
+    if (valor == null || valor < 1) {
+      _qtd.text = '${widget.item.quantity}';
+      return;
+    }
+    final maximo = widget.item.stock > 0 ? widget.item.stock : valor;
+    if (valor > maximo) valor = maximo;
+    _qtd.text = '$valor';
+    if (valor != widget.item.quantity) widget.onQuantity(valor);
+  }
+
+  String? get _reasonIdSelecionado {
+    for (final r in widget.reasons) {
+      if (r.id == widget.item.reasonId) return r.id;
+    }
+    final label = widget.item.reason.trim().toLowerCase();
+    for (final r in widget.reasons) {
+      if (r.label.trim().toLowerCase() == label) return r.id;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final totalItem = item.quantity * item.costPrice;
+    final consolidada = (item.stock - item.quantity).clamp(0, item.stock);
+    final reasonId = _reasonIdSelecionado;
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: Checkbox(
+                    value: widget.selected,
+                    onChanged: (v) => widget.onSelected(v ?? false),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    activeColor: const Color(0xFFE11D48),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.description,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87)),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          _tag('SAP: ${item.sapCode}'),
+                          _tag('EAN: ${item.ean}'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFF1F5F9)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _info('Saldo Físico', '${item.stock}'),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1F2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFECDD3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('Qtd. Quebra',
+                            style: TextStyle(
+                                fontSize: 9,
+                                color: Color(0xFFE11D48),
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        SizedBox(
+                          width: 45,
+                          height: 26,
+                          child: TextField(
+                            controller: _qtd,
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFBE123C)),
+                            onSubmitted: (_) => _commitQuantidade(),
+                            onTapOutside: (_) {
+                              FocusScope.of(context).unfocus();
+                              _commitQuantidade();
+                            },
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.zero,
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFFFDA4AF))),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFFFDA4AF))),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _info('Consolidada', '$consolidada'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: reasonId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 10),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.black87),
+                    items: widget.reasons
+                        .map((r) => DropdownMenuItem<String>(
+                              value: r.id,
+                              child: Text(r.label,
+                                  style: const TextStyle(fontSize: 11)),
+                            ))
+                        .toList(),
+                    onChanged: (id) {
+                      if (id == null) return;
+                      for (final r in widget.reasons) {
+                        if (r.id == id) {
+                          widget.onReason(r);
+                          break;
+                        }
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFECDD3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text('TOTAL ITEM',
+                          style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFE11D48))),
+                      Text('R\$ ${totalItem.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFBE123C))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 9, fontWeight: FontWeight.w600, color: Colors.grey)),
+    );
+  }
+
+  Widget _info(String label, String valor) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Text(valor,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+      ],
+    );
   }
 }
