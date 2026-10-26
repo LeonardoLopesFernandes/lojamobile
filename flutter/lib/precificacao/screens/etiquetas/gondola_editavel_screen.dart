@@ -388,6 +388,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
                               promoLinha0: _promoLinha0(d),
                               promoLinha1: _promoLinha1(d),
                               promoLinha2: _promoLinha2(d),
+                              leveGanhe: _ehLeveGanhe(d),
                             ),
                           ),
                   ),
@@ -602,6 +603,7 @@ class _GondolaPreviewPainter extends CustomPainter {
   final String promoLinha0;
   final String promoLinha1;
   final String promoLinha2;
+  final bool leveGanhe;
 
   const _GondolaPreviewPainter({
     required this.template,
@@ -616,6 +618,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     required this.promoLinha0,
     required this.promoLinha1,
     required this.promoLinha2,
+    this.leveGanhe = false,
   });
 
   // Dimensões e layout — igual ao GondolaPreviewView.kt (minhaloja-kotlin).
@@ -748,7 +751,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       if (partes.length == 2) {
         spans.add(TextSpan(text: partes[0], style: base));
         spans.add(TextSpan(
-            text: ',', style: base.copyWith(fontSize: px(size) * 0.95)));
+            text: ',', style: base.copyWith(fontSize: px(size) * 0.90)));
         spans.add(TextSpan(text: partes[1], style: base));
       } else {
         spans.add(TextSpan(text: text, style: base));
@@ -775,17 +778,11 @@ class _GondolaPreviewPainter extends CustomPainter {
     var larguraValorPx = 0.0;
     final ehDepor = cifrao.startsWith('De R\$');
 
-    // Tamanho comum dos valores De/Por: os dois usam a mesma fonte e a mesma
-    // largura máxima, evitando que um fique comprimido e pareça menor.
-    const double valorMaxW = 240.0;
+    // Os dois valores usam o mesmo tamanho (110) e a mesma largura máxima;
+    // se o texto for maior que isso, só ele é comprimido na largura.
+    const double valorMaxW = 243.0;
     final porValor =
         ehDepor ? promoLinha1.replaceFirst('Por R\$', '').trim() : '';
-    final wDe = _largura(valor, px(110)) / scale;
-    final wPor =
-        porValor.isEmpty ? 0.0 : _largura(porValor, px(110)) / scale;
-    final maiorW = wDe > wPor ? wDe : wPor;
-    final tamValor =
-        maiorW > valorMaxW ? 110.0 * valorMaxW / maiorW : 110.0;
 
     // Código lateral (SAP) na vertical (promocional: mais ao topo).
     if (codigo.isNotEmpty) {
@@ -825,8 +822,9 @@ class _GondolaPreviewPainter extends CustomPainter {
           _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
           larguraValorPx = px(300);
         } else {
-          larguraValorPx = drawValor(valor, tx(345), ty(baseline), tamValor,
-              TextAlign.right, const Color(0xFF000000), px(valorMaxW));
+          larguraValorPx = drawValor(valor, tx(345), ty(baseline), 110.0,
+              TextAlign.right, const Color(0xFF000000),
+              px(leveGanhe ? 275.0 : valorMaxW));
         }
         final maxCifrao = ehDepor ? 30.0 : 45.0;
         final tamCifrao = _ajustarTexto(cifraoDraw, maxCifrao, 26, 100);
@@ -888,7 +886,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           final esquerda = _boxLeft + 12;
           final direita = _boxRight - 10;
           final baseBox = _boxCy + 38;
-          drawValor(porValor, tx(direita), ty(baseBox), tamValor,
+          drawValor(porValor, tx(direita), ty(baseBox), 110.0,
               TextAlign.right, const Color(0xFFFFFFFF), px(valorMaxW));
           draw('Por R\$', tx(esquerda), ty(baseBox), rotuloTam,
               TextAlign.left, const Color(0xFFFFFFFF));
@@ -930,6 +928,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       old.cifrao != cifrao ||
       old.codigo != codigo ||
       old.ean != ean ||
+      old.leveGanhe != leveGanhe ||
       old.modo != modo;
 }
 
