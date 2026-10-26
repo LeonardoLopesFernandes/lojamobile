@@ -804,7 +804,8 @@ class _GondolaPreviewPainter extends CustomPainter {
     if (valor.isNotEmpty) {
       final cifraoDraw = cifrao;
       final tam = modo == 0 ? 110.0 : 54.0;
-      final baseline = modo == 0 ? 240.0 : (ehDepor ? _boxCy : 230.0);
+      final baseline =
+          modo == 0 ? 240.0 : (ehDepor ? _boxCy + 38 : 230.0);
       final centroX = modo == 0 ? _TW / 2 - 80 : _leftCx;
 
       if (modo == 1) {
