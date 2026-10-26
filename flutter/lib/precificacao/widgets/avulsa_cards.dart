@@ -238,7 +238,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       return (
         leve: null,
         valor:
-            'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${inst.installmentQuantity}x de R\$${_num(valorParcCalc)}',
+            'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${inst.installmentQuantity}X de R\$${_num(valorParcCalc)}',
         tipo: 'parcelado',
         cor: _orangeBadge,
       );
@@ -248,8 +248,8 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       return (
         leve: null,
         valor: (precoPromo != null && precoPromo > 0)
-            ? 'R\$${_num(precoPromo)} | ${qtdParc}x de R\$${_num(valorParcCalc)}'
-            : '${_brl(precoNormal)} | ${qtdParc}x de R\$${_num(valorParcCalc)}',
+            ? 'R\$${_num(precoPromo)} | ${qtdParc}X de R\$${_num(valorParcCalc)}'
+            : '${_brl(precoNormal)} | ${qtdParc}X de R\$${_num(valorParcCalc)}',
         tipo: 'parcelado',
         cor: _orangeBadge,
       );
@@ -505,7 +505,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
       return (
         leve: null,
         valor:
-            'De R\$${_num(precoNormal)} | Por R\$${_num(precoPromo)} | ${qtdParc}x de R\$${_num(valorParc)}',
+            'De R\$${_num(precoNormal)} | Por R\$${_num(precoPromo)} | ${qtdParc}X de R\$${_num(valorParc)}',
         tipo: 'parcelado',
         cor: _orangeBadge,
       );
@@ -515,8 +515,8 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
       return (
         leve: null,
         valor: (por != null && valorParc > 0)
-            ? 'R\$${_num(por)} | ${qtdParc}x de R\$${_num(valorParc)}'
-            : '${_brl(precoNormal)} | ${qtdParc}x de R\$${_num(valorParc)}',
+            ? 'R\$${_num(por)} | ${qtdParc}X de R\$${_num(valorParc)}'
+            : '${_brl(precoNormal)} | ${qtdParc}X de R\$${_num(valorParc)}',
         tipo: 'parcelado',
         cor: _orangeBadge,
       );

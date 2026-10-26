@@ -465,7 +465,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
   }
 
   String _cifrao(PrintingData d) {
-    if (_ehDepor(d)) return 'De   R\$';
+    if (_ehDepor(d)) return 'De R\$';
     return 'R\$';
   }
 
@@ -735,6 +735,43 @@ class _GondolaPreviewPainter extends CustomPainter {
       return tp.width * sx;
     }
 
+    /// Igual ao drawEscalado, mas desenha a vírgula com 97% do tamanho.
+    double drawValor(String text, double x, double y, double size,
+        TextAlign align, Color color, double maxLargura) {
+      final base = TextStyle(
+          fontFamily: 'HelveticaNeueCondensed',
+          fontSize: px(size),
+          fontWeight: FontWeight.bold,
+          color: color);
+      final partes = text.split(',');
+      final spans = <InlineSpan>[];
+      if (partes.length == 2) {
+        spans.add(TextSpan(text: partes[0], style: base));
+        spans.add(TextSpan(
+            text: ',', style: base.copyWith(fontSize: px(size) * 0.97)));
+        spans.add(TextSpan(text: partes[1], style: base));
+      } else {
+        spans.add(TextSpan(text: text, style: base));
+      }
+      final tp = TextPainter(
+        text: TextSpan(children: spans),
+        textAlign: align,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final baseY =
+          tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final sx = tp.width > maxLargura ? maxLargura / tp.width : 1.0;
+      final left = align == TextAlign.right
+          ? -tp.width
+          : (align == TextAlign.center ? -tp.width / 2 : 0.0);
+      canvas.save();
+      canvas.translate(x, y - baseY);
+      canvas.scale(sx, 1.0);
+      tp.paint(canvas, Offset(left, 0));
+      canvas.restore();
+      return tp.width * sx;
+    }
+
     var larguraValorPx = 0.0;
     final ehDepor = cifrao.startsWith('De R\$');
 
@@ -765,7 +802,7 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     // Preço à vista
     if (valor.isNotEmpty) {
-      final cifraoDraw = ehDepor ? cifrao.replaceFirst('De ', '') : cifrao;
+      final cifraoDraw = cifrao;
       final tam = modo == 0 ? 110.0 : 54.0;
       final baseline = modo == 0 ? 240.0 : (ehDepor ? _boxCy : 230.0);
       final centroX = modo == 0 ? _TW / 2 - 80 : _leftCx;
@@ -775,7 +812,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
           larguraValorPx = px(300);
         } else {
-          larguraValorPx = drawEscalado(valor, tx(345), ty(baseline), 110.0,
+          larguraValorPx = drawValor(valor, tx(345), ty(baseline), 110.0,
               TextAlign.right, const Color(0xFF000000), px(240));
         }
         final maxCifrao = ehDepor ? 30.0 : 45.0;
@@ -830,7 +867,23 @@ class _GondolaPreviewPainter extends CustomPainter {
         draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), t0, TextAlign.center,
             const Color(0xFFFFFFFF));
       }
-      if (promoLinha1.isNotEmpty) {
+      if (ehDepor && promoLinha1.isNotEmpty) {
+        // "Por R$" no mesmo tamanho do "De R$" e o valor no mesmo tamanho do
+        // valor do lado amarelo (110). A caixa preta tem 350x135 (y 141..276).
+        final porValor = promoLinha1.replaceFirst('Por R\$', '').trim();
+        if (porValor.isNotEmpty) {
+          const rotuloTam = 30.0;
+          final rotuloW = _largura('Por R\$', px(rotuloTam)) / scale;
+          final esquerda = _boxLeft + 12;
+          final direita = _boxRight - 10;
+          final maxValor = direita - esquerda - rotuloW - 8;
+          final baseBox = _boxCy + 38;
+          drawValor(porValor, tx(direita), ty(baseBox), 110.0,
+              TextAlign.right, const Color(0xFFFFFFFF), px(maxValor));
+          draw('Por R\$', tx(esquerda), ty(baseBox), rotuloTam,
+              TextAlign.left, const Color(0xFFFFFFFF));
+        }
+      } else if (promoLinha1.isNotEmpty) {
         drawEscalado(promoLinha1, tx(_boxCx),
             ty(ehParc ? _boxCy + 22 : _boxCy + 12), 75.0, TextAlign.center,
             const Color(0xFFFFFFFF), px(310));
