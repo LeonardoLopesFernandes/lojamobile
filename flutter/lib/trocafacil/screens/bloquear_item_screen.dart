@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:inventario/precificacao/utils/toast_utils.dart';
 import '../models/bloqueio.dart';
 import '../network/troca_api.dart';
 
@@ -54,6 +55,10 @@ class _BloquearItemScreenState extends State<BloquearItemScreen> {
 
   void _adicionarLinha() {
     setState(() => _linhas.add(_LinhaBloqueio()));
+  }
+
+  void _enviar() {
+    ToastUtils.showInfo(context, 'Envio de bloqueio em implementação');
   }
 
   Future<void> _scan(_LinhaBloqueio linha) async {
@@ -142,8 +147,15 @@ class _BloquearItemScreenState extends State<BloquearItemScreen> {
                 fontSize: 18,
                 fontWeight: FontWeight.w500)),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFFD32F2F),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.send),
+        label: const Text('Enviar'),
+        onPressed: _enviar,
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         children: [
           for (int i = 0; i < _linhas.length; i++) ...[
             _linhaCard(i, _linhas[i]),
