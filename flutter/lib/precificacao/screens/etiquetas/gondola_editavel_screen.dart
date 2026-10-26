@@ -506,7 +506,7 @@ class _GondolaEditavelScreenState extends State<GondolaEditavelScreen> {
       final valor = _parse(_valorParcelaController.text) > 0
           ? _parse(_valorParcelaController.text)
           : (d.installments?.installmentValue ?? 0);
-      return '${parcelas}X de R\$ ${_fmt(valor)}';
+      return '${parcelas}x de R\$ ${_fmt(valor)}';
     }
     if (_ehDepor(d)) {
       final por = _parse(_precoPorController.text) > 0

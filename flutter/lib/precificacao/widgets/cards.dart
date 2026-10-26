@@ -204,7 +204,7 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
       return (
         leveGanhe: null,
         deporValor:
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc != null ? '${qtdParc}X de R\$${_num(valorParc)}' : _brl(valorParc)}',
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc != null ? '${qtdParc}x de R\$${_num(valorParc)}' : _brl(valorParc)}',
         deporBadge: 'parcelado'
       );
     }
@@ -455,7 +455,7 @@ class _PapeletaCardState extends State<PapeletaCard> {
       return (
         leveGanhe: null,
         deporValor:
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.item.price} | ${qtdParc != null ? '${qtdParc}X de R\$${_num(valorParc)}' : _brl(valorParc)}',
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.item.price} | ${qtdParc != null ? '${qtdParc}x de R\$${_num(valorParc)}' : _brl(valorParc)}',
         deporBadge: 'parcelado'
       );
     }
@@ -730,7 +730,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
       String? promo;
       if (qtdParc != null) {
         promo =
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc}X de R\$${_num(valorParc)}';
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc}x de R\$${_num(valorParc)}';
       } else if (valorParc > 0) {
         promo = _brl(valorParc);
       }
@@ -927,10 +927,10 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
       String? promo;
       if (por != null && valorParc > 0) {
         // Combinado depor+parcelado (igual Kotlin): R$por | Nx de R$parcela
-        promo = 'R\$${_num(por)} | ${qtdParc}X de R\$${_num(valorParc)}';
+        promo = 'R\$${_num(por)} | ${qtdParc}x de R\$${_num(valorParc)}';
       } else {
         promo =
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.item.price} | ${qtdParc}X de R\$${_num(valorParc)}';
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.item.price} | ${qtdParc}x de R\$${_num(valorParc)}';
       }
       return (badge: 'PARCELADO', badgeColor: _orange, promo: promo, price: null);
     }
