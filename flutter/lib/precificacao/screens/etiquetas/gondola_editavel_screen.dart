@@ -748,7 +748,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       if (partes.length == 2) {
         spans.add(TextSpan(text: partes[0], style: base));
         spans.add(TextSpan(
-            text: ',', style: base.copyWith(fontSize: px(size) * 0.97)));
+            text: ',', style: base.copyWith(fontSize: px(size) * 0.95)));
         spans.add(TextSpan(text: partes[1], style: base));
       } else {
         spans.add(TextSpan(text: text, style: base));
@@ -774,6 +774,18 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     var larguraValorPx = 0.0;
     final ehDepor = cifrao.startsWith('De R\$');
+
+    // Tamanho comum dos valores De/Por: os dois usam a mesma fonte e a mesma
+    // largura máxima, evitando que um fique comprimido e pareça menor.
+    const double valorMaxW = 240.0;
+    final porValor =
+        ehDepor ? promoLinha1.replaceFirst('Por R\$', '').trim() : '';
+    final wDe = _largura(valor, px(110)) / scale;
+    final wPor =
+        porValor.isEmpty ? 0.0 : _largura(porValor, px(110)) / scale;
+    final maiorW = wDe > wPor ? wDe : wPor;
+    final tamValor =
+        maiorW > valorMaxW ? 110.0 * valorMaxW / maiorW : 110.0;
 
     // Código lateral (SAP) na vertical (promocional: mais ao topo).
     if (codigo.isNotEmpty) {
@@ -813,8 +825,8 @@ class _GondolaPreviewPainter extends CustomPainter {
           _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
           larguraValorPx = px(300);
         } else {
-          larguraValorPx = drawValor(valor, tx(345), ty(baseline), 110.0,
-              TextAlign.right, const Color(0xFF000000), px(240));
+          larguraValorPx = drawValor(valor, tx(345), ty(baseline), tamValor,
+              TextAlign.right, const Color(0xFF000000), px(valorMaxW));
         }
         final maxCifrao = ehDepor ? 30.0 : 45.0;
         final tamCifrao = _ajustarTexto(cifraoDraw, maxCifrao, 26, 100);
@@ -869,18 +881,15 @@ class _GondolaPreviewPainter extends CustomPainter {
             const Color(0xFFFFFFFF));
       }
       if (ehDepor && promoLinha1.isNotEmpty) {
-        // "Por R$" no mesmo tamanho do "De R$" e o valor no mesmo tamanho do
-        // valor do lado amarelo (110). A caixa preta tem 350x135 (y 141..276).
-        final porValor = promoLinha1.replaceFirst('Por R\$', '').trim();
+        // "Por R$" no mesmo tamanho do "De R$" e valor no mesmo tamanho do
+        // valor do lado amarelo (mesma fonte e mesma largura máxima).
         if (porValor.isNotEmpty) {
           const rotuloTam = 30.0;
-          final rotuloW = _largura('Por R\$', px(rotuloTam)) / scale;
           final esquerda = _boxLeft + 12;
           final direita = _boxRight - 10;
-          final maxValor = direita - esquerda - rotuloW - 8;
           final baseBox = _boxCy + 38;
-          drawValor(porValor, tx(direita), ty(baseBox), 110.0,
-              TextAlign.right, const Color(0xFFFFFFFF), px(maxValor));
+          drawValor(porValor, tx(direita), ty(baseBox), tamValor,
+              TextAlign.right, const Color(0xFFFFFFFF), px(valorMaxW));
           draw('Por R\$', tx(esquerda), ty(baseBox), rotuloTam,
               TextAlign.left, const Color(0xFFFFFFFF));
         }
