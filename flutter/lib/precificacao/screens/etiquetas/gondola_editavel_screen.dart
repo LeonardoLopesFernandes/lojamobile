@@ -711,7 +711,8 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     /// Desenha mantendo a altura e comprimindo só a largura se passar de [maxLargura].
     double drawEscalado(String text, double x, double y, double size,
-        TextAlign align, Color color, double maxLargura) {
+        TextAlign align, Color color, double maxLargura,
+        {double sy = 1.0}) {
       final tp = TextPainter(
         text: TextSpan(
           text: text,
@@ -732,7 +733,7 @@ class _GondolaPreviewPainter extends CustomPainter {
           : (align == TextAlign.center ? -tp.width / 2 : 0.0);
       canvas.save();
       canvas.translate(x, y - base);
-      canvas.scale(sx, 1.0);
+      canvas.scale(sx, sy);
       tp.paint(canvas, Offset(left, 0));
       canvas.restore();
       return tp.width * sx;
@@ -740,7 +741,8 @@ class _GondolaPreviewPainter extends CustomPainter {
 
     /// Igual ao drawEscalado, mas desenha a vírgula com 97% do tamanho.
     double drawValor(String text, double x, double y, double size,
-        TextAlign align, Color color, double maxLargura) {
+        TextAlign align, Color color, double maxLargura,
+        {double sy = 1.0, double commaScale = 1.0}) {
       final base = TextStyle(
           fontFamily: 'HelveticaNeueCondensed',
           fontSize: px(size),
@@ -751,7 +753,7 @@ class _GondolaPreviewPainter extends CustomPainter {
       if (partes.length == 2) {
         spans.add(TextSpan(text: partes[0], style: base));
         spans.add(TextSpan(
-            text: ',', style: base.copyWith(fontSize: px(size) * 0.90)));
+            text: ',', style: base.copyWith(fontSize: px(size) * commaScale)));
         spans.add(TextSpan(text: partes[1], style: base));
       } else {
         spans.add(TextSpan(text: text, style: base));
@@ -769,10 +771,39 @@ class _GondolaPreviewPainter extends CustomPainter {
           : (align == TextAlign.center ? -tp.width / 2 : 0.0);
       canvas.save();
       canvas.translate(x, y - baseY);
-      canvas.scale(sx, 1.0);
+      canvas.scale(sx, sy);
       tp.paint(canvas, Offset(left, 0));
       canvas.restore();
       return tp.width * sx;
+    }
+
+    /// Desenha com a altura normal, mas forçando a largura exata (pode esticar
+    /// ou comprimir) — usado para igualar a largura das linhas da caixa preta.
+    void drawLarguraFixa(String text, double x, double y, double size,
+        TextAlign align, Color color, double larguraAlvo) {
+      if (larguraAlvo <= 0) return;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+              fontFamily: 'HelveticaNeueCondensed',
+              fontSize: px(size),
+              fontWeight: FontWeight.bold,
+              color: color),
+        ),
+        textAlign: align,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final base = tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final sx = larguraAlvo / tp.width;
+      final left = align == TextAlign.right
+          ? -tp.width
+          : (align == TextAlign.center ? -tp.width / 2 : 0.0);
+      canvas.save();
+      canvas.translate(x, y - base);
+      canvas.scale(sx, 1.0);
+      tp.paint(canvas, Offset(left, 0));
+      canvas.restore();
     }
 
     var larguraValorPx = 0.0;
@@ -813,23 +844,51 @@ class _GondolaPreviewPainter extends CustomPainter {
     if (valor.isNotEmpty) {
       final cifraoDraw = cifrao;
       final tam = modo == 0 ? 110.0 : 54.0;
-      final baseline =
-          modo == 0 ? 240.0 : (ehDepor ? _boxCy + 38 : 230.0);
+      final baseline = modo == 0
+          ? 240.0
+          : (ehDepor ? _boxCy + 38 : (leveGanhe ? 220.0 : 230.0));
       final centroX = modo == 0 ? _TW / 2 - 80 : _leftCx;
 
       if (modo == 1) {
-        if (barcode) {
-          _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
-          larguraValorPx = px(300);
+        if (leveGanhe) {
+          // R$ e valor na horizontal, esticados só na vertical (1.7x) para
+          // ficarem com a altura da parte preta.
+          final cifraoW = _largura(cifraoDraw, px(110)) / scale;
+          final maxValor = 345.0 - (20.0 + cifraoW + 8.0);
+          if (barcode) {
+            _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
+            larguraValorPx = px(300);
+          } else {
+            larguraValorPx = drawValor(valor, tx(345), ty(baseline), 110.0,
+                TextAlign.right, const Color(0xFF000000), px(maxValor),
+                sy: 1.5, commaScale: 0.6);
+          }
+          drawEscalado(cifraoDraw, tx(20), ty(baseline), 110.0,
+              TextAlign.left, const Color(0xFF000000), px(cifraoW), sy: 1.5);
         } else {
-          larguraValorPx = drawValor(valor, tx(345), ty(baseline), 110.0,
-              TextAlign.right, const Color(0xFF000000),
-              px(leveGanhe ? 275.0 : valorMaxW));
+          if (barcode) {
+            _desenharBarcode(canvas, tx(_boxLeft + 10), ty(_boxCy - 45), 300.0);
+            larguraValorPx = px(300);
+          } else {
+            larguraValorPx = drawValor(valor, tx(345), ty(baseline), 110.0,
+                TextAlign.right, const Color(0xFF000000), px(valorMaxW));
+          }
+          const maxCifrao = 45.0;
+          // No De/Por o rótulo é desenhado em duas linhas ("De"/"R$"); usar 45
+          // direto evita o ajuste de largura do texto inteiro reduzir à toa.
+          final tamCifrao =
+              ehDepor ? 45.0 : _ajustarTexto(cifraoDraw, maxCifrao, 26, 100);
+          if (ehDepor) {
+            // "De" em cima e "R$" embaixo (o valor permanece igual).
+            draw('De', tx(20), ty(baseline - tamCifrao), tamCifrao,
+                TextAlign.left, const Color(0xFF000000));
+            draw('R\$', tx(20), ty(baseline), tamCifrao, TextAlign.left,
+                const Color(0xFF000000));
+          } else {
+            draw(cifraoDraw, tx(20), ty(baseline), tamCifrao, TextAlign.left,
+                const Color(0xFF000000));
+          }
         }
-        final maxCifrao = ehDepor ? 30.0 : 45.0;
-        final tamCifrao = _ajustarTexto(cifraoDraw, maxCifrao, 26, 100);
-        draw(cifraoDraw, tx(20), ty(baseline), tamCifrao, TextAlign.left,
-            const Color(0xFF000000));
       } else {
         final cifraoW = _largura(cifraoDraw, px(tam)) / scale;
         double valorW;
@@ -873,6 +932,7 @@ class _GondolaPreviewPainter extends CustomPainter {
     // Caixa preta (promocional)
     if (modo == 1) {
       final ehParc = promoLinha0 == 'EM ATÉ';
+      var larguraPromo1 = 0.0;
       if (promoLinha0.isNotEmpty) {
         final t0 = _ajustarTexto(promoLinha0, 17, 10, _boxMax);
         draw(promoLinha0, tx(_boxCx), ty(_boxCy - 44), t0, TextAlign.center,
@@ -882,24 +942,32 @@ class _GondolaPreviewPainter extends CustomPainter {
         // "Por R$" no mesmo tamanho do "De R$" e valor no mesmo tamanho do
         // valor do lado amarelo (mesma fonte e mesma largura máxima).
         if (porValor.isNotEmpty) {
-          const rotuloTam = 30.0;
+          const rotuloTam = 45.0;
           final esquerda = _boxLeft + 12;
           final direita = _boxRight - 10;
           final baseBox = _boxCy + 38;
           drawValor(porValor, tx(direita), ty(baseBox), 110.0,
               TextAlign.right, const Color(0xFFFFFFFF), px(valorMaxW));
-          draw('Por R\$', tx(esquerda), ty(baseBox), rotuloTam,
+          draw('Por', tx(esquerda), ty(baseBox - rotuloTam), rotuloTam,
+              TextAlign.left, const Color(0xFFFFFFFF));
+          draw('R\$', tx(esquerda), ty(baseBox), rotuloTam,
               TextAlign.left, const Color(0xFFFFFFFF));
         }
       } else if (promoLinha1.isNotEmpty) {
-        drawEscalado(promoLinha1, tx(_boxCx),
+        larguraPromo1 = drawEscalado(promoLinha1, tx(_boxCx),
             ty(ehParc ? _boxCy + 22 : _boxCy + 12), 75.0, TextAlign.center,
             const Color(0xFFFFFFFF), px(310));
       }
       if (promoLinha2.isNotEmpty) {
         final t2 = _ajustarTexto(promoLinha2, 17, 10, _boxMax);
-        draw(promoLinha2, tx(_boxCx), ty(ehParc ? 268 : 252), t2,
-            TextAlign.center, const Color(0xFFFFFFFF));
+        if (leveGanhe && larguraPromo1 > 0) {
+          // Mesma largura do "N por R$ ..." e um pouco mais para baixo.
+          drawLarguraFixa(promoLinha2, tx(_boxCx), ty(256), t2,
+              TextAlign.center, const Color(0xFFFFFFFF), larguraPromo1);
+        } else {
+          draw(promoLinha2, tx(_boxCx), ty(ehParc ? 268 : 252), t2,
+              TextAlign.center, const Color(0xFFFFFFFF));
+        }
       }
     }
   }
