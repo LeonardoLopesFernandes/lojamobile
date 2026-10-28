@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/recebimento.dart';
 import '../network/api_client.dart';
@@ -37,6 +39,14 @@ class MainProvider extends ChangeNotifier {
 
   /// Cache da lista completa de Recebidas (para busca local por placa).
   List<Recebimento>? _recebidasCache;
+
+  /// Viagens cujo protocolo já foi gerado, mas que a API ainda não moveu para
+  /// "Recebidas". Ficam visíveis em Pendentes até aparecerem em Recebidas.
+  final Map<String, Recebimento> _aguardandoRecebida = {};
+  Timer? _pollAguardando;
+
+  bool estaAguardandoRecebida(String id) =>
+      _aguardandoRecebida.containsKey(id);
 
   MainProvider(this.sessionManager) {
     apiClient = ApiClient(sessionManager);
@@ -162,6 +172,14 @@ class MainProvider extends ChangeNotifier {
       final filtered = response.recebimentos
           .where((r) => r.status.toLowerCase() == currentStatus.toLowerCase())
           .toList();
+      if (currentStatus == Constants.statusPendente) {
+        // Mantém as viagens que já tiveram protocolo gerado e ainda não
+        // apareceram em Recebidas (o servidor demora alguns instantes).
+        final ids = filtered.map((r) => r.id).toSet();
+        for (final r in _aguardandoRecebida.values) {
+          if (!ids.contains(r.id)) filtered.add(r);
+        }
+      }
       _allItems.addAll(filtered);
       if (currentStatus == Constants.statusRecebido) {
         _allItems.sort((a, b) {
@@ -177,7 +195,13 @@ class MainProvider extends ChangeNotifier {
       }
       currentPage = page;
       isLastPage = page >= response.totalPages;
-      totalItems = response.totalItems;
+      final extrasPendentes = currentStatus == Constants.statusPendente
+          ? _aguardandoRecebida.values
+              .where((r) =>
+                  !response.recebimentos.any((e) => e.id == r.id))
+              .length
+          : 0;
+      totalItems = response.totalItems + extrasPendentes;
       items = List.from(_allItems);
       progressoViagem = sessionManager.getBrlogProgress();
       isLoading = false;
@@ -245,11 +269,73 @@ class MainProvider extends ChangeNotifier {
     final response = await apiService.gerarProtocolo(
         storeId, ProtocoloRequest(idRecebimento: recebimento.id));
     if (response.success) {
-      refresh();
+      // Mantém a viagem em Pendentes até ela aparecer em Recebidas.
+      _aguardandoRecebida[recebimento.id] = recebimento;
+      _iniciarPollAguardando();
+      await loadRecebimentos(reset: true);
+      carregarDashboard();
       return response.protocolo ?? "Gerado";
     } else {
       throw Exception(response.message ?? "Falha ao gerar protocolo");
     }
+  }
+
+  void _iniciarPollAguardando() {
+    _pollAguardando?.cancel();
+    if (_aguardandoRecebida.isEmpty) return;
+    _pollAguardando = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_aguardandoRecebida.isEmpty) {
+        _pollAguardando?.cancel();
+        return;
+      }
+      verificarAguardandoRecebida();
+    });
+  }
+
+  Future<bool> _estaRecebida(String id) async {
+    final curto = id.length > 7 ? id.substring(id.length - 7) : id;
+    bool contem(List<Recebimento> lista) => lista.any(
+        (r) => r.id == id || r.id.endsWith(curto) || r.id == curto);
+    try {
+      final resp = await apiService.getRecebimentos(
+          storeId: storeId, status: Constants.statusRecebido, sort: 'desc');
+      if (contem(resp.recebimentos)) return true;
+    } catch (_) {}
+    for (final termo in {id, curto}) {
+      try {
+        final resp = await apiService.getRecebimentos(
+            storeId: storeId,
+            status: Constants.statusRecebido,
+            search: termo,
+            sort: 'desc');
+        if (contem(resp.recebimentos)) return true;
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  Future<void> verificarAguardandoRecebida() async {
+    if (_aguardandoRecebida.isEmpty) return;
+    var removeu = false;
+    for (final id in _aguardandoRecebida.keys.toList()) {
+      if (await _estaRecebida(id)) {
+        _aguardandoRecebida.remove(id);
+        removeu = true;
+      }
+    }
+    if (!removeu) return;
+    if (_aguardandoRecebida.isEmpty) _pollAguardando?.cancel();
+    if (currentStatus == Constants.statusPendente) {
+      await loadRecebimentos(reset: true);
+    }
+    carregarDashboard();
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _pollAguardando?.cancel();
+    super.dispose();
   }
 
   /// Renova token Microsoft e sincroniza progresso das viagens (BRLog).

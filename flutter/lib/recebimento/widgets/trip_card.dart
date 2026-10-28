@@ -7,6 +7,7 @@ class TripCard extends StatelessWidget {
   final Recebimento recebimento;
   final double? progresso;
   final bool compact;
+  final bool processando;
   final VoidCallback? onVisualizar;
   final VoidCallback? onImprimir;
   final VoidCallback? onReceber;
@@ -16,6 +17,7 @@ class TripCard extends StatelessWidget {
     required this.recebimento,
     this.progresso,
     this.compact = false,
+    this.processando = false,
     this.onVisualizar,
     this.onImprimir,
     this.onReceber,
@@ -101,9 +103,9 @@ class TripCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8)),
                   padding: EdgeInsets.symmetric(vertical: compact ? 8 : 10),
                 ),
-                onPressed: onReceber,
+                onPressed: processando ? null : onReceber,
                 child: Text(
-                  'RECEBER',
+                  processando ? 'PROCESSANDO...' : 'RECEBER',
                   style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

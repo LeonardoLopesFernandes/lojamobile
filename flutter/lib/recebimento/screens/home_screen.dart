@@ -181,6 +181,7 @@ class _HomeBody extends StatelessWidget {
       recebimento: r,
       progresso: provider.progressoViagem[numero],
       compact: provider.isModoGrid,
+      processando: provider.estaAguardandoRecebida(r.id),
       onVisualizar: () =>
           Navigator.of(context).pushNamed('/detalhes', arguments: r.id),
       onImprimir: () => _gerarExcel(context, r),
