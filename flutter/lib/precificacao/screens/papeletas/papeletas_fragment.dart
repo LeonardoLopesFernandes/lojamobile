@@ -90,11 +90,18 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
       _modelo == 'Promocional' || _modelo == 'Promocional Editável';
   bool get _usarComumEditavel => _modelo == 'Normal Editável';
   bool get _usarVencimentos => _modelo == 'Vencimentos';
+  bool get _usarEletro => _modelo == 'Eletro da semana';
   bool get _isModoEditavel =>
-      _modelo == 'Promocional Editável' || _modelo == 'Normal Editável';
+      _modelo == 'Promocional Editável' ||
+      _modelo == 'Normal Editável' ||
+      _usarEletro;
   // Modelos que abrem preview; "Normal" envia direto pela API.
   bool get _abrePreview =>
-      _usarMisto || _usarModeloEditavel || _usarComumEditavel || _usarVencimentos;
+      _usarMisto ||
+      _usarModeloEditavel ||
+      _usarComumEditavel ||
+      _usarVencimentos ||
+      _usarEletro;
   bool get _tipoNormal => _tipo == 'Normal';
   String get _tipoPapeleta {
     if (_modelo == 'Promocional Editável') return 'Promocional';
@@ -173,6 +180,19 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
     final hasTW = d.takeAndWinQuantity != null && d.takeAndWinQuantity! > 0;
     if (hasInst && !hasPromo && !hasTW) return (d.price) > 149.99;
     return true;
+  }
+
+  PapeletaPrintingData _eletroData(PapeletaPrintingData d) {
+    final qtd = (d.installmentQuantity ?? 0) > 0
+        ? d.installmentQuantity!
+        : 10;
+    return d.copyWith(
+      template: Constants.signTemplateEletroSemana,
+      quantity: 1,
+      size: _size,
+      installmentQuantity: qtd,
+      installmentPrice: d.installmentPrice ?? 0.0,
+    );
   }
 
   Future<void> _addStandalone() async {
@@ -321,6 +341,21 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
     }
     final tamanho = _size;
 
+    if (_usarEletro) {
+      final qtdEletro = qty < 1 ? 1 : qty;
+      await _abrirModelo(
+        List.generate(qtdEletro, (_) => _eletroData(signData)),
+        semOverlay: false,
+        apiSemOverlay: false,
+        modoEditavel: true,
+        modoVencimentos: false,
+        hideGerarPreview: false,
+        mostrarCheckboxOverlay: false,
+        removerEan: item.ean,
+      );
+      return;
+    }
+
     if (_abrePreview) {
       if (_usarMisto) {
         final lista = List.generate(
@@ -383,6 +418,32 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
     if (_isGerando) return;
     if (_items.isEmpty) {
       ToastUtils.show(context, 'Nenhuma papeleta para imprimir');
+      return;
+    }
+    if (_usarEletro) {
+      final lista = <PapeletaPrintingData>[];
+      for (final item in _items) {
+        final d = item.printingData;
+        if (d == null) continue;
+        final qtd = item.quantity < 1 ? 1 : item.quantity;
+        for (var i = 0; i < qtd; i++) {
+          lista.add(_eletroData(d));
+        }
+      }
+      if (lista.isEmpty) {
+        ToastUtils.show(context, 'Dados de impressão não disponíveis');
+        return;
+      }
+      await _abrirModelo(
+        lista,
+        semOverlay: false,
+        apiSemOverlay: false,
+        modoEditavel: true,
+        modoVencimentos: false,
+        hideGerarPreview: false,
+        mostrarCheckboxOverlay: false,
+        acao: _AcaoSucesso.limpar,
+      );
       return;
     }
     setState(() => _isGerando = true);
@@ -663,6 +724,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
                                   'Normal',
                                   'Normal Editável',
                                   'Vencimentos',
+                                  'Eletro da semana',
                                 ],
                                 onChanged: (v) {
                                   if (v == null) return;
@@ -673,6 +735,12 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
                                     }
                                     if (v == 'Normal Editável') {
                                       _tipo = 'Normal';
+                                    }
+                                    if (v == 'Eletro da semana' &&
+                                        _size != '1×1' &&
+                                        _size != '2×1' &&
+                                        _size != '4×1') {
+                                      _size = '4×1';
                                     }
                                   });
                                 },
@@ -707,7 +775,9 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
                                 label: 'TAMANHO',
                                 icon: Icons.aspect_ratio,
                                 value: _size,
-                                options: const ['1×1', '2×1', '4×1', '6×1'],
+                                options: _usarEletro
+                                    ? const ['1×1', '2×1', '4×1']
+                                    : const ['1×1', '2×1', '4×1', '6×1'],
                                 onChanged: (v) {
                                   if (v != null) setState(() => _size = v);
                                 },
