@@ -62,4 +62,10 @@ flutter:
     - family: HelveticaNeueCondensed
       fonts:
         - asset: assets/fonts/HelveticaNeueCondensed.otf
+    - family: SFProDisplay
+      fonts:
+        - asset: assets/fonts/SFProDisplay-Regular.otf
+          weight: 400
+        - asset: assets/fonts/SFProDisplay-Bold.otf
+          weight: 700
 
