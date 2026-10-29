@@ -799,6 +799,8 @@ class _ModeloEditavelScreenState extends State<ModeloEditavelScreen> {
             labelText: label,
             hintText: hint,
             isDense: true,
+            labelStyle: fontSize == null ? null : TextStyle(fontSize: fontSize),
+            hintStyle: fontSize == null ? null : TextStyle(fontSize: fontSize),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
