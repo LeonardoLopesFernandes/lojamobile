@@ -630,11 +630,11 @@ void _drawEletroContent(
     text: title,
     maxWidth: contentW,
     startSize: w * 0.095,
-    weight: FontWeight.w800,
+    weight: FontWeight.w700,
     color: titleColor,
     maxLines: 3,
-    height: 1.05,
-    letterSpacing: -0.5,
+    height: 1.0,
+    letterSpacing: 0,
   );
   _paintCentered(canvas, titleTp, cx, yTop + h * 0.315);
 
@@ -647,10 +647,10 @@ void _drawEletroContent(
     priceTp = _eletroPainter(
       _eletroMoney(d.installmentPrice ?? 0),
       instSize,
-      FontWeight.w900,
+      FontWeight.w700,
       dark,
     );
-    qtyTp = _eletroPainter('${qty}x', instSize, FontWeight.w900, dark);
+    qtyTp = _eletroPainter('${qty}x', instSize, FontWeight.w700, dark);
     final total = priceTp.width + gap + qtyTp.width;
     if (total <= contentW * 0.95 || instSize <= 8) break;
     instSize -= 1;
@@ -698,7 +698,7 @@ void _drawEletroContent(
           style: TextStyle(
             fontFamily: 'SFProDisplay',
             fontSize: size,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: dark,
           ),
         ),
@@ -718,7 +718,7 @@ void _drawEletroContent(
           style: TextStyle(
             fontFamily: 'SFProDisplay',
             fontSize: size,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: dark,
           ),
         ),
@@ -727,7 +727,7 @@ void _drawEletroContent(
           style: TextStyle(
             fontFamily: 'SFProDisplay',
             fontSize: size,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
             color: dark,
           ),
         ),
@@ -749,7 +749,7 @@ void _drawEletroContent(
     text: '*Oferta válida de $inicio até $fim',
     maxWidth: contentW,
     startSize: w * 0.03,
-    weight: FontWeight.w600,
+    weight: FontWeight.w400,
     color: const Color(0xFF4A4B4D),
     maxLines: 1,
   );
@@ -774,7 +774,7 @@ TextPainter _eletroPainter(
         fontWeight: weight,
         color: color,
         height: 1.0,
-        letterSpacing: -2,
+        letterSpacing: 0,
       ),
     ),
     textDirection: TextDirection.ltr,
