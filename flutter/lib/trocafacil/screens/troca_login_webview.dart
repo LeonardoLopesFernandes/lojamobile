@@ -6,6 +6,7 @@ import 'package:inventario/network/session_manager.dart';
 import 'package:inventario/widgets/auth_loader.dart';
 import 'package:inventario/widgets/auth_logo_animado.dart';
 import 'package:inventario/utils/log_helper.dart';
+import '../network/troca_api.dart';
 import '../network/troca_session.dart';
 
 const String _trocaPath1 =
@@ -33,6 +34,8 @@ class _TrocaLoginWebViewScreenState extends State<TrocaLoginWebViewScreen> {
   bool _carregando = true;
   bool _pronto = false;
   bool _concluido = false;
+  String _email = '';
+  String _senha = '';
 
   @override
   void initState() {
@@ -41,6 +44,9 @@ class _TrocaLoginWebViewScreenState extends State<TrocaLoginWebViewScreen> {
   }
 
   Future<void> _init() async {
+    final session = await SessionManager.create();
+    _email = session.getUserEmail() ?? '';
+    _senha = session.getSavedPassword() ?? '';
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent(
@@ -53,6 +59,7 @@ class _TrocaLoginWebViewScreenState extends State<TrocaLoginWebViewScreen> {
             if (!mounted || _concluido) return;
             if (_carregando) setState(() => _carregando = false);
             _capturar(url);
+            _preencherSeMicrosoft(url);
           },
           onNavigationRequest: (req) {
             _capturar(req.url);
@@ -72,6 +79,42 @@ class _TrocaLoginWebViewScreenState extends State<TrocaLoginWebViewScreen> {
     final token = Uri.decodeComponent(m.group(1)!);
     if (token.length > 50) _salvar(token);
   }
+
+  /// Reaproveita as credenciais Microsoft salvas no app (as mesmas usadas no
+  /// login principal/Recebimento) para preencher e enviar automaticamente.
+  Future<void> _preencherSeMicrosoft(String url) async {
+    if (_concluido) return;
+    if (!url.contains('login.microsoftonline.com')) return;
+    if (_email.isEmpty || _senha.isEmpty) return;
+    try {
+      final atual = await _controller.currentUrl() ?? url;
+      if (!atual.contains('login.microsoftonline.com')) return;
+      await _controller.runJavaScript(
+          _montarScriptPreenchimento(_email, _senha));
+    } catch (e) {
+      LogHelper.e('TrocaLogin: auto preenchimento', e);
+    }
+  }
+
+  String _montarScriptPreenchimento(String email, String senha) {
+    final e = _jsString(email);
+    final s = _jsString(senha);
+    return "(function(){"
+        "var setV=function(el,v){var d=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
+        "if(d&&d.set){d.set.call(el,v);}else{el.value=v;}"
+        "el.dispatchEvent(new Event('input',{bubbles:true}));"
+        "el.dispatchEvent(new Event('change',{bubbles:true}));};"
+        "var btn=document.getElementById('idSIButton9');"
+        "var em=document.getElementById('i0116');"
+        "if(em){setV(em,$e);if(btn){btn.click();return 'email-clicked';}return 'email-no-btn';}"
+        "var pw=document.getElementById('i0118');"
+        "if(pw){setV(pw,$s);if(btn){btn.click();return 'pwd-clicked';}return 'pwd-no-btn';}"
+        "return 'no-field';"
+        "})()";
+  }
+
+  String _jsString(String s) =>
+      '"${s.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
 
   Future<void> _salvar(String token) async {
     _concluido = true;
@@ -157,6 +200,22 @@ class _TrocaLoginWebViewScreenState extends State<TrocaLoginWebViewScreen> {
 Future<bool> ensureTrocaLogin(BuildContext context) async {
   final troca = await TrocaSession.create();
   if (troca.isLoggedIn()) return true;
+
+  // Tenta reaproveitar o token principal do app (mesma conta Microsoft).
+  // Se o BFF do Troca Fácil aceitar, não precisa logar de novo.
+  final session = await SessionManager.create();
+  final principal = session.getToken();
+  if (principal != null && principal.isNotEmpty) {
+    troca.saveToken(principal);
+    try {
+      await TrocaApi().validarSessao();
+      return true;
+    } catch (e) {
+      troca.clear();
+      LogHelper.e('TrocaLogin: token principal nao aceito', e);
+    }
+  }
+
   if (!context.mounted) return false;
   final ok = await Navigator.of(context).pushNamed('/troca_login');
   return ok == true;

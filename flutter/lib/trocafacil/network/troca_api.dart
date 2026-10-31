@@ -45,6 +45,22 @@ class TrocaApi {
     return d.isEmpty ? v : d.padLeft(13, '0');
   }
 
+  /// Valida o token atual com uma chamada leve. Usado para tentar reaproveitar
+  /// o token principal do app no Troca Fácil. Lança [TrocaApiException] se o
+  /// token não for aceito (401/403) ou houver erro.
+  Future<void> validarSessao() async {
+    final now = DateTime.now();
+    String ymd(DateTime d) =>
+        '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+    await getAvaliacoes(
+      startDate: ymd(now),
+      finalDate: ymd(now),
+      pageSize: 1,
+    );
+  }
+
   /// Lista as operações/avaliações (endpoint /bff-trade/avaliations).
   Future<AvaliacoesPage> getAvaliacoes({
     required String startDate,
