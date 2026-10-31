@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/models/models.dart';
-import 'package:inventario/network/inventario_service.dart';
-import 'package:inventario/network/session_manager.dart';
+import 'package:inventario/precificacao/network/api_client.dart';
+import 'package:inventario/precificacao/network/api_service.dart';
 
 const Color _greenCheckbox = Color(0xFF1B5E20);
 const Color _red = Color(0xFFD32F2F);
@@ -16,6 +16,17 @@ const Color _descDark2 = Color(0xFF212121);
 const Color _eanGray = Color(0xFF666666);
 const Color _eanGray2 = Color(0xFF757575);
 const Color _green = Color(0xFF4CAF50);
+
+void _copiarEan(BuildContext context, String ean) {
+  Clipboard.setData(ClipboardData(text: ean));
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('EAN copiado: $ean'),
+      duration: const Duration(seconds: 1),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
 const Color _greenDark = Color(0xFF2E7D32);
 const Color _orange = Color(0xFFFF9800);
 const Color _grayBadge = Color(0xFF9E9E9E);
@@ -30,8 +41,8 @@ String _brl(double v) {
   return 'R\$ $grouped,$dec';
 }
 
-// Número pt-BR sem símbolo (ex: 63,33), espelha o "%.2f" do Kotlin.
-String _num(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
+// Número pt-BR sem símbolo, com separador de milhar (ex: 1.234,56).
+String _num(double v) => _brl(v).replaceFirst('R\$ ', '');
 
 class _Badge extends StatelessWidget {
   final String text;
@@ -41,75 +52,12 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         height: 18,
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(30)),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(9)),
         alignment: Alignment.center,
         child: Text(text,
             style: const TextStyle(
                 color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
       );
-}
-
-Future<void> _copiarEan(BuildContext context, String ean) async {
-  await Clipboard.setData(ClipboardData(text: ean));
-  if (!context.mounted) return;
-  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-    SnackBar(content: Text('EAN copiado: $ean'), duration: const Duration(seconds: 2)),
-  );
-}
-
-/// Barra verde com o badge de tipo encostado à direita (GreenBadgeContainer + WhiteTypeBadge).
-class _GreenTypeBar extends StatelessWidget {
-  final String? promo;
-  final String? price;
-  final String badge;
-  final Color badgeColor;
-  const _GreenTypeBar({
-    required this.promo,
-    required this.price,
-    required this.badge,
-    required this.badgeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final txt = promo ?? price ?? '';
-    return Container(
-      height: 28,
-      decoration: BoxDecoration(
-        color: _green,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(txt,
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: _green),
-              borderRadius:
-                  const BorderRadius.horizontal(right: Radius.circular(6)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            alignment: Alignment.center,
-            child: Text(badge,
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: badgeColor)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Card da home (EtiquetasFragment) -> item_etiqueta.xml
@@ -142,14 +90,11 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
 
   Future<void> _carregarSaldo() async {
     try {
-      final session = await SessionManager.create();
-      final store = session.getUserStore() ?? Constants.defaultStore;
-      final p = await InventarioService.forSession(session).getProductStore(
-        storeId: store,
-        ean: widget.tag.ean,
-        sapCode: widget.tag.sap,
-      );
-      if (mounted) setState(() => _saldo = p.stock);
+      final api = ApiService(ApiClient.instance.getSlApiService());
+      final store = ApiClient.instance.sessionManager.getUserStore() ??
+          Constants.defaultStore;
+      final s = await api.getProductStock(store, ean: widget.tag.ean, sapCode: widget.tag.sap);
+      if (mounted) setState(() => _saldo = s);
     } catch (_) {}
   }
 
@@ -178,6 +123,25 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
               : take.totalValue;
       return (leveGanhe: 'Leve ${take.qty} por ${_brl(totalLeve)} | ${_brl(precoNormal)}', deporValor: null, deporBadge: null);
     }
+    final inst = pd?.installments;
+    final qtdParc = (inst != null && inst.installmentQuantity > 0) ? inst.installmentQuantity : null;
+    final valorParc = (inst != null && inst.installmentValue > 0)
+        ? inst.installmentValue
+        : (pd != null && pd.displayPrice > 0)
+            ? pd.displayPrice
+            : (pd != null && pd.unitValue > 0)
+                ? pd.unitValue
+                : (pd != null && pd.unitQty > 0)
+                    ? pd.unitQty
+                    : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
+    // De/Por + Parcelado: badge combinado (De R$X|Por R$Y|Nx de R$Z).
+    if (qtdParc != null && precoPromo != null && precoPromo > 0 && precoPromo < precoNormal) {
+      return (
+        leveGanhe: null,
+        deporValor: 'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${qtdParc}x de R\$${_num(valorParc)}',
+        deporBadge: 'parcelado'
+      );
+    }
     if (precoPromo != null && precoPromo > 0 && precoPromo < precoNormal) {
       return (
         leveGanhe: null,
@@ -185,26 +149,13 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
         deporBadge: 'de por'
       );
     }
-    final inst = pd?.installments;
-    final qtdParc = (inst != null && inst.installmentQuantity > 0) ? inst.installmentQuantity : null;
     // Parcelado só com DADOS de parcela (igual à tela de entrada);
     // movement="Parcelado" sem installments abre como de por.
     if (qtdParc != null) {
-      final valorParc = (inst != null && inst.installmentValue > 0)
-          ? inst.installmentValue
-          : (pd != null && pd.displayPrice > 0)
-              ? pd.displayPrice
-              : (pd != null && pd.unitValue > 0)
-                  ? pd.unitValue
-                  : (pd != null && pd.unitQty > 0)
-                      ? pd.unitQty
-                      : (precoPromo != null && precoPromo > 0
-                          ? precoPromo
-                          : precoNormal);
       return (
         leveGanhe: null,
         deporValor:
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc != null ? '${qtdParc}x de R\$${_num(valorParc)}' : _brl(valorParc)}',
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc}x de R\$${_num(valorParc)}',
         deporBadge: 'parcelado'
       );
     }
@@ -256,30 +207,34 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text.rich(
-                        TextSpan(
-                          style: const TextStyle(
-                              fontSize: 10, color: _eanGray2),
-                          children: [
-                            TextSpan(
-                                text:
-                                    'DEP: $deptNum | EAN: ${widget.tag.ean} / SAP: ${widget.tag.sap}'),
-                            if (_saldo != null)
+                      GestureDetector(
+                        onTap: () => _copiarEan(context, widget.tag.ean),
+                        child: Text.rich(
+                          TextSpan(
+                            style: const TextStyle(
+                                fontSize: 10, color: _eanGray2),
+                            children: [
                               TextSpan(
-                                text: ' | SALDO: ${_saldo!.toInt()}',
-                                style: TextStyle(
-                                  color:
-                                      _saldo! < 0 ? _redBrand : _greenDark,
-                                  fontWeight: FontWeight.bold,
+                                  text:
+                                      'DEP: $deptNum | EAN: ${widget.tag.ean} / SAP: ${widget.tag.sap}'),
+                              if (_saldo != null)
+                                TextSpan(
+                                  text: ' | SALDO: ${_saldo!.toInt()}',
+                                  style: TextStyle(
+                                    color:
+                                        _saldo! < 0 ? _redBrand : _greenDark,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       if (p.leveGanhe != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          height: 28,
+                          padding: const EdgeInsets.only(left: 10),
                           decoration: BoxDecoration(
                             color: _green,
                             borderRadius: BorderRadius.circular(6),
@@ -294,10 +249,15 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                                       color: Colors.white)),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                height: 28,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(9),
+                                  borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(6),
+                                      bottomRight: Radius.circular(6)),
+                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: const Text('leve e ganhe',
                                     style: TextStyle(
@@ -309,9 +269,10 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                           ),
                         ),
                       ] else if (p.deporValor != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          height: 28,
+                          padding: const EdgeInsets.only(left: 12),
                           decoration: BoxDecoration(
                             color: _green,
                             borderRadius: BorderRadius.circular(6),
@@ -319,17 +280,30 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(p.deporValor!,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white)),
-                              const SizedBox(width: 4),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(p.deporValor!,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
+                                ),
+                              ),
+                              SizedBox(width: p.deporBadge == 'parcelado' ? 10 : 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                height: 28,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(9),
+                                  borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(6),
+                                      bottomRight: Radius.circular(6)),
+                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: Text(p.deporBadge!,
                                     style: TextStyle(
@@ -346,13 +320,6 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                       ],
                     ],
                   ),
-                ),
-                IconButton(
-                  onPressed: widget.onRemover,
-                  icon: Image.asset('assets/icons/remove.png',
-                      width: 22, height: 22, color: _redBrand),
-                  padding: const EdgeInsets.all(2),
-                  constraints: const BoxConstraints(maxWidth: 28, maxHeight: 28),
                 ),
               ],
             ),
@@ -393,14 +360,11 @@ class _PapeletaCardState extends State<PapeletaCard> {
 
   Future<void> _carregarSaldo() async {
     try {
-      final session = await SessionManager.create();
-      final store = session.getUserStore() ?? Constants.defaultStore;
-      final p = await InventarioService.forSession(session).getProductStore(
-        storeId: store,
-        ean: widget.item.ean,
-        sapCode: widget.item.sap,
-      );
-      if (mounted) setState(() => _saldo = p.stock);
+      final api = ApiService(ApiClient.instance.getSlApiService());
+      final store = ApiClient.instance.sessionManager.getUserStore() ??
+          Constants.defaultStore;
+      final s = await api.getProductStock(store, ean: widget.item.ean, sapCode: widget.item.sap);
+      if (mounted) setState(() => _saldo = s);
     } catch (_) {}
   }
 
@@ -436,6 +400,20 @@ class _PapeletaCardState extends State<PapeletaCard> {
         deporBadge: null
       );
     }
+    final qtdParc = (pd?.installmentQuantity != null && pd!.installmentQuantity! > 0)
+        ? pd!.installmentQuantity!
+        : null;
+    final valorParc = (pd?.installmentPrice != null && pd!.installmentPrice! > 0)
+        ? pd!.installmentPrice!
+        : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
+    // De/Por + Parcelado: badge combinado.
+    if (qtdParc != null && precoPromo != null && precoPromo > 0 && precoPromo < precoNormal) {
+      return (
+        leveGanhe: null,
+        deporValor: 'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${qtdParc}x de R\$${_num(valorParc)}',
+        deporBadge: 'parcelado'
+      );
+    }
     if (precoPromo != null && precoPromo > 0 && precoPromo < precoNormal) {
       return (
         leveGanhe: null,
@@ -443,19 +421,13 @@ class _PapeletaCardState extends State<PapeletaCard> {
         deporBadge: 'de por'
       );
     }
-    final qtdParc = (pd?.installmentQuantity != null && pd!.installmentQuantity! > 0)
-        ? pd!.installmentQuantity!
-        : null;
     // Parcelado só com DADOS de parcela (igual à tela de entrada);
     // movement="Parcelado" sem installments abre como de por.
     if (qtdParc != null) {
-      final valorParc = (pd?.installmentPrice != null && pd!.installmentPrice! > 0)
-          ? pd!.installmentPrice!
-          : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
       return (
         leveGanhe: null,
         deporValor:
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.item.price} | ${qtdParc != null ? '${qtdParc}x de R\$${_num(valorParc)}' : _brl(valorParc)}',
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.item.price} | ${qtdParc}x de R\$${_num(valorParc)}',
         deporBadge: 'parcelado'
       );
     }
@@ -507,30 +479,34 @@ class _PapeletaCardState extends State<PapeletaCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text.rich(
-                        TextSpan(
-                          style: const TextStyle(
-                              fontSize: 10, color: _eanGray2),
-                          children: [
-                            TextSpan(
-                                text:
-                                    'DEP: $deptNum | EAN: ${widget.item.ean} / SAP: ${widget.item.sap}'),
-                            if (_saldo != null)
+                      GestureDetector(
+                        onTap: () => _copiarEan(context, widget.item.ean),
+                        child: Text.rich(
+                          TextSpan(
+                            style: const TextStyle(
+                                fontSize: 10, color: _eanGray2),
+                            children: [
                               TextSpan(
-                                text: ' | SALDO: ${_saldo!.toInt()}',
-                                style: TextStyle(
-                                  color:
-                                      _saldo! < 0 ? _redBrand : _greenDark,
-                                  fontWeight: FontWeight.bold,
+                                  text:
+                                      'DEP: $deptNum | EAN: ${widget.item.ean} / SAP: ${widget.item.sap}'),
+                              if (_saldo != null)
+                                TextSpan(
+                                  text: ' | SALDO: ${_saldo!.toInt()}',
+                                  style: TextStyle(
+                                    color:
+                                        _saldo! < 0 ? _redBrand : _greenDark,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       if (p.leveGanhe != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          height: 28,
+                          padding: const EdgeInsets.only(left: 10),
                           decoration: BoxDecoration(
                             color: _green,
                             borderRadius: BorderRadius.circular(6),
@@ -545,10 +521,15 @@ class _PapeletaCardState extends State<PapeletaCard> {
                                       color: Colors.white)),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                height: 28,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(9),
+                                  borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(6),
+                                      bottomRight: Radius.circular(6)),
+                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: const Text('leve e ganhe',
                                     style: TextStyle(
@@ -560,9 +541,10 @@ class _PapeletaCardState extends State<PapeletaCard> {
                           ),
                         ),
                       ] else if (p.deporValor != null) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          height: 28,
+                          padding: const EdgeInsets.only(left: 12),
                           decoration: BoxDecoration(
                             color: _green,
                             borderRadius: BorderRadius.circular(6),
@@ -570,17 +552,30 @@ class _PapeletaCardState extends State<PapeletaCard> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(p.deporValor!,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white)),
-                              const SizedBox(width: 4),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(p.deporValor!,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
+                                ),
+                              ),
+                              SizedBox(width: p.deporBadge == 'parcelado' ? 10 : 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                height: 28,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(9),
+                                  borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(6),
+                                      bottomRight: Radius.circular(6)),
+                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: Text(p.deporBadge!,
                                     style: TextStyle(
@@ -597,13 +592,6 @@ class _PapeletaCardState extends State<PapeletaCard> {
                       ],
                     ],
                   ),
-                ),
-                IconButton(
-                  onPressed: widget.onRemover,
-                  icon: Image.asset('assets/icons/remove.png',
-                      width: 22, height: 22, color: _redBrand),
-                  padding: const EdgeInsets.all(2),
-                  constraints: const BoxConstraints(maxWidth: 28, maxHeight: 28),
                 ),
               ],
             ),
@@ -702,6 +690,26 @@ class _PriceTagCardState extends State<PriceTagCard> {
       final price = precoNormal > 0 ? _brl(precoNormal) : widget.tag.price;
       return (badge: 'LEVE E GANHE', badgeColor: _green, promo: promo, price: price);
     }
+    final inst = pd?.installments;
+    final qtdParc = (inst != null && inst.installmentQuantity > 0) ? inst.installmentQuantity : null;
+    final valorParc = (inst != null && inst.installmentValue > 0)
+        ? inst.installmentValue
+        : (pd != null && pd.displayPrice > 0)
+            ? pd.displayPrice
+            : (pd != null && pd.unitValue > 0)
+                ? pd.unitValue
+                : (pd != null && pd.unitQty > 0)
+                    ? pd.unitQty
+                    : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
+    // De/Por + Parcelado: badge combinado.
+    if (qtdParc != null && precoPromo != null && precoPromo > 0 && precoPromo < precoNormal) {
+      return (
+        badge: 'PARCELADO',
+        badgeColor: _orange,
+        promo: 'De R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${qtdParc}x de R\$${_num(valorParc)}',
+        price: null
+      );
+    }
     if (movement.contains('DE') ||
         movement.contains('POR') ||
         movement.contains('PROMOCIONAL')) {
@@ -711,30 +719,16 @@ class _PriceTagCardState extends State<PriceTagCard> {
       }
       return (badge: 'DE/POR', badgeColor: _orange, promo: promo, price: null);
     }
-    final inst = pd?.installments;
-    final qtdParc = (inst != null && inst.installmentQuantity > 0) ? inst.installmentQuantity : null;
     // Parcelado só com DADOS de parcela (igual à tela de entrada);
     // movement="Parcelado" sem installments abre como de por.
     if (qtdParc != null) {
-      final valorParc = (inst != null && inst.installmentValue > 0)
-          ? inst.installmentValue
-          : (pd != null && pd.displayPrice > 0)
-              ? pd.displayPrice
-              : (pd != null && pd.unitValue > 0)
-                  ? pd.unitValue
-                  : (pd != null && pd.unitQty > 0)
-                      ? pd.unitQty
-                      : (precoPromo != null && precoPromo > 0
-                          ? precoPromo
-                          : precoNormal);
-      String? promo;
-      if (qtdParc != null) {
-        promo =
-            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc}x de R\$${_num(valorParc)}';
-      } else if (valorParc > 0) {
-        promo = _brl(valorParc);
-      }
-      return (badge: 'PARCELADO', badgeColor: _orange, promo: promo, price: null);
+      return (
+        badge: 'PARCELADO',
+        badgeColor: _orange,
+        promo:
+            '${precoNormal > 0 ? _brl(precoNormal) : widget.tag.price} | ${qtdParc}x de R\$${_num(valorParc)}',
+        price: null
+      );
     }
     final price = precoNormal > 0 ? _brl(precoNormal) : widget.tag.price;
     return (badge: 'NORMAL', badgeColor: _grayBadge, promo: null, price: price);
@@ -776,16 +770,14 @@ class _PriceTagCardState extends State<PriceTagCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(widget.tag.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: _descDark)),
                 ),
                 SizedBox(
-                  width: 26,
-                  height: 26,
+                  width: 30,
+                  height: 30,
                   child: Container(
                     decoration: BoxDecoration(
                       color: _qtyGray,
@@ -799,7 +791,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                       keyboardType: TextInputType.number,
                       maxLength: 2,
                       style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.bold, color: _descDark2),
+                          fontSize: 15, fontWeight: FontWeight.bold, color: _descDark),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         isCollapsed: true,
@@ -823,7 +815,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                   child: GestureDetector(
                     onTap: () => _copiarEan(context, widget.tag.ean),
                     child: Text(
-                      'EAN: ${widget.tag.ean}',
+                      'EAN: ${widget.tag.ean} • Dep: ${widget.tag.department}',
                       style: const TextStyle(fontSize: 10, color: _eanGray),
                     ),
                   ),
@@ -832,13 +824,73 @@ class _PriceTagCardState extends State<PriceTagCard> {
                 _statusBadge(),
               ],
             ),
-            const SizedBox(height: 6),
-            _GreenTypeBar(
-              promo: showPromo ? b.promo : null,
-              price: showPrice ? b.price : null,
-              badge: b.badge,
-              badgeColor: b.badgeColor,
-            ),
+            if (showPromo || showPrice) ...[
+              const SizedBox(height: 4),
+              Container(
+                height: 28,
+                padding: const EdgeInsets.only(left: 10),
+                decoration: BoxDecoration(
+                  color: _green,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(showPromo ? b.promo! : b.price!,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      height: 28,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(6),
+                            bottomRight: Radius.circular(6)),
+                        border: Border.all(color: _green, width: 1),
+                      ),
+                      child: Text(b.badge,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: b.badgeColor)),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 4),
+              Container(
+                height: 28,
+                padding: const EdgeInsets.only(left: 10),
+                decoration: BoxDecoration(
+                  color: _green,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(b.badge,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -905,6 +957,22 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
       final price = precoNormal > 0 ? _brl(precoNormal) : widget.item.price;
       return (badge: 'LEVE E GANHE', badgeColor: _green, promo: promo, price: price);
     }
+    final qtdParc = (pd?.installmentQuantity != null && pd!.installmentQuantity! > 0)
+        ? pd!.installmentQuantity!
+        : null;
+    final valorParc = (pd?.installmentPrice != null && pd!.installmentPrice! > 0)
+        ? pd!.installmentPrice!
+        : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
+    // De/Por + Parcelado: badge combinado.
+    if (qtdParc != null && precoPromo != null && precoPromo > 0 && precoPromo < precoNormal) {
+      return (
+        badge: 'PARCELADO',
+        badgeColor: _orange,
+        promo:
+            'De R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${qtdParc}x de R\$${_num(valorParc)}',
+        price: null
+      );
+    }
     if (movement.contains('DE') ||
         movement.contains('POR') ||
         movement.contains('PROMOCIONAL')) {
@@ -914,19 +982,12 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
       }
       return (badge: 'DE/POR', badgeColor: _orange, promo: promo, price: null);
     }
-    final qtdParc = (pd?.installmentQuantity != null && pd!.installmentQuantity! > 0)
-        ? pd!.installmentQuantity!
-        : null;
     // Parcelado só com DADOS de parcela (igual à tela de entrada);
     // movement="Parcelado" sem installments abre como de por.
     if (qtdParc != null) {
-      final valorParc = (pd?.installmentPrice != null && pd!.installmentPrice! > 0)
-          ? pd!.installmentPrice!
-          : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
       final por = (precoPromo != null && precoPromo > 0) ? precoPromo : null;
       String? promo;
       if (por != null && valorParc > 0) {
-        // Combinado depor+parcelado (igual Kotlin): R$por | Nx de R$parcela
         promo = 'R\$${_num(por)} | ${qtdParc}x de R\$${_num(valorParc)}';
       } else {
         promo =
@@ -974,16 +1035,14 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(widget.item.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: _descDark)),
                 ),
                 SizedBox(
-                  width: 26,
-                  height: 26,
+                  width: 30,
+                  height: 30,
                   child: Container(
                     decoration: BoxDecoration(
                       color: _qtyGray,
@@ -997,7 +1056,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                       keyboardType: TextInputType.number,
                       maxLength: 2,
                       style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.bold, color: _descDark2),
+                          fontSize: 15, fontWeight: FontWeight.bold, color: _descDark),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         isCollapsed: true,
@@ -1021,7 +1080,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                   child: GestureDetector(
                     onTap: () => _copiarEan(context, widget.item.ean),
                     child: Text(
-                      'Dep: ${widget.item.department} • EAN: ${widget.item.ean}',
+                      'EAN: ${widget.item.ean} • Dep: ${widget.item.department}',
                       style: const TextStyle(fontSize: 10, color: _eanGray),
                     ),
                   ),
@@ -1030,13 +1089,73 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                 _statusBadge(),
               ],
             ),
-            const SizedBox(height: 6),
-            _GreenTypeBar(
-              promo: showPromo ? b.promo : null,
-              price: showPrice ? b.price : null,
-              badge: b.badge,
-              badgeColor: b.badgeColor,
-            ),
+            if (showPromo || showPrice) ...[
+              const SizedBox(height: 4),
+              Container(
+                height: 28,
+                padding: const EdgeInsets.only(left: 10),
+                decoration: BoxDecoration(
+                  color: _green,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(showPromo ? b.promo! : b.price!,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      height: 28,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(6),
+                            bottomRight: Radius.circular(6)),
+                        border: Border.all(color: _green, width: 1),
+                      ),
+                      child: Text(b.badge,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: b.badgeColor)),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 4),
+              Container(
+                height: 28,
+                padding: const EdgeInsets.only(left: 10),
+                decoration: BoxDecoration(
+                  color: _green,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(b.badge,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

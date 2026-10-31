@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/badge_acao.dart';
 import 'package:flutter/services.dart';
 import '../../models/models.dart';
 import '../../network/api_service.dart';
@@ -23,6 +25,16 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
     with BuscarAnimMixin {
   final ApiService _api = ApiService(ApiClient.instance.getSlApiService());
   final ScrollController _scrollController = ScrollController();
+  bool _mostrarTopo = false;
+
+  void _subirAoTopo() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+    );
+  }
 
   String _storeId = Constants.defaultStore;
 
@@ -521,11 +533,34 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
           Column(
             children: [
               Expanded(
-                child: _buildBody(),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (n) {
+                    final mostrar = n.metrics.pixels > 30;
+                    if (mostrar != _mostrarTopo) {
+                      setState(() => _mostrarTopo = mostrar);
+                    }
+                    return false;
+                  },
+                  child: _buildBody(),
+                ),
               ),
               _buildBottomBar(),
             ],
           ),
+          if (_mostrarTopo)
+            Positioned(
+              right: 16,
+              bottom: 84,
+              child: FloatingActionButton(
+                backgroundColor: primaryRed,
+                onPressed: _subirAoTopo,
+                child: SvgPicture.asset(
+                  'assets/icons/ic_up_two.svg',
+                  width: 22,
+                  height: 22,
+                ),
+              ),
+            ),
           if (_menuOpen) _buildMenuOverlay(),
         ],
       ),
@@ -536,11 +571,17 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        backgroundColor: primaryRed,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF111827),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.white,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
         title: Text(
           'Etiquetas de ${isTomorrow ? 'amanhã' : 'hoje'}',
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(
+              fontWeight: FontWeight.w600, color: Color(0xFFC61033)),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -651,13 +692,13 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ..._menuItem('assets/icons/eti_avulsa.png', 'ETIQUETA AVULSA', 0),
+                ..._menuItem('assets/icons/eti_avulsa.png', 'Etiqueta avulsa', 0),
                 _menuDivider(),
-                ..._menuItem('assets/icons/pap_avulsa.png', 'PAPELETA AVULSA', 1),
+                ..._menuItem('assets/icons/pap_avulsa.png', 'Papeleta avulsa', 1),
                 _menuDivider(),
-                ..._menuItem('assets/icons/eti_diaria.png', 'ETIQUETAS DIÁRIAS', 2),
+                ..._menuItem('assets/icons/eti_diaria.png', 'Etiquetas diárias', 2),
                 _menuDivider(),
-                ..._menuItem('assets/icons/pap_diaria.png', 'PAPELETAS DIÁRIAS', 3),
+                ..._menuItem('assets/icons/pap_diaria.png', 'Papeletas diárias', 3),
               ],
             ),
           ),
@@ -694,10 +735,10 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
   void _onMenuTap(int index) {
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(context, '/precificacao_etiquetas');
+        Navigator.pop(context);
         break;
       case 1:
-        Navigator.pushReplacementNamed(context, '/precificacao_papeletas');
+        Navigator.pop(context);
         break;
       case 2:
         setState(() {});
@@ -993,50 +1034,27 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
   }
 
   Widget _buildBottomBar() {
-    const primaryRed = Color(0xFFC61033);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
+    if (_selectedCount == 0) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: _onReport,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryRed,
-                side: const BorderSide(color: primaryRed),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30)),
-              ),
-              child: const Text('RELATÓRIO',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
+          BadgeAcao(
+            texto: 'RELATÓRIO',
+            icone: Icons.picture_as_pdf,
+            corFundo: Colors.white,
+            corTexto: const Color(0xFFC61033),
+            corBorda: const Color(0xFFC61033),
+            onPressed: _onReport,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _onPrint,
-              icon: const Icon(Icons.print),
-              label: const Text('IMPRIMIR',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryRed,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30)),
-              ),
-            ),
+          const SizedBox(width: 12),
+          BadgeAcao(
+            texto: 'IMPRIMIR',
+            icone: Icons.print,
+            corFundo: const Color(0xFFC61033),
+            corTexto: Colors.white,
+            onPressed: _onPrint,
           ),
         ],
       ),
