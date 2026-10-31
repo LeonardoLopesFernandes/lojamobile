@@ -77,7 +77,7 @@ class _GreenTypeBar extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         color: _green,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -96,7 +96,7 @@ class _GreenTypeBar extends StatelessWidget {
               color: Colors.white,
               border: Border.all(color: _green),
               borderRadius:
-                  const BorderRadius.horizontal(right: Radius.circular(12)),
+                  const BorderRadius.horizontal(right: Radius.circular(6)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             alignment: Alignment.center,
@@ -282,7 +282,7 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: _green,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -314,7 +314,7 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: _green,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -533,7 +533,7 @@ class _PapeletaCardState extends State<PapeletaCard> {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: _green,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -565,7 +565,7 @@ class _PapeletaCardState extends State<PapeletaCard> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: _green,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

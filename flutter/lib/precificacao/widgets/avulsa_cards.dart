@@ -94,7 +94,7 @@ Widget _greenBadge(String valor, String tipo, Color cor, {bool parcelado = false
     constraints: const BoxConstraints(minHeight: 28),
     decoration: BoxDecoration(
       color: avulsaGreen,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(6),
     ),
     padding: const EdgeInsets.only(left: 12),
     child: Row(
@@ -129,7 +129,7 @@ Widget _greenBadge(String valor, String tipo, Color cor, {bool parcelado = false
               left: BorderSide(color: avulsaGreen),
             ),
             borderRadius:
-                BorderRadius.horizontal(right: Radius.circular(12)),
+                BorderRadius.horizontal(right: Radius.circular(6)),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -347,7 +347,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       constraints: const BoxConstraints(minHeight: 28),
       decoration: BoxDecoration(
         color: avulsaGreen,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
       ),
       padding: const EdgeInsets.only(left: 10),
       child: Row(
@@ -408,7 +408,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
           right: BorderSide(color: avulsaGreen),
           left: BorderSide(color: avulsaGreen),
         ),
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -614,7 +614,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
       constraints: const BoxConstraints(minHeight: 28),
       decoration: BoxDecoration(
         color: avulsaGreen,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
       ),
       padding: const EdgeInsets.only(left: 10),
       child: Row(
@@ -675,7 +675,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
           right: BorderSide(color: avulsaGreen),
           left: BorderSide(color: avulsaGreen),
         ),
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
       ),
       alignment: Alignment.center,
       child: Text(
