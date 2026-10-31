@@ -694,10 +694,10 @@ class _EtiquetasScreenState extends State<EtiquetasScreen>
   void _onMenuTap(int index) {
     switch (index) {
       case 0:
-        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, '/precificacao_etiquetas');
         break;
       case 1:
-        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, '/precificacao_papeletas');
         break;
       case 2:
         setState(() {});

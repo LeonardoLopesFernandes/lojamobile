@@ -23,7 +23,9 @@ import 'trocafacil/screens/troca_etiqueta_screen.dart';
 import 'trocafacil/screens/lista_bloqueios_screen.dart';
 import 'trocafacil/screens/bloquear_item_screen.dart';
 import 'precificacao/screens/etiquetas/etiquetas_fragment.dart';
+import 'precificacao/screens/etiquetas/etiquetas_screen.dart';
 import 'precificacao/screens/papeletas/papeletas_fragment.dart';
+import 'precificacao/screens/papeletas/papeletas_diarias_screen.dart';
 import 'precificacao/screens/barcode/barcode_scanner_screen.dart';
 import 'precificacao/screens/etiquetas/gondola_editavel_screen.dart';
 import 'precificacao/screens/modelo/modelo_editavel_screen.dart';
@@ -116,6 +118,8 @@ class MyApp extends StatelessWidget {
               ),
               body: const PapeletasFragment(),
             ),
+        '/etiquetas': (ctx) => const EtiquetasScreen(),
+        '/papeletas_diarias': (ctx) => const PapeletasDiariasScreen(),
         '/recebimento': (ctx) => const HomeScreen(),
         '/detalhes': (ctx) => const DetalhesViagemScreen(),
         '/itens': (ctx) => const ItensScreen(),

@@ -867,15 +867,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
     final nome = (b != null && b.user.isNotEmpty)
         ? b.user
         : (_session?.getUserName() ?? '');
-    final loja = (b != null && b.store.isNotEmpty)
-        ? b.store
-        : (_session?.getUserStore() ?? '');
-    final data = b != null ? formatDataBr(b.date) : '';
-    final subtitulo = [
-      data,
-      loja,
-      if (_itens.isNotEmpty) '$_totalQtd un.',
-    ].where((e) => e.trim().isNotEmpty).join('  •  ');
+    final dataHora = b != null ? formatDataHoraBr(b.date) : '';
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(14),
@@ -892,31 +884,42 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 20,
-            backgroundColor: Color(0xFFFEF2F2),
-            child: Icon(Icons.person,
-                color: Color(Constants.primaryRed), size: 22),
-          ),
-          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(nome.isEmpty ? 'Usuário' : nome,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827))),
-                if (subtitulo.isNotEmpty) ...[
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline,
+                        size: 14, color: Color(Constants.primaryRed)),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(nome.isEmpty ? 'Usuário' : nome,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827))),
+                    ),
+                  ],
+                ),
+                if (dataHora.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(subtitulo,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF6B7280))),
+                  Row(
+                    children: [
+                      const Icon(Icons.event,
+                          size: 12, color: Color(0xFF6B7280)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(dataHora,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12, color: Color(0xFF6B7280))),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -1007,6 +1010,14 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
             : isValidade
                 ? Icons.calendar_today_rounded
                 : Icons.info_outline;
+        final qtyBg =
+            (isAvaria || isValidade) ? badgeBg : const Color(0xFFFFFBEB);
+        final qtyBorder =
+            (isAvaria || isValidade) ? badgeBorder : const Color(0xFFFDE68A);
+        final qtyColor =
+            (isAvaria || isValidade) ? badgeColor : const Color(0xFFB45309);
+        final qtyNumberColor =
+            (isAvaria || isValidade) ? badgeColor : const Color(0xFF78350F);
         return InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: _somenteLeitura ? null : () => _editarItem(it),
@@ -1060,10 +1071,32 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Saldo ${it.stock}  •  Valor ${_brl(it.costPrice)}  •  Total ${_brl(it.costPrice * it.quantity)}',
-                        style: const TextStyle(
-                            fontSize: 11, color: Color(0xFF6B7280)),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          _infoBadge(
+                            'Saldo',
+                            '${it.stock}',
+                            const Color(0xFFEFF6FF),
+                            const Color(0xFFDBEAFE),
+                            const Color(0xFF1D4ED8),
+                          ),
+                          _infoBadge(
+                            'Valor',
+                            _brl(it.costPrice),
+                            const Color(0xFFECFDF5),
+                            const Color(0xFFD1FAE5),
+                            const Color(0xFF047857),
+                          ),
+                          _infoBadge(
+                            'Total',
+                            _brl(it.costPrice * it.quantity),
+                            const Color(0xFFFFFBEB),
+                            const Color(0xFFFDE68A),
+                            const Color(0xFFB45309),
+                          ),
+                        ],
                       ),
                       if (motivo.isNotEmpty) ...[
                         const SizedBox(height: 10),
@@ -1098,25 +1131,25 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
+                    color: qtyBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    border: Border.all(color: qtyBorder),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('QUEBRA',
+                      Text('QUEBRA',
                           style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFB45309),
+                              color: qtyColor,
                               letterSpacing: 0.5)),
                       const SizedBox(height: 2),
                       Text('${it.quantity}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF78350F))),
+                              color: qtyNumberColor)),
                     ],
                   ),
                 ),
@@ -1125,6 +1158,34 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _infoBadge(
+      String label, String valor, Color bg, Color borda, Color cor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: borda),
+      ),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$label ',
+              style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600, color: cor),
+            ),
+            TextSpan(
+              text: valor,
+              style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.bold, color: cor),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

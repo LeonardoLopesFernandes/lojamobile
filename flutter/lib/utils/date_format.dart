@@ -9,3 +9,19 @@ String formatDataBr(String valor) {
   return '${l.day.toString().padLeft(2, '0')}/'
       '${l.month.toString().padLeft(2, '0')}/${l.year}';
 }
+
+/// Formata dd/MM/yyyy • HH:MM quando a string trouxer horário (ISO com "T"
+/// ou contendo ":"). Se for só data, devolve no formato dd/MM/yyyy.
+String formatDataHoraBr(String valor) {
+  if (valor.isEmpty) return valor;
+  final temHora = valor.contains('T') || valor.contains(':');
+  final d = DateTime.tryParse(valor);
+  if (d == null) return valor;
+  final l = d.toLocal();
+  final data = '${l.day.toString().padLeft(2, '0')}/'
+      '${l.month.toString().padLeft(2, '0')}/${l.year}';
+  if (!temHora) return data;
+  final hora = '${l.hour.toString().padLeft(2, '0')}:'
+      '${l.minute.toString().padLeft(2, '0')}';
+  return '$data • $hora';
+}
