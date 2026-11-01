@@ -72,70 +72,158 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
   Future<void> _abrir(BloqueioOperacao op) async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Bloqueio ${op.id}',
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 6),
-              Text('Loja ${op.store} • ${TrocaApi.fmtIsoDate(op.createdAt)}',
-                  style:
-                      const TextStyle(fontSize: 12, color: Colors.black54)),
-              const SizedBox(height: 8),
-              for (final it in op.itemsBlocked)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(it.description,
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600)),
-                      Text(
-                        'Etiqueta: ${it.tags.join(', ')} • Motivo: ${it.reasonBlocking} • ${it.quantity}x',
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.black54),
+                      const Text(
+                        'Detalhes do Bloqueio',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A)),
+                      ),
+                      InkWell(
+                        onTap: () => Navigator.pop(ctx),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                              color: Colors.grey[100], shape: BoxShape.circle),
+                          child: Icon(Icons.close,
+                              size: 18, color: Colors.grey[700]),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _reimprimir(op);
-                      },
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Loja ${op.store}',
+                          style: TextStyle(
+                              color: Colors.red[700],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '•  ${TrocaApi.fmtIsoDate(op.createdAt)}',
+                        style:
+                            TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  for (final it in op.itemsBlocked) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE9ECEF)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            it.description,
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF212529)),
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: Color(0xFFDEE2E6)),
+                          const SizedBox(height: 12),
+                          _buildDetailRow('Etiqueta:', _etiqueta(it)),
+                          const SizedBox(height: 8),
+                          _buildDetailRow('Motivo:', it.reasonBlocking),
+                          const SizedBox(height: 8),
+                          _buildDetailRow(
+                              'Quantidade:', '${it.quantity}x'),
+                          const SizedBox(height: 8),
+                          _buildDetailRow('Valor:',
+                              it.precovigente.isEmpty ? '-' : it.precovigente,
+                              isHighlight: true),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD32F2F),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: const Text('REIMPRIMIR',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.print_outlined, size: 18),
+                      label: const Text(
+                        'REIMPRIMIR',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            letterSpacing: 0.5),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _reimprimir(op);
+                      },
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  String _etiqueta(ItemBloqueado it) {
+    if (it.tags.isNotEmpty) return it.tags.join(', ');
+    return it.ean.isEmpty ? '-' : it.ean;
   }
 
   Future<void> _reimprimir(BloqueioOperacao op) async {
@@ -304,4 +392,31 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
       },
     );
   }
+}
+
+Widget _buildDetailRow(String label, String value,
+    {bool isHighlight = false}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        label,
+        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+      ),
+      const SizedBox(width: 12),
+      Flexible(
+        child: Text(
+          value.isEmpty ? '-' : value,
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+            color: isHighlight
+                ? const Color(0xFFD32F2F)
+                : const Color(0xFF343A40),
+          ),
+        ),
+      ),
+    ],
+  );
 }
