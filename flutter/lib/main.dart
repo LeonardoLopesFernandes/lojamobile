@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app_navigator.dart';
 import 'widgets/truck_loader.dart';
+import 'widgets/voltar_hubs_guard.dart';
 import 'utils/constants.dart';
 import 'network/session_manager.dart';
 import 'auth/hub_tokens.dart';
@@ -92,9 +93,9 @@ class MyApp extends StatelessWidget {
         '/': (ctx) => const SplashDecider(),
         '/login': (ctx) => const LoginScreen(),
         '/login_webview': (ctx) => const LoginWebViewScreen(),
-        '/inventario': (ctx) => const ListaInventarioScreen(),
-        '/quebras': (ctx) => const QuebrasMenuScreen(),
-        '/precificacao': (ctx) => const PrecificacaoMenuScreen(),
+        '/inventario': (ctx) => const VoltarHubsGuard(child: ListaInventarioScreen()),
+        '/quebras': (ctx) => const VoltarHubsGuard(child: QuebrasMenuScreen()),
+        '/precificacao': (ctx) => const VoltarHubsGuard(child: PrecificacaoMenuScreen()),
         '/rotina': (ctx) => const RotinaHubScreen(),
         'DepartmentDetail': (ctx) => const DepartmentDetailScreen(),
         'SpecialItems': (ctx) => const SpecialItemsScreen(),
@@ -151,7 +152,7 @@ class MyApp extends StatelessWidget {
         },
         '/modelo_editavel': (ctx) => const ModeloEditavelScreen(),
         '/pdf_viewer': (ctx) => const PdfViewerScreen(),
-        '/troca_facil': (ctx) => const TrocaFacilMenuScreen(),
+        '/troca_facil': (ctx) => const VoltarHubsGuard(child: TrocaFacilMenuScreen()),
         '/troca_login': (ctx) => const TrocaLoginWebViewScreen(),
         '/troca_etiqueta': (ctx) {
           final args = ModalRoute.of(ctx)?.settings.arguments;
