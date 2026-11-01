@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/inventario.dart';
 import '../models/quebra.dart';
@@ -929,9 +930,9 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
+                color: const Color(0xFFECFDF5),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -940,14 +941,14 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                       style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFB45309),
+                          color: Color(0xFF047857),
                           letterSpacing: 0.5)),
                   const SizedBox(height: 2),
                   Text(_brl(_totalValor),
                       style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF78350F))),
+                          color: Color(0xFF065F46))),
                 ],
               ),
             ),
@@ -1066,35 +1067,41 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                         spacing: 6,
                         runSpacing: 4,
                         children: [
-                          _codigoChip('EAN: ${it.ean}'),
-                          _codigoChip('SAP: ${it.sapCode}'),
+                          _codigoChip('EAN', it.ean),
+                          _codigoChip('SAP', it.sapCode),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
+                      Row(
                         children: [
-                          _infoBadge(
-                            'Saldo',
-                            '${it.stock}',
-                            const Color(0xFFEFF6FF),
-                            const Color(0xFFDBEAFE),
-                            const Color(0xFF1D4ED8),
+                          Expanded(
+                            child: _infoBadge(
+                              'Saldo',
+                              '${it.stock}',
+                              const Color(0xFFEFF6FF),
+                              const Color(0xFFDBEAFE),
+                              const Color(0xFF1D4ED8),
+                            ),
                           ),
-                          _infoBadge(
-                            'Valor',
-                            _brl(it.costPrice),
-                            const Color(0xFFECFDF5),
-                            const Color(0xFFD1FAE5),
-                            const Color(0xFF047857),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _infoBadge(
+                              'Valor',
+                              _brl(it.costPrice),
+                              const Color(0xFFECFDF5),
+                              const Color(0xFFD1FAE5),
+                              const Color(0xFF047857),
+                            ),
                           ),
-                          _infoBadge(
-                            'Total',
-                            _brl(it.costPrice * it.quantity),
-                            const Color(0xFFFFFBEB),
-                            const Color(0xFFFDE68A),
-                            const Color(0xFFB45309),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _infoBadge(
+                              'Total',
+                              _brl(it.costPrice * it.quantity),
+                              const Color(0xFFFFFBEB),
+                              const Color(0xFFFDE68A),
+                              const Color(0xFFB45309),
+                            ),
                           ),
                         ],
                       ),
@@ -1102,21 +1109,21 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                         const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                              horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
                             color: badgeBg,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(color: badgeBorder),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(badgeIcon, size: 12, color: badgeColor),
-                              const SizedBox(width: 4),
+                              Icon(badgeIcon, size: 15, color: badgeColor),
+                              const SizedBox(width: 6),
                               Text('Motivo: $motivo',
                                   style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
                                       color: badgeColor)),
                             ],
                           ),
@@ -1170,39 +1177,59 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: borda),
       ),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            TextSpan(
-              text: '$label ',
-              style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: cor),
-            ),
-            TextSpan(
-              text: valor,
-              style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.bold, color: cor),
-            ),
-          ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: '$label ',
+                style: TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w600, color: cor),
+              ),
+              TextSpan(
+                text: valor,
+                style: TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.bold, color: cor),
+              ),
+            ],
+          ),
+          maxLines: 1,
+          softWrap: false,
         ),
       ),
     );
   }
 
-  Widget _codigoChip(String text) {
-    return Container(
+  Widget _codigoChip(String label, String valor) {
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Text(text,
+      child: Text('$label: $valor',
           style: const TextStyle(
               fontSize: 10,
               fontFamily: 'monospace',
               color: Color(0xFF4B5563),
               fontWeight: FontWeight.w500)),
+    );
+    if (valor.trim().isEmpty) return chip;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: valor));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label copiado: $valor'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
+      child: chip,
     );
   }
 
