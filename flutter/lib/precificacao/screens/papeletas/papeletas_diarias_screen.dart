@@ -628,10 +628,6 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
             icon: Icon(_expandido ? Icons.expand_less : Icons.expand_more),
             onPressed: () => setState(() => _expandido = !_expandido),
           ),
-          IconButton(
-            icon: const Icon(Icons.account_circle, size: 28),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-          ),
         ],
         elevation: 0,
       ),

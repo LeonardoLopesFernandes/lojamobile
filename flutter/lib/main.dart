@@ -36,7 +36,7 @@ import 'recebimento/screens/detalhes_viagem_screen.dart';
 import 'recebimento/screens/itens_screen.dart';
 import 'recebimento/screens/fotos_recebimento_screen.dart';
 import 'recebimento/screens/imagens_recebimento_screen.dart';
-import 'recebimento/screens/profile_screen.dart';
+import 'screens/profile_screen.dart';
 import 'precificacao/core/session_manager.dart' as prec_session;
 import 'precificacao/network/api_client.dart' as prec_api;
 

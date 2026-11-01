@@ -179,10 +179,14 @@ class _HomeHubScreenState extends State<HomeHubScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Image.asset(
-                      'assets/drawables/logo_mloja.png',
-                      width: 40,
-                      height: 40,
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Navigator.pushNamed(context, '/profile'),
+                      child: Image.asset(
+                        'assets/drawables/logo_mloja.png',
+                        width: 40,
+                        height: 40,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     const Expanded(

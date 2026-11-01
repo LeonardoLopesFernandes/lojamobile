@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -256,20 +255,6 @@ class _Header extends StatefulWidget {
 }
 
 class _HeaderState extends State<_Header> {
-  String? _foto;
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarFoto();
-  }
-
-  Future<void> _carregarFoto() async {
-    final session = await SessionManager.create();
-    if (!mounted) return;
-    setState(() => _foto = session.getProfilePhoto());
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MainProvider>(context);
@@ -311,18 +296,6 @@ class _HeaderState extends State<_Header> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5)),
               ],
-            ),
-          ),
-          InkWell(
-            onTap: () async {
-              await Navigator.of(context).pushNamed('/profile');
-              _carregarFoto();
-            },
-            child: CircleAvatar(
-              radius: 22,
-              backgroundColor: const Color(0xFFF1F1F1),
-              backgroundImage: _foto != null ? FileImage(File(_foto!)) : null,
-              child: _foto == null ? Icon(Icons.person, color: vermelho) : null,
             ),
           ),
         ],
