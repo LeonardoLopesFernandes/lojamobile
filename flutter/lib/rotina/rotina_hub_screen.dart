@@ -7,6 +7,9 @@ import 'api/cronet_adapter.dart';
 import 'auth/auth_provider.dart';
 import 'hooks/departments_controller.dart';
 import 'screens/main_screen.dart';
+import 'screens/department_detail_screen.dart';
+import 'screens/special_items_screen.dart';
+import 'screens/dashboard_screen.dart';
 import 'theme.dart' as rotina_theme;
 
 /// Hub da Rotina Comercial dentro do LojaMobile.
@@ -67,7 +70,28 @@ class _RotinaHubScreenState extends State<RotinaHubScreen> {
         ChangeNotifierProvider<DepartmentsController>(
             create: (_) => DepartmentsController()),
       ],
-      child: const MainScreen(),
+      child: Navigator(
+        onGenerateRoute: (settings) {
+          Widget page;
+          switch (settings.name) {
+            case 'DepartmentDetail':
+              page = const DepartmentDetailScreen();
+              break;
+            case 'SpecialItems':
+              page = const SpecialItemsScreen();
+              break;
+            case 'Dashboard':
+              page = const DashboardScreen();
+              break;
+            default:
+              page = const MainScreen();
+          }
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => page,
+          );
+        },
+      ),
     );
   }
 }

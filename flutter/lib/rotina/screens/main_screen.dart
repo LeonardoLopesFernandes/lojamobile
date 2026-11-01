@@ -13,12 +13,12 @@ import 'package:inventario/rotina/components/success_toast.dart';
 import 'package:inventario/rotina/components/treatment_badge_modal.dart';
 import 'package:inventario/rotina/hooks/departments_controller.dart';
 import 'package:inventario/rotina/screens/books_screen.dart';
-import 'package:inventario/rotina/screens/profile_screen.dart';
 import 'package:inventario/rotina/theme.dart';
 import 'package:inventario/rotina/types.dart';
 import 'package:inventario/rotina/utils/time.dart';
 import 'package:inventario/rotina/utils/toast.dart';
 import 'package:provider/provider.dart';
+import 'package:inventario/widgets/dialog_voltar_hubs.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -122,6 +122,13 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Future<void> _confirmarVoltarHubs() async {
+    final ok = await confirmarVoltarHubs(context);
+    if (ok && mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<DepartmentsController>();
@@ -165,7 +172,8 @@ class _MainScreenState extends State<MainScreen> {
           controller.loadDataForDate(today);
           return;
         }
-        setState(() => _showExit = true);
+        // Dentro do LojaMobile, voltar confirma e retorna à home dos hubs.
+        _confirmarVoltarHubs();
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -309,28 +317,7 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x03000000), blurRadius: 12, offset: Offset(0, 8)),
-                  ],
-                ),
-                child: Center(
-                  child: Image.asset('assets/rotina/ic_user.png', width: 28, height: 28),
-                ),
-              ),
-            ),
+            const SizedBox(width: 44),
           ],
         ),
       ),

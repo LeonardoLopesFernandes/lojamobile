@@ -12,6 +12,7 @@ import '../utils/constants.dart';
 import '../utils/excel_downloader.dart';
 import '../widgets/trip_card.dart';
 import '../widgets/dialog_protocolo_sucesso.dart';
+import '../../widgets/dialog_voltar_hubs.dart';
 
 /// Sincroniza as viagens do BRLog via OAuth Microsoft (aad_oauth), o mesmo
 /// fluxo do app BRLog. Executada somente ao tocar em "Sincronizar viagens".
@@ -100,13 +101,23 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+Future<void> _confirmarVoltarHubs(BuildContext context) async {
+  final ok = await confirmarVoltarHubs(context);
+  if (ok && context.mounted) Navigator.of(context).pop();
+}
+
 class _HomeBody extends StatelessWidget {
   const _HomeBody();
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MainProvider>(context);
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _confirmarVoltarHubs(context);
+      },
+      child: Scaffold(
         backgroundColor: const Color(Constants.bgGray),
         drawer: const _AppDrawer(),
         body: Column(
@@ -161,7 +172,7 @@ class _HomeBody extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _itemBuilder(BuildContext context, MainProvider provider, int i) {

@@ -166,9 +166,15 @@ Future<({bool saved, String message})> _downloadPdf(
       onReceiveProgress: (_, __) {},
     );
     final bytes = Uint8List.fromList(res.data as List<int>);
-    await const MethodChannel('rotina/storage').invokeMethod<String>(
-      'savePdf',
-      {'bytes': bytes, 'fileName': fileName},
+    /// No LojaMobile o canal nativo é o `com.ir/media`, que salva em
+    /// Downloads e abre o PDF (mesmo usado pelos relatórios de etiquetas).
+    await const MethodChannel('com.ir/media').invokeMethod<String>(
+      'saveToDownloadsAndOpen',
+      {
+        'fileName': fileName,
+        'bytes': bytes,
+        'mime': 'application/pdf',
+      },
     );
     return (saved: true, message: 'PDF salvo na pasta Downloads: $fileName');
   } on PlatformException catch (e) {
