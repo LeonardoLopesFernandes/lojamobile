@@ -29,6 +29,13 @@ const List<_Hub> _hubs = [
     rota: '/precificacao',
   ),
   _Hub(
+    id: 'rotina',
+    iconAsset: 'assets/rotina/logo_rotina.png',
+    fallbackIcon: Icons.task_alt,
+    title: 'Rotina Comercial',
+    rota: '/rotina',
+  ),
+  _Hub(
     id: 'recebimento',
     iconAsset: 'assets/drawables/recebimento.png',
     fallbackIcon: Icons.local_shipping_outlined,

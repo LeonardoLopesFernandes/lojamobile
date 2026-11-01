@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -6,6 +7,7 @@ import '../network/session_manager.dart';
 import '../network/inventario_service.dart';
 import '../utils/constants.dart';
 import '../utils/log_helper.dart';
+import '../auth/hub_tokens.dart';
 
 /// URL de login SAML do minhaloja (fiel ao LoginWebViewActivity.carregarLogin).
 /// prompt=select_account mostra a tela "Escolher uma conta" com as contas
@@ -32,6 +34,12 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
   String _email = '';
   String _senha = '';
   bool _argsLidos = false;
+  bool _sincronizando = false;
+  String _syncMensagem = '';
+  Completer<void>? _pageCompleter;
+  bool _trocaTokenCapturado = false;
+  bool _rotinaTokenCapturado = false;
+  String _syncUrl = '';
 
   @override
   void didChangeDependencies() {
@@ -57,10 +65,19 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
+            if (url != null) _syncUrl = url;
+            if (url != null && _sincronizando) _capturarTokenDaUrl(url);
             if (url != null) _verificarTokenNaUrl(url);
             if (url != null) _verificarTokenViaCookies();
           },
           onPageFinished: (url) async {
+            if (url != null) _syncUrl = url;
+            if (_sincronizando) {
+              if (url != null) _capturarTokenDaUrl(url);
+              _pageCompleter?.complete();
+              _pageCompleter = null;
+              return;
+            }
             // Antes de capturar o token, esconde o carregamento para o
             // usuário ver/preencher o login SAML. Depois do token, mantém a
             // tela de carregamento (logo centralizado).
@@ -73,6 +90,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
           },
           onNavigationRequest: (request) {
             final url = request.url;
+            if (_sincronizando) _capturarTokenDaUrl(url);
             if (!_loginConcluido) _verificarTokenNaUrl(url);
             return NavigationDecision.navigate;
           },
@@ -209,6 +227,8 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
       final store = _session.getUserStore() ?? 'L291';
       final inventario = InventarioService.forSession(_session);
       await inventario.getCycleCounts(storeId: store, limit: 1);
+      await _sincronizarHubs(
+          token, claims?['exp'] is int ? claims!['exp'] as int : null);
       _irParaHome();
     } catch (e) {
       LogHelper.e("token rejeitado pelo BFF", e);
@@ -221,6 +241,115 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
           const SnackBar(content: Text('Token rejeitado. Tente novamente.')),
         );
       }
+    }
+  }
+
+  // ---- Sincronização dos tokens próprios dos hubs ----
+
+  /// Roda depois do token principal: o mesmo WebView (mesma sessão Microsoft)
+  /// passa pelas autorizações da Rotina e do Troca Fácil e captura os tokens.
+  Future<void> _sincronizarHubs(String mainToken, int? exp) async {
+    try {
+      await HubTokens.copiarPrincipalParaRecebimento(mainToken, exp: exp);
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _sincronizando = true;
+      _carregando = false;
+      _syncMensagem = 'Sincronizando Rotina Comercial...';
+    });
+    try {
+      await _capturarRotina();
+      if (mounted) {
+        setState(() => _syncMensagem = 'Sincronizando Troca Fácil...');
+      }
+      await _capturarTroca();
+    } catch (e) {
+      LogHelper.e('HubSync: erro ao sincronizar tokens', e);
+    }
+    if (mounted) {
+      setState(() {
+        _sincronizando = false;
+        _syncMensagem = '';
+      });
+    }
+  }
+
+  Future<void> _capturarRotina() async {
+    _rotinaTokenCapturado = false;
+    await _carregarUrl(
+        'https://sl-authorization.americanas.io/rotina-comercial');
+    for (var i = 0; i < 8 && !_rotinaTokenCapturado; i++) {
+      final token = await _lerCookie('rc-newToken');
+      if (token != null) {
+        _rotinaTokenCapturado = true;
+        await HubTokens.salvarRotina(token);
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 1200));
+    }
+  }
+
+  Future<void> _capturarTroca() async {
+    _trocaTokenCapturado = false;
+    await _carregarUrl(
+        'https://sl-authorization.americanas.io/troca-facil/login');
+    for (var i = 0; i < 16 && !_trocaTokenCapturado; i++) {
+      if (_syncUrl.contains('trocafacil.americanas.io')) {
+        final token = await _lerCookie('token');
+        if (token != null) {
+          _trocaTokenCapturado = true;
+          await HubTokens.salvarTroca(token);
+          return;
+        }
+      }
+      await Future.delayed(const Duration(milliseconds: 1200));
+    }
+  }
+
+  Future<void> _carregarUrl(String url) async {
+    final c = Completer<void>();
+    _pageCompleter = c;
+    try {
+      await _controller
+          .loadRequest(Uri.parse(url))
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {}
+    try {
+      await c.future.timeout(const Duration(seconds: 20));
+    } catch (_) {}
+    _pageCompleter = null;
+  }
+
+  void _capturarTokenDaUrl(String url) {
+    if (!_sincronizando) return;
+    _syncUrl = url;
+    final m = RegExp(r'[?&]token=([^&]+)').firstMatch(url);
+    if (m == null) return;
+    final token = Uri.decodeComponent(m.group(1)!);
+    if (token.length <= 50) return;
+    if (url.contains('trocafacil.americanas.io')) {
+      _trocaTokenCapturado = true;
+      HubTokens.salvarTroca(token);
+    } else if (url.contains('rotina-comercial.americanas.io')) {
+      _rotinaTokenCapturado = true;
+      HubTokens.salvarRotina(token);
+    }
+  }
+
+  Future<String?> _lerCookie(String nome) async {
+    try {
+      final result = await _controller.runJavaScriptReturningResult(
+          "(function(){try{var c=document.cookie?document.cookie.split('; '):[];"
+          "for(var i=0;i<c.length;i++){var kv=c[i].split('=');"
+          "if(kv[0]==='$nome')return kv.slice(1).join('=');}"
+          "if(window.localStorage){var v=localStorage.getItem('$nome');if(v)return v;}"
+          "if(window.sessionStorage){var v=sessionStorage.getItem('$nome');if(v)return v;}"
+          "return '';}catch(e){return '';}})()");
+      final s = result.toString().replaceAll('"', '').trim();
+      return s.length > 50 ? s : null;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -278,6 +407,42 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
           else
             const SizedBox.shrink(),
           if (_carregando) const _CarregamentoWidget(),
+          if (_sincronizando)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Material(
+                color: const Color(Constants.primaryRed),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _syncMensagem,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

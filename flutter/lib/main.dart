@@ -4,6 +4,7 @@ import 'app_navigator.dart';
 import 'widgets/truck_loader.dart';
 import 'utils/constants.dart';
 import 'network/session_manager.dart';
+import 'auth/hub_tokens.dart';
 import 'screens/login_screen.dart';
 import 'screens/login_webview_screen.dart';
 import 'screens/lista_inventario_screen.dart';
@@ -37,6 +38,10 @@ import 'recebimento/screens/itens_screen.dart';
 import 'recebimento/screens/fotos_recebimento_screen.dart';
 import 'recebimento/screens/imagens_recebimento_screen.dart';
 import 'screens/profile_screen.dart';
+import 'rotina/rotina_hub_screen.dart';
+import 'rotina/screens/department_detail_screen.dart';
+import 'rotina/screens/special_items_screen.dart';
+import 'rotina/screens/dashboard_screen.dart';
 import 'precificacao/core/session_manager.dart' as prec_session;
 import 'precificacao/network/api_client.dart' as prec_api;
 
@@ -90,6 +95,10 @@ class MyApp extends StatelessWidget {
         '/inventario': (ctx) => const ListaInventarioScreen(),
         '/quebras': (ctx) => const QuebrasMenuScreen(),
         '/precificacao': (ctx) => const PrecificacaoMenuScreen(),
+        '/rotina': (ctx) => const RotinaHubScreen(),
+        'DepartmentDetail': (ctx) => const DepartmentDetailScreen(),
+        'SpecialItems': (ctx) => const SpecialItemsScreen(),
+        'Dashboard': (ctx) => const DashboardScreen(),
         '/precificacao_etiquetas': (ctx) => Scaffold(
               appBar: AppBar(
                 backgroundColor: Colors.white,
@@ -180,10 +189,18 @@ class _SplashDeciderState extends State<SplashDecider> {
 
   Future<void> _decide() async {
     final session = await SessionManager.create();
-    if (session.isLoggedIn()) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else {
+    if (!session.isLoggedIn()) {
       Navigator.of(context).pushReplacementNamed('/login');
+      return;
+    }
+    // Detecta sessões próprias vencidas (Rotina/Troca Fácil). Se alguma
+    // expirou, volta para o Login Microsoft, que renova todos os tokens.
+    final rotinaOk = await HubTokens.rotinaValida();
+    final trocaOk = await HubTokens.trocaValida();
+    if (!rotinaOk || !trocaOk) {
+      Navigator.of(context).pushReplacementNamed('/login');
+    } else {
+      Navigator.of(context).pushReplacementNamed('/home');
     }
   }
 
