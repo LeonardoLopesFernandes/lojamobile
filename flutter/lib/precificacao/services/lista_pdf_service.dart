@@ -168,6 +168,10 @@ class ListaPdfService {
       fontSize: 10,
     );
     const cellStyle = pw.TextStyle(fontSize: 9);
+    final descStyle = pw.TextStyle(
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+    );
     final eanStyle = pw.TextStyle(
       fontSize: 14,
       fontWeight: pw.FontWeight.bold,
@@ -185,6 +189,7 @@ class ListaPdfService {
 
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+      defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
       columnWidths: {
         0: const pw.FixedColumnWidth(70),
         1: const pw.FlexColumnWidth(),
@@ -210,7 +215,7 @@ class ListaPdfService {
                   mainAxisSize: pw.MainAxisSize.min,
                   children: [
                     pw.Text(t.description,
-                        style: cellStyle, textAlign: pw.TextAlign.center),
+                        style: descStyle, textAlign: pw.TextAlign.center),
                     pw.SizedBox(height: 2),
                     pw.BarcodeWidget(
                       barcode: Barcode.code128(),
