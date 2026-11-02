@@ -169,85 +169,219 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
 
     final acao = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Operação ${op.tradeId}',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                _linha('Cliente', nome),
-                if (doc.isNotEmpty) _linha('Documento', doc),
-                if (cidade.isNotEmpty || uf.isNotEmpty)
-                  _linha('Cidade', '$cidade${uf.isNotEmpty ? ' - $uf' : ''}'),
-                _linha('Motivo', motivo),
-                if (produtosTxt.isNotEmpty)
-                  _linha('Produtos', produtosTxt),
-                if (etiquetas.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  const Text('Selecione as etiquetas para reimprimir:',
-                      style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  for (final e in etiquetas)
-                    InkWell(
-                      onTap: () => setSheetState(() {
-                        if (selecionadas.contains(e)) {
-                          selecionadas.remove(e);
-                        } else {
-                          selecionadas.add(e);
-                        }
-                      }),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                                selecionadas.contains(e)
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: const Color(0xFFD32F2F),
-                                size: 20),
-                            const SizedBox(width: 8),
-                            Text(e,
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600)),
-                          ],
-                        ),
+        builder: (ctx, setSheetState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                ],
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                        child: _badge(
-                            'REIMPRIMIR',
-                            op.cancelada
-                                ? null
-                                : () => Navigator.pop(ctx, 'reimprimir'),
-                            icon: Icons.print)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: _badge(
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Operação ${op.tradeId}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => Navigator.pop(ctx),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close,
+                              size: 18, color: Color(0xFF495057)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE9ECEF)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildField('Cliente', nome, isBold: true),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: _buildField(
+                                  'Documento', doc.isEmpty ? '-' : doc),
+                            ),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: _buildField(
+                                'Cidade',
+                                cidade.isEmpty && uf.isEmpty
+                                    ? '-'
+                                    : '$cidade${uf.isNotEmpty ? ' - $uf' : ''}',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _buildField('Motivo', motivo),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE9ECEF)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Produtos',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          produtosTxt.isEmpty ? '-' : produtosTxt,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF212529),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(height: 1, color: Color(0xFFDEE2E6)),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Selecione as etiquetas para reimprimir:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF495057),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        for (final e in etiquetas)
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: selecionadas.contains(e),
+                                activeColor: const Color(0xFFD32F2F),
+                                onChanged: (val) => setSheetState(() {
+                                  if (selecionadas.contains(e)) {
+                                    selecionadas.remove(e);
+                                  } else {
+                                    selecionadas.add(e);
+                                  }
+                                }),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  e,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(color: Color(0xFFCED4DA)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: op.cancelada
+                              ? null
+                              : () => Navigator.pop(ctx, 'cancelar'),
+                          child: const Text(
                             'CANCELAR',
-                            op.cancelada
-                                ? null
-                                : () => Navigator.pop(ctx, 'cancelar'),
-                            icon: Icons.close)),
-                  ],
-                ),
-              ],
+                            style: TextStyle(
+                              color: Color(0xFF495057),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD32F2F),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.print_outlined, size: 18),
+                          label: const Text(
+                            'REIMPRIMIR',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          onPressed: op.cancelada
+                              ? null
+                              : () => Navigator.pop(ctx, 'reimprimir'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -312,46 +446,21 @@ class _ListaOperacoesScreenState extends State<ListaOperacoesScreen> {
     }
   }
 
-  Widget _linha(String label, String valor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          Text(valor,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87)),
-        ],
-      ),
-    );
-  }
-
-  Widget _badge(String label, VoidCallback? onTap, {IconData? icon}) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFD32F2F),
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: Colors.grey.shade300,
-        disabledForegroundColor: Colors.grey.shade600,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 18, color: Colors.white),
-            const SizedBox(width: 6),
-          ],
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
+  Widget _buildField(String label, String value, {bool isBold = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+            color: const Color(0xFF343A40),
+          ),
+        ),
+      ],
     );
   }
 
