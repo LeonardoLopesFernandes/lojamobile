@@ -10,7 +10,8 @@ import 'package:share_plus/share_plus.dart';
 import '../models/models.dart';
 
 /// Gera um PDF em formato de relatório/tabela com os itens da lista.
-/// Colunas: Quantidade, EAN, SAP, Descrição. Depois oferece compartilhamento.
+/// Colunas: Quantidade e Código de Barras (descrição acima e EAN abaixo).
+/// Depois oferece compartilhamento.
 class ListaPdfService {
   ListaPdfService._();
 
@@ -157,8 +158,9 @@ class ListaPdfService {
     );
   }
 
-  /// Tabela do relatório de etiquetas: QTD, EAN, DESCRIÇÃO, CÓDIGO DE BARRAS
-  /// (Code 128 gerado a partir do EAN).
+  /// Tabela do relatório de etiquetas: QUANTIDADE e CÓDIGO DE BARRAS.
+  /// A descrição fica acima do código de barras e o EAN abaixo, maior e com
+  /// os dígitos espaçados.
   static pw.Widget _tabelaEtiquetas(List<PriceTag> itens) {
     final headerStyle = pw.TextStyle(
       fontWeight: pw.FontWeight.bold,
@@ -166,6 +168,12 @@ class ListaPdfService {
       fontSize: 10,
     );
     const cellStyle = pw.TextStyle(fontSize: 9);
+    final eanStyle = pw.TextStyle(
+      fontSize: 14,
+      fontWeight: pw.FontWeight.bold,
+    );
+
+    String espacar(String valor) => valor.split('').join(' ');
 
     pw.Widget cell(pw.Widget child, {pw.Alignment? align}) => pw.Padding(
           padding: const pw.EdgeInsets.all(4),
@@ -178,29 +186,26 @@ class ListaPdfService {
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
       columnWidths: {
-        0: const pw.FixedColumnWidth(40),
-        1: const pw.FixedColumnWidth(90),
-        2: const pw.FlexColumnWidth(),
-        3: const pw.FixedColumnWidth(190),
+        0: const pw.FixedColumnWidth(70),
+        1: const pw.FlexColumnWidth(),
       },
       children: [
         pw.TableRow(
           decoration: const pw.BoxDecoration(color: PdfColors.red700),
           children: [
-            cell(pw.Text('QTD', style: headerStyle, textAlign: pw.TextAlign.center)),
-            cell(pw.Text('COD EAN', style: headerStyle, textAlign: pw.TextAlign.center)),
-            cell(pw.Text('DESCRIÇÃO', style: headerStyle, textAlign: pw.TextAlign.center)),
-            cell(pw.Text('CÓDIGO DE BARRAS', style: headerStyle, textAlign: pw.TextAlign.center)),
+            cell(pw.Text('Quantidade',
+                style: headerStyle, textAlign: pw.TextAlign.center)),
+            cell(pw.Text('CÓDIGO DE BARRAS',
+                style: headerStyle, textAlign: pw.TextAlign.center)),
           ],
         ),
         for (final t in itens)
           pw.TableRow(
             children: [
-              cell(pw.Text(t.quantity.toString(), style: cellStyle, textAlign: pw.TextAlign.center)),
-              cell(pw.Text(t.ean, style: cellStyle, textAlign: pw.TextAlign.center)),
-              cell(pw.Text(t.description, style: cellStyle, textAlign: pw.TextAlign.center)),
+              cell(pw.Text(t.quantity.toString(),
+                  style: cellStyle, textAlign: pw.TextAlign.center)),
               cell(pw.SizedBox(
-                width: 175,
+                width: 300,
                 child: pw.Column(
                   mainAxisSize: pw.MainAxisSize.min,
                   children: [
@@ -210,13 +215,13 @@ class ListaPdfService {
                     pw.BarcodeWidget(
                       barcode: Barcode.code128(),
                       data: t.ean,
-                      width: 175,
-                      height: 34,
+                      width: 280,
+                      height: 36,
                       drawText: false,
                     ),
-                    pw.SizedBox(height: 2),
-                    pw.Text(t.ean,
-                        style: cellStyle, textAlign: pw.TextAlign.center),
+                    pw.SizedBox(height: 4),
+                    pw.Text(espacar(t.ean),
+                        style: eanStyle, textAlign: pw.TextAlign.center),
                   ],
                 ),
               )),
