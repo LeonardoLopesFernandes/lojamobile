@@ -6,6 +6,7 @@ import 'package:inventario/precificacao/utils/toast_utils.dart';
 import 'package:inventario/network/inventario_service.dart';
 import 'package:inventario/network/session_manager.dart';
 import 'compose_avulsa.dart';
+import 'product_image_dialog.dart';
 
 String _brl(double v) {
   final s = v.toStringAsFixed(2);
@@ -58,7 +59,7 @@ Widget _qtyBox(TextEditingController c, ValueChanged<int> onChange) {
 }
 
 Widget _eanLinha(BuildContext context, String texto, String ean,
-    {double? saldo}) {
+    {double? saldo, String descricao = ''}) {
   return GestureDetector(
     onTap: () async {
       await Clipboard.setData(ClipboardData(text: ean));
@@ -291,14 +292,21 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                 _qtyBox(_qty, widget.onChangedQuantity),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    item.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF212121)),
+                  child: GestureDetector(
+                    onTap: () => mostrarImagemProduto(
+                      context,
+                      ean: item.ean,
+                      descricao: item.description,
+                    ),
+                    child: Text(
+                      item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF212121)),
+                    ),
                   ),
                 ),
                 IconButton(
@@ -323,6 +331,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                       _eanLinha(context,
                           'DEP: $deptNum | EAN: ${item.ean} / SAP: ${item.sap}',
                           item.ean,
+                          descricao: item.description,
                           saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
@@ -558,14 +567,21 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                 _qtyBox(_qty, widget.onChangedQuantity),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    item.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF212121)),
+                  child: GestureDetector(
+                    onTap: () => mostrarImagemProduto(
+                      context,
+                      ean: item.ean,
+                      descricao: item.description,
+                    ),
+                    child: Text(
+                      item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF212121)),
+                    ),
                   ),
                 ),
                 IconButton(
@@ -590,6 +606,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                       _eanLinha(context,
                           'DEP: $deptNum | EAN: ${item.ean} / SAP: ${item.sap}',
                           item.ean,
+                          descricao: item.description,
                           saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
