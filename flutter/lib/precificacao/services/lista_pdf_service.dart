@@ -220,8 +220,8 @@ class ListaPdfService {
                     pw.BarcodeWidget(
                       barcode: Barcode.code128(),
                       data: t.ean,
-                      width: 280,
-                      height: 36,
+                      width: 220,
+                      height: 30,
                       drawText: false,
                     ),
                     pw.SizedBox(height: 4),
