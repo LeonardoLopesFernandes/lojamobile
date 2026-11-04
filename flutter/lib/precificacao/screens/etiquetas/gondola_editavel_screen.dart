@@ -911,7 +911,7 @@ class _GondolaPreviewPainter extends CustomPainter {
                 valor, tx(345), ty(baseline), 110.0,
                 TextAlign.right, const Color(0xFF000000),
                 px(ehParc ? 260.0 : (ehDepor ? alvoDepor : valorMaxW)),
-                sy: ehParc ? 1.4 : 1.0,
+                sy: ehParc ? 1.4 : (ehDepor ? 1.1 : 1.0),
                 larguraAlvo: ehDepor ? px(alvoDepor) : 0.0);
           }
           const maxCifrao = 45.0;
