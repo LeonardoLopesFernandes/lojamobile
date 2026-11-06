@@ -111,6 +111,7 @@ class ApiService {
     if (ean.isEmpty && item['_printingData'] is Map) {
       ean = (item['_printingData']['ean']?.toString() ?? '').trim();
     }
+    if (ean == '-' || ean == '--' || ean.toLowerCase() == 'null') return '';
     return ean;
   }
 }

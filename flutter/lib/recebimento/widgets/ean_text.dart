@@ -25,10 +25,17 @@ class _EanTextState extends State<EanText> {
   String _ean = '';
   bool _buscando = false;
 
+  String _eanValido(String valor) {
+    final v = valor.trim();
+    if (v == '-' || v == '--') return '';
+    if (v.toLowerCase() == 'null') return '';
+    return v;
+  }
+
   @override
   void initState() {
     super.initState();
-    _ean = widget.eanInicial;
+    _ean = _eanValido(widget.eanInicial);
     if (_ean.isEmpty) _buscar();
   }
 
@@ -37,7 +44,7 @@ class _EanTextState extends State<EanText> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sap != widget.sap ||
         oldWidget.eanInicial != widget.eanInicial) {
-      _ean = widget.eanInicial;
+      _ean = _eanValido(widget.eanInicial);
       if (_ean.isEmpty) _buscar();
     }
   }
@@ -50,7 +57,7 @@ class _EanTextState extends State<EanText> {
     final ean = await EanResolver.bySap(sap);
     if (!mounted) return;
     setState(() {
-      _ean = ean;
+      _ean = _eanValido(ean);
       _buscando = false;
     });
   }
