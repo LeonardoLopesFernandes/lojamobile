@@ -86,6 +86,16 @@ class ApiService {
       if (ean.isNotEmpty) return ean;
     }
 
+    // Último fallback: consulta de produto por SAP.
+    for (final candidato in candidatos) {
+      if (candidato.isEmpty) continue;
+      final ean = await _consultarEan(
+        'web/product/store/$storeId',
+        {'sapCode': candidato},
+      );
+      if (ean.isNotEmpty) return ean;
+    }
+
     return '';
   }
 
@@ -93,6 +103,8 @@ class ApiService {
       String path, Map<String, String> query) async {
     try {
       final json = await client.get(path, query: query) as Map<String, dynamic>;
+      final direto = _extrairEan(json);
+      if (direto.isNotEmpty) return direto;
       final itens = json['items'] as List? ?? [];
       for (final item in itens) {
         final ean = _extrairEan(item);
@@ -110,6 +122,12 @@ class ApiService {
     }
     if (ean.isEmpty && item['_printingData'] is Map) {
       ean = (item['_printingData']['ean']?.toString() ?? '').trim();
+    }
+    if (ean.isEmpty && item['product'] is Map) {
+      ean = (item['product']['ean']?.toString() ?? '').trim();
+    }
+    if (ean.isEmpty && item['id_ean'] != null) {
+      ean = item['id_ean'].toString().trim();
     }
     if (ean == '-' || ean == '--' || ean.toLowerCase() == 'null') return '';
     return ean;
