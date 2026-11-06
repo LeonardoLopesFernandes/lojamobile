@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/recebimento.dart';
 import '../utils/constants.dart';
 import '../utils/currency_formatter.dart';
+import 'ean_text.dart';
 
 class ItemRow extends StatelessWidget {
   final RecebimentoItem item;
@@ -33,16 +34,17 @@ class ItemRow extends StatelessWidget {
                   color: Color(0xFF1A1A1A),
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 2),
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 2,
             children: [
               Text("Qtd: ${CurrencyFormatter.formatarInteiro(item.quantidade)}",
                   style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
-              const SizedBox(width: 16),
               Text("DEP: ${item.departamento}",
                   style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
-              const SizedBox(width: 16),
               Text("SAP: $sap",
                   style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
+              EanText(sap: item.idSap, eanInicial: item.idEan),
             ],
           ),
         ],
