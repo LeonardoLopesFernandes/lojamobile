@@ -24,6 +24,7 @@ class EanText extends StatefulWidget {
 class _EanTextState extends State<EanText> {
   String _ean = '';
   bool _buscando = false;
+  int _geracao = 0;
 
   String _eanValido(String valor) {
     final v = valor.trim();
@@ -35,8 +36,7 @@ class _EanTextState extends State<EanText> {
   @override
   void initState() {
     super.initState();
-    _ean = _eanValido(widget.eanInicial);
-    if (_ean.isEmpty) _buscar();
+    _aplicarEanInicial();
   }
 
   @override
@@ -44,18 +44,30 @@ class _EanTextState extends State<EanText> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sap != widget.sap ||
         oldWidget.eanInicial != widget.eanInicial) {
-      _ean = _eanValido(widget.eanInicial);
-      if (_ean.isEmpty) _buscar();
+      _aplicarEanInicial();
     }
   }
 
+  void _aplicarEanInicial() {
+    _geracao++;
+    _ean = _eanValido(widget.eanInicial);
+    _buscando = _ean.isEmpty;
+    if (_buscando) _buscar();
+  }
+
   Future<void> _buscar() async {
-    if (_buscando) return;
     final sap = widget.sap.trim();
-    if (sap.isEmpty) return;
+    final geracao = ++_geracao;
+    if (sap.isEmpty) {
+      setState(() {
+        _ean = '';
+        _buscando = false;
+      });
+      return;
+    }
     setState(() => _buscando = true);
     final ean = await EanResolver.bySap(sap);
-    if (!mounted) return;
+    if (!mounted || geracao != _geracao) return;
     setState(() {
       _ean = _eanValido(ean);
       _buscando = false;
@@ -80,7 +92,7 @@ class _EanTextState extends State<EanText> {
       child: Text(
         '${widget.prefixo}$valor',
         style: widget.style ??
-            const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+            const TextStyle(fontSize: 11, color: Color(0xFF666666)),
       ),
     );
   }
