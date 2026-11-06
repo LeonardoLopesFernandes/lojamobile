@@ -9,6 +9,7 @@ class Constants {
 
   // URLs - minhaloja-bff
   static const String baseUrl = "https://minhaloja-bff.americanas.io/";
+  static const String slBaseUrl = "https://sl-bff.americanas.io/";
 
   // BrasilRisk
   static const String brasilRiskBaseUrl = "https://apimobile.brasilrisk.com.br/";

@@ -1,3 +1,4 @@
+import '../utils/constants.dart';
 import 'api_client.dart';
 import 'api_service.dart';
 import 'session_manager.dart';
@@ -43,6 +44,6 @@ class EanResolver {
   static Future<ApiService> _criarServico() async {
     final session = await SessionManager.create();
     _storeId = session.getUserStore();
-    return ApiService(ApiClient(session));
+    return ApiService(ApiClient(session, baseUrl: Constants.slBaseUrl));
   }
 }
