@@ -20,6 +20,7 @@ class ApiClient {
     };
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
+      headers['Cookie'] = 'rc-newToken=$token';
     }
     return headers;
   }

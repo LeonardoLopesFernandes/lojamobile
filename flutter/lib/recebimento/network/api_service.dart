@@ -56,26 +56,61 @@ class ApiService {
   /// EAN do produto consultado pela etiqueta avulsa do Minha Loja.
   Future<String> getEanBySap(String storeId, String sap) async {
     // O Minha Loja busca SAP sem os zeros à esquerda.
-    final sapLimpo =
-        int.tryParse(sap.trim())?.toString() ?? sap.trim();
+    final digitos = sap.replaceAll(RegExp(r'\D'), '');
+    final sapLimpo = digitos.replaceFirst(RegExp(r'^0+'), '');
     if (sapLimpo.isEmpty) return '';
-    try {
-      final hoje = DateTime.now();
-      final data = '${hoje.year.toString().padLeft(4, '0')}-'
-          '${hoje.month.toString().padLeft(2, '0')}-'
-          '${hoje.day.toString().padLeft(2, '0')}';
-      final json = await client.get(
+
+    final hoje = DateTime.now();
+    final data = '${hoje.year.toString().padLeft(4, '0')}-'
+        '${hoje.month.toString().padLeft(2, '0')}-'
+        '${hoje.day.toString().padLeft(2, '0')}';
+
+    final candidatos = <String>{sapLimpo, sap.trim()};
+
+    for (final candidato in candidatos) {
+      if (candidato.isEmpty) continue;
+      final ean = await _consultarEan(
         'web/price-tag/store/$storeId/single-label-printing',
-        query: {'startDate': data, 'sapId': sapLimpo},
-      ) as Map<String, dynamic>;
+        {'startDate': data, 'sapId': candidato},
+      );
+      if (ean.isNotEmpty) return ean;
+    }
+
+    // Fallback para a papeleta avulsa, que usa a mesma base de produto.
+    for (final candidato in candidatos) {
+      if (candidato.isEmpty) continue;
+      final ean = await _consultarEan(
+        'web/price-sign/store/$storeId/standalone',
+        {'type': 'PAPELETA_COMUM', 'startDate': data, 'sapId': candidato},
+      );
+      if (ean.isNotEmpty) return ean;
+    }
+
+    return '';
+  }
+
+  Future<String> _consultarEan(
+      String path, Map<String, String> query) async {
+    try {
+      final json = await client.get(path, query: query) as Map<String, dynamic>;
       final itens = json['items'] as List? ?? [];
       for (final item in itens) {
-        if (item is Map) {
-          final ean = item['ean']?.toString() ?? '';
-          if (ean.isNotEmpty) return ean;
-        }
+        final ean = _extrairEan(item);
+        if (ean.isNotEmpty) return ean;
       }
     } catch (_) {}
     return '';
+  }
+
+  String _extrairEan(dynamic item) {
+    if (item is! Map) return '';
+    var ean = item['ean']?.toString().trim() ?? '';
+    if (ean.isEmpty && item['printingData'] is Map) {
+      ean = (item['printingData']['ean']?.toString() ?? '').trim();
+    }
+    if (ean.isEmpty && item['_printingData'] is Map) {
+      ean = (item['_printingData']['ean']?.toString() ?? '').trim();
+    }
+    return ean;
   }
 }
