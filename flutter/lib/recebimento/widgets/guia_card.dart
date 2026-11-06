@@ -162,18 +162,19 @@ class _ProdutoSimples extends StatelessWidget {
             runSpacing: 2,
             children: [
               Text("Qtd: ${CurrencyFormatter.formatarInteiro(item.quantidade)}",
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF666666), fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF666666), fontWeight: FontWeight.bold)),
               Text("DEP: ${item.departamento}",
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF666666), fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF666666), fontWeight: FontWeight.bold)),
               CopyableText(
                   texto: "SAP: $sap",
                   valorCopia: sap,
                   rotulo: "SAP",
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF666666), fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF666666), fontWeight: FontWeight.bold)),
               EanText(
                   key: ValueKey('${item.idSap}|${item.idEan}'),
                   sap: item.idSap,
                   eanInicial: item.idEan,
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF666666), fontWeight: FontWeight.bold),
                 ),
             ],
           ),
