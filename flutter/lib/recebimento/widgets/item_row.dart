@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/recebimento.dart';
 import '../utils/constants.dart';
 import '../utils/currency_formatter.dart';
+import 'copyable_text.dart';
 import 'ean_text.dart';
 
 class ItemRow extends StatelessWidget {
@@ -42,7 +43,10 @@ class ItemRow extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
               Text("DEP: ${item.departamento}",
                   style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
-              Text("SAP: $sap",
+              CopyableText(
+                  texto: "SAP: $sap",
+                  valorCopia: sap,
+                  rotulo: "SAP",
                   style: const TextStyle(fontSize: 12, color: Color(0xFF666666))),
               EanText(sap: item.idSap, eanInicial: item.idEan),
             ],

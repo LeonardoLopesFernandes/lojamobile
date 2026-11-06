@@ -55,7 +55,10 @@ class ApiService {
 
   /// EAN do produto consultado pela etiqueta avulsa do Minha Loja.
   Future<String> getEanBySap(String storeId, String sap) async {
-    if (sap.trim().isEmpty) return '';
+    // O Minha Loja busca SAP sem os zeros à esquerda.
+    final sapLimpo =
+        int.tryParse(sap.trim())?.toString() ?? sap.trim();
+    if (sapLimpo.isEmpty) return '';
     try {
       final hoje = DateTime.now();
       final data = '${hoje.year.toString().padLeft(4, '0')}-'
@@ -63,7 +66,7 @@ class ApiService {
           '${hoje.day.toString().padLeft(2, '0')}';
       final json = await client.get(
         'web/price-tag/store/$storeId/single-label-printing',
-        query: {'startDate': data, 'sapId': sap.trim()},
+        query: {'startDate': data, 'sapId': sapLimpo},
       ) as Map<String, dynamic>;
       final itens = json['items'] as List? ?? [];
       for (final item in itens) {

@@ -186,13 +186,42 @@ class _ItensScreenState extends State<ItensScreen> {
                           color: Colors.white.withOpacity(0.2)),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Stack(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Total',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.85),
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                CurrencyFormatter.formatarMoedaComSimbolo(
+                                    _soma),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              'Total',
+                              'Quantidade',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.85),
                                 fontSize: 11,
@@ -200,9 +229,8 @@ class _ItensScreenState extends State<ItensScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              CurrencyFormatter.formatarMoedaComSimbolo(_soma),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              CurrencyFormatter.formatarInteiro(
+                                  _quantidadeFiltrada),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -211,26 +239,6 @@ class _ItensScreenState extends State<ItensScreen> {
                               ),
                             ),
                           ],
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'QTD: ${CurrencyFormatter.formatarInteiro(_quantidadeFiltrada)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
                         ),
                       ],
                     ),

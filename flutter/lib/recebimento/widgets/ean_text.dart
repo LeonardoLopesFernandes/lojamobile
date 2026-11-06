@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../network/ean_resolver.dart';
 
@@ -57,10 +58,23 @@ class _EanTextState extends State<EanText> {
   @override
   Widget build(BuildContext context) {
     final valor = _ean.isNotEmpty ? _ean : (_buscando ? '...' : '-');
-    return Text(
-      '${widget.prefixo}$valor',
-      style: widget.style ??
-          const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _ean.isEmpty
+          ? null
+          : () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await Clipboard.setData(ClipboardData(text: _ean));
+              if (!mounted) return;
+              messenger.showSnackBar(
+                SnackBar(content: Text('EAN copiado: $_ean')),
+              );
+            },
+      child: Text(
+        '${widget.prefixo}$valor',
+        style: widget.style ??
+            const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+      ),
     );
   }
 }

@@ -10,7 +10,7 @@ class EanResolver {
   static String? _storeId;
 
   static Future<String> bySap(String sap) {
-    final chave = sap.trim();
+    final chave = int.tryParse(sap.trim())?.toString() ?? sap.trim();
     if (chave.isEmpty) return Future.value('');
 
     final emCache = _cache[chave];
