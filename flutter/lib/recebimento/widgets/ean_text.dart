@@ -92,7 +92,7 @@ class _EanTextState extends State<EanText> {
       child: Text(
         '${widget.prefixo}$valor',
         style: widget.style ??
-            const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+            const TextStyle(fontSize: 12, color: Color(0xFF666666), fontWeight: FontWeight.bold),
       ),
     );
   }
