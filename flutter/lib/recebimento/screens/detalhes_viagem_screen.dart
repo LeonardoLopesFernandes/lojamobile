@@ -779,6 +779,24 @@ class _CardInfo extends StatelessWidget {
 
   const _CardInfo(this.d, this.isPendente, this.onRisco, this.onVolumes);
 
+  Widget _badge(String texto, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(Constants.primaryRed),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(texto,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.white)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final numero = d.viagemId.length > 7
@@ -803,140 +821,113 @@ class _CardInfo extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Column(
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                Row(
+                Column(
                   children: [
-                    const SizedBox(
-                        width: 65,
-                        child: Text('Data',
+                    Row(
+                      children: [
+                        const SizedBox(
+                            width: 65,
+                            child: Text('Data',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF9E9E9E)))),
+                        Expanded(
+                          child: Text(_fmtData(d.viagemData),
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black)),
+                        ),
+                        _badge('ITENS DE RISCO', onRisco),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const SizedBox(
+                            width: 65,
+                            child: Text('Origem',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF9E9E9E)))),
+                        Expanded(
+                          child: Text("${d.origem} (${d.codigoOrigem})",
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const SizedBox(
+                            width: 65,
+                            child: Text('Placa',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF9E9E9E)))),
+                        Expanded(
+                          child: Text(d.placaVeiculo,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black)),
+                        ),
+                      ],
+                    ),
+                    if (d.dataRecebimento.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                                "Recebimento: ${_fmtDataReceb(d.dataRecebimento)}",
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black)),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle,
+                            size: 18, color: Color(0xFF2E7D32)),
+                        const SizedBox(width: 6),
+                        Text(d.status.toUpperCase(),
                             style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF9E9E9E)))),
-                    Expanded(
-                      child: Text(_fmtData(d.viagemData),
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black)),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        InkWell(
-                          onTap: onRisco,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(Constants.primaryRed),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text('ITENS DE RISCO',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        InkWell(
-                          onTap: onVolumes,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(Constants.primaryRed),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text('VOLUMES',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
-                          ),
-                        ),
+                                color: statusColor)),
+                        if (d.protocolo != null && d.protocolo!.isNotEmpty) ...[
+                          const SizedBox(width: 16),
+                          const Icon(Icons.verified_user,
+                              size: 16, color: Color(Constants.primaryRed)),
+                          const SizedBox(width: 6),
+                          Text("PROTOCOLO: ${d.protocolo}",
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(Constants.primaryRed))),
+                        ],
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const SizedBox(
-                        width: 65,
-                        child: Text('Origem',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF9E9E9E)))),
-                    Expanded(
-                      child: Text("${d.origem} (${d.codigoOrigem})",
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const SizedBox(
-                        width: 65,
-                        child: Text('Placa',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF9E9E9E)))),
-                    Expanded(
-                      child: Text(d.placaVeiculo,
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black)),
-                    ),
-                  ],
-                ),
-                if (d.dataRecebimento.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                            "Recebimento: ${_fmtDataReceb(d.dataRecebimento)}",
-                            style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black)),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.check_circle,
-                        size: 18, color: Color(0xFF2E7D32)),
-                    const SizedBox(width: 6),
-                    Text(d.status.toUpperCase(),
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor)),
-                    if (d.protocolo != null && d.protocolo!.isNotEmpty) ...[
-                      const SizedBox(width: 16),
-                      const Icon(Icons.verified_user,
-                          size: 16, color: Color(Constants.primaryRed)),
-                      const SizedBox(width: 6),
-                      Text("PROTOCOLO: ${d.protocolo}",
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(Constants.primaryRed))),
-                    ],
-                  ],
+                Positioned(
+                  top: 33,
+                  right: 0,
+                  child: _badge('VOLUMES', onVolumes),
                 ),
               ],
             ),
