@@ -157,11 +157,11 @@ class ExcelDownloader {
               5: pw.Alignment.center,
             },
             columnWidths: const {
-              0: pw.FlexColumnWidth(0.55),
+              0: pw.FlexColumnWidth(0.80),
               1: pw.FlexColumnWidth(1.7),
               2: pw.FlexColumnWidth(1.8),
               3: pw.FlexColumnWidth(4.6),
-              4: pw.FlexColumnWidth(0.85),
+              4: pw.FlexColumnWidth(0.70),
               5: pw.FlexColumnWidth(2.1),
             },
             oddRowDecoration: pw.BoxDecoration(color: corZebra),
