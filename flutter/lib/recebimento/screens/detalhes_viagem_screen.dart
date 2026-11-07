@@ -260,6 +260,23 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
         arguments: {'titulo': 'ITENS DE RISCO', 'itens': risco});
   }
 
+  void _abrirVolumes() {
+    if (_detalhes == null) return;
+    final volumes = _todosItens().where((i) => i.quantidade >= 200).toList()
+      ..sort((a, b) {
+        final porDepartamento = a.departamento.compareTo(b.departamento);
+        if (porDepartamento != 0) return porDepartamento;
+        return b.quantidade.compareTo(a.quantidade);
+      });
+    if (volumes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Nenhum item com quantidade a partir de 200.")));
+      return;
+    }
+    Navigator.of(context).pushNamed('/itens',
+        arguments: {'titulo': 'VOLUMES', 'itens': volumes});
+  }
+
   List<RecebimentoItem> _todosItens() {
     final d = _detalhes;
     final todos = <RecebimentoItem>[];
@@ -662,7 +679,8 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    _CardInfo(d, isPendente, _abrirItensRisco),
+                    _CardInfo(
+                        d, isPendente, _abrirItensRisco, _abrirVolumes),
                     _CardBrlog(
                       nota: _brlogNota,
                       detalhe: _brlogDetalhe,
@@ -757,8 +775,9 @@ class _CardInfo extends StatelessWidget {
   final DetalhesViagemResponse d;
   final bool isPendente;
   final VoidCallback onRisco;
+  final VoidCallback onVolumes;
 
-  const _CardInfo(this.d, this.isPendente, this.onRisco);
+  const _CardInfo(this.d, this.isPendente, this.onRisco, this.onVolumes);
 
   @override
   Widget build(BuildContext context) {
@@ -802,21 +821,43 @@ class _CardInfo extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               color: Colors.black)),
                     ),
-                    InkWell(
-                      onTap: onRisco,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: const Color(Constants.primaryRed),
-                          borderRadius: BorderRadius.circular(6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        InkWell(
+                          onTap: onRisco,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(Constants.primaryRed),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('ITENS DE RISCO',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
                         ),
-                        child: const Text('ITENS DE RISCO',
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white)),
-                      ),
+                        const SizedBox(height: 6),
+                        InkWell(
+                          onTap: onVolumes,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(Constants.primaryRed),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('VOLUMES',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
