@@ -450,6 +450,7 @@ class _RealizarTrocaEtapa2ScreenState
       child: TextField(
         controller: controller,
         readOnly: readOnly || onTap != null,
+        onTap: onTap,
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
           border: InputBorder.none,
@@ -467,7 +468,7 @@ class _RealizarTrocaEtapa2ScreenState
         Text(titulo,
             style: const TextStyle(fontSize: 12, color: Colors.black54)),
         const SizedBox(height: 6),
-        onTap != null ? GestureDetector(onTap: onTap, child: field) : field,
+        field,
       ],
     );
   }
