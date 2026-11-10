@@ -108,9 +108,8 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
   }
 
   double _normalizar(double p) {
-    var v = p;
-    if (v > 1.0) v /= 100.0;
-    return v.clamp(0.0, 1.0);
+    // O BRLog envia ProgressoViagem em percentual (1 = 1%, 100 = 100%).
+    return (p / 100.0).clamp(0.0, 1.0);
   }
 
   String _pegarNumeroViagem() {
@@ -593,25 +592,37 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
     );
     if (confirmar != true) return;
 
-    final codEmpresa = _session.getBrlogCodEmpresaUsuario();
-    if (nota.codPedido == null ||
-        nota.codPedidoDestino == null ||
-        nota.codPedidoOcorrenciaTipo == null) {
+    final codEmpresa = _session.getBrlogCodEmpresaUsuario() > 0
+        ? _session.getBrlogCodEmpresaUsuario()
+        : (nota.codEmpresaUsuario ??
+            _brlogDetalhe?.codEmpresaUsuario ??
+            0);
+    final codPedido = nota.codPedido ?? _brlogDetalhe?.codPedido;
+    final codPedidoDestino =
+        nota.codPedidoDestino ?? _brlogDetalhe?.codPedidoDestino;
+    final codOcorrencia = nota.codPedidoOcorrenciaTipo ??
+        nota.codPedidoStatus ??
+        _brlogDetalhe?.codPedidoStatus ??
+        _brlogDetalhe?.codStatusDaEntrega ??
+        1;
+    if (codPedido == null || codPedidoDestino == null || codEmpresa <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("Dados do pedido indisponíveis para liberação.")));
       return;
     }
-    final dataCadastro = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now());
+    final dataCadastro =
+        DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now());
     try {
       final resp = await _brLog.autorizarAberturaBau(AutorizarAberturaBauRequest(
-        codPedido: nota.codPedido!,
+        codPedido: codPedido,
         codEmpresaUsuario: codEmpresa,
         dataCadastro: dataCadastro,
-        codPedidoDestino: nota.codPedidoDestino!,
-        codPedidoOcorrenciaTipo: nota.codPedidoOcorrenciaTipo!,
+        codPedidoDestino: codPedidoDestino,
+        codPedidoOcorrenciaTipo: codOcorrencia,
       ));
       if (resp.aberturaBauAutorizada == true ||
           resp.status?.toLowerCase() == "ok" ||
+          resp.statusCode == 200 ||
           (resp.status == null && resp.mensagem == null)) {
         setState(() {
           _bauAutorizado = true;
@@ -1069,18 +1080,29 @@ class _CardBrlog extends StatelessWidget {
           if (bauAutorizado)
             Container(
               margin: const EdgeInsets.only(top: 12),
-              padding: const EdgeInsets.all(10),
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F8F2),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
               ),
-              child: const Text('Baú já autorizado para abertura.',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(Constants.badgeGreen))),
-            ),
-          if (onSolicitar != null)
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle,
+                      color: Color(Constants.badgeGreen), size: 20),
+                  SizedBox(width: 8),
+                  Text('Abertura de baú já autorizada',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A))),
+                ],
+              ),
+            )
+          else if (onSolicitar != null)
             Container(
               margin: const EdgeInsets.only(top: 12),
               width: double.infinity,

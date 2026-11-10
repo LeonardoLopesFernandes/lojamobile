@@ -173,6 +173,7 @@ Map<String, dynamic> _notaToMap(BrasilRiskNota n) => {
       'CodPedido': n.codPedido,
       'CodPedidoDestino': n.codPedidoDestino,
       'CodPedidoOcorrenciaTipo': n.codPedidoOcorrenciaTipo,
+      'CodPedidoStatus': n.codPedidoStatus,
       'CodEmpresaUsuario': n.codEmpresaUsuario,
       'NumeroViagem': n.numeroViagem,
       'ProgressoViagem': n.progressoViagem,

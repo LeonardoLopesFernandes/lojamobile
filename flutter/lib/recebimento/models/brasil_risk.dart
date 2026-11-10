@@ -44,6 +44,7 @@ class BrasilRiskNota {
   final int? codPedido;
   final int? codPedidoDestino;
   final int? codPedidoOcorrenciaTipo;
+  final int? codPedidoStatus;
   final int? codEmpresaUsuario;
   final String? numeroViagem;
   final double? progressoViagem;
@@ -70,6 +71,7 @@ class BrasilRiskNota {
     this.codPedido,
     this.codPedidoDestino,
     this.codPedidoOcorrenciaTipo,
+    this.codPedidoStatus,
     this.codEmpresaUsuario,
     this.numeroViagem,
     this.progressoViagem,
@@ -98,6 +100,7 @@ class BrasilRiskNota {
       codPedido: json['CodPedido'],
       codPedidoDestino: json['CodPedidoDestino'],
       codPedidoOcorrenciaTipo: json['CodPedidoOcorrenciaTipo'],
+      codPedidoStatus: json['CodPedidoStatus'],
       codEmpresaUsuario: json['CodEmpresaUsuario'],
       numeroViagem: json['NumeroViagem']?.toString(),
       progressoViagem: (json['ProgressoViagem'] as num?)?.toDouble(),
@@ -330,7 +333,7 @@ class AutorizarAberturaBauRequest {
         'CodPedido': codPedido,
         'CodEmpresaUsuario': codEmpresaUsuario,
         'DataCadastro': dataCadastro,
-        'CodPedidoDestino': codPedidoDestino,
+        'CodPedidoDestino': codPedidoDestino.toString(),
         'CodPedidoOcorrenciaTipo': codPedidoOcorrenciaTipo,
       };
 }

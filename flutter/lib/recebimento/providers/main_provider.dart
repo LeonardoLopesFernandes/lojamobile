@@ -376,9 +376,8 @@ class MainProvider extends ChangeNotifier {
   }
 
   double _normalizar(double p) {
-    var v = p;
-    if (v > 1.0) v /= 100.0;
-    return v.clamp(0.0, 1.0);
+    // O BRLog envia ProgressoViagem em percentual (1 = 1%, 100 = 100%).
+    return (p / 100.0).clamp(0.0, 1.0);
   }
 
   void clearSession() => sessionManager.clearAll();

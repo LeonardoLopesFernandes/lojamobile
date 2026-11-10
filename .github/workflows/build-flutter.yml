@@ -3,6 +3,7 @@ name: Build Flutter APK (arm64-v8a)
 on:
   push:
     tags: [ 'v*' ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -60,8 +61,23 @@ jobs:
             --split-debug-info=build/symbols \
             --no-tree-shake-icons
 
+      - name: Definir nome do APK
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "APK_NAME=lojamobile-${GITHUB_REF_NAME}.apk" >> "$GITHUB_ENV"
+          else
+            echo "APK_NAME=lojamobile-dev.apk" >> "$GITHUB_ENV"
+          fi
+
       - name: Rename APK
-        run: mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk lojamobile-release.apk
+        run: mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "$APK_NAME"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APK_NAME }}
+          path: flutter/${{ env.APK_NAME }}
+          if-no-files-found: error
 
       - name: Cleanup keystore
         if: always()
@@ -76,6 +92,6 @@ jobs:
             Build automático a partir do commit `${{ github.sha }}`.
             APK Flutter **arm64-v8a** (release).
             Instale sobre a versão anterior para atualizar (versionCode crescente).
-          files: flutter/lojamobile-release.apk
+          files: flutter/${{ env.APK_NAME }}
           overwrite: true
           make_latest: true

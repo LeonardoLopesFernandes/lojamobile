@@ -52,8 +52,8 @@ Future<void> _sincronizarBRLog(
     final progresso = <String, double>{};
     for (final nota in lista) {
       if (nota.numeroViagem == null || nota.progressoViagem == null) continue;
-      var p = nota.progressoViagem!;
-      if (p > 1.0) p /= 100.0;
+      // BRLog envia percentual (1 = 1%, 100 = 100%).
+      final p = nota.progressoViagem! / 100.0;
       progresso[nota.numeroViagem!] = p.clamp(0.0, 1.0);
     }
     if (progresso.isNotEmpty) session.saveBrlogProgress(progresso);
