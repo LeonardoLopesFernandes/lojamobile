@@ -51,7 +51,15 @@ class _RotinaHubScreenState extends State<RotinaHubScreen> {
     }
 
     await _auth.initialize();
-    if (mounted) setState(() => _pronto = true);
+    if (!mounted) return;
+    if (_auth.state != AuthState.authenticated) {
+      // Token próprio da Rotina ausente/expirado: volta ao login principal
+      // para o fluxo de sincronização capturar um token novo da Rotina.
+      Navigator.of(context, rootNavigator: true)
+          .pushReplacementNamed('/login');
+      return;
+    }
+    setState(() => _pronto = true);
   }
 
   @override

@@ -279,14 +279,25 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
     _rotinaTokenCapturado = false;
     await _carregarUrl(
         'https://sl-authorization.americanas.io/rotina-comercial');
-    for (var i = 0; i < 8 && !_rotinaTokenCapturado; i++) {
+    // Igual ao app original da Rotina: aguarda a navegação para o domínio
+    // da Rotina e faz polling do cookie/localStorage até o token aparecer.
+    for (var i = 0; i < 25 && !_rotinaTokenCapturado; i++) {
+      if (_syncUrl.contains('rotina-comercial.americanas.io')) {
+        final token = await _lerCookie('rc-newToken');
+        if (token != null) {
+          _rotinaTokenCapturado = true;
+          await HubTokens.salvarRotina(token);
+          return;
+        }
+      }
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+    if (!_rotinaTokenCapturado) {
       final token = await _lerCookie('rc-newToken');
       if (token != null) {
         _rotinaTokenCapturado = true;
         await HubTokens.salvarRotina(token);
-        return;
       }
-      await Future.delayed(const Duration(milliseconds: 1200));
     }
   }
 

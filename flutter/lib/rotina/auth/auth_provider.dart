@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:inventario/precificacao/core/session_manager.dart' as loja;
 import 'package:inventario/rotina/api/client.dart';
 import 'package:inventario/rotina/storage/session.dart';
 
@@ -56,10 +55,9 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    // Reaproveita o token do login principal do LojaMobile quando o Rotina
-    // ainda não tiver um token próprio (mesma conta).
-    final savedToken =
-        await Session.getToken() ?? loja.SessionManager.instance?.getToken();
+    // Usa somente o token próprio da Rotina. O token principal do LojaMobile
+    // é de outro serviço e é rejeitado (401) pela BFF da Rotina.
+    final savedToken = await Session.getToken();
     if (savedToken != null) {
       setAuthToken(savedToken);
       _token = savedToken;

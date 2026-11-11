@@ -23,12 +23,24 @@ class Session {
 
   static Future<void> saveToken(String token) async {
     final prefs = await _instance;
+    var expiryMs = DateTime.now().millisecondsSinceEpoch +
+        _tokenExpiryDays * 86400000;
+    // Respeita o `exp` real do JWT da Rotina. Antes o token era considerado
+    // válido por 14 dias mesmo quando o JWT expirava antes, causando o 401
+    // "Token expirado" dentro da Rotina.
+    try {
+      final parts = token.split('.');
+      if (parts.length == 3) {
+        var p = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+        p = p.padRight(p.length + (4 - p.length % 4) % 4, '=');
+        final claims = jsonDecode(utf8.decode(base64.decode(p)));
+        if (claims is Map && claims['exp'] is int) {
+          expiryMs = (claims['exp'] as int) * 1000;
+        }
+      }
+    } catch (_) {}
     await prefs.setString(_token, token);
-    await prefs.setString(
-        _tokenExpiry,
-        (DateTime.now().millisecondsSinceEpoch +
-                _tokenExpiryDays * 86400000)
-            .toString());
+    await prefs.setString(_tokenExpiry, expiryMs.toString());
     await prefs.setString(_remember, 'true');
   }
 
