@@ -98,9 +98,18 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
           .obterInformacoesNotaCliente(codEmpresa, nota.codPedido)
           .then((detalhe) {
         if (!mounted) return;
+        // O endpoint de detalhes às vezes retorna ProgressoViagem = 0,
+        // o que zerava a porcentagem que já tinha sido carregada da lista.
+        final progressoDetalhe = detalhe.progressoViagem;
+        final progressoNormalizado =
+            progressoDetalhe != null && progressoDetalhe > 0
+                ? _normalizar(progressoDetalhe)
+                : 0.0;
         setState(() {
           _brlogDetalhe = detalhe;
-          _progresso = _normalizar(detalhe.progressoViagem ?? _progresso);
+          if (progressoNormalizado > _progresso) {
+            _progresso = progressoNormalizado;
+          }
           _bauAutorizado = detalhe.aberturaBauAutorizada == true;
         });
       }).catchError((_) {});
