@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:inventario/network/session_manager.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
 import '../models/cupom.dart';
 import '../network/troca_api.dart';
 import '../network/troca_session.dart';
 import '../services/etiqueta_launcher.dart';
+import '../services/etiqueta_pdf.dart';
 import 'realizar_troca_itens_screen.dart' show ProdutoSelecionado;
 
 /// Tela 2 — Avaliação do(s) produto(s) selecionado(s) (Sim/Não por questão).
@@ -195,7 +197,7 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
 
       final resultado = await _api.finishTrade(body);
       if (!mounted) return;
-      _mostrarResultado(resultado);
+      _mostrarResultado(resultado, body, session);
     } on TrocaApiException catch (e) {
       if (!mounted) return;
       if (e.statusCode == 401) {
@@ -213,7 +215,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
     }
   }
 
-  void _mostrarResultado(Map<String, dynamic> resultado) {
+  void _mostrarResultado(Map<String, dynamic> resultado,
+      Map<String, dynamic> body, SessionManager session) {
     final status = (resultado['operationStatus'] ?? '').toString();
     final prods = resultado['products'];
     final autorizado = (prods is List && prods.isNotEmpty)
@@ -221,6 +224,7 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
         : '';
     final aprovado = autorizado.toUpperCase() == 'APROVADO' ||
         status.toLowerCase() == 'aceita';
+    final etiquetas = _extrairEtiquetas(resultado);
 
     showDialog<void>(
       context: context,
@@ -241,16 +245,122 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
           ),
           if (aprovado)
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(ctx).pop();
-                Navigator.of(context).popUntil((r) => r.isFirst);
-                abrirEtiquetaTroca();
+                await _abrirEtiquetaFinalizada(
+                  resultado: resultado,
+                  body: body,
+                  session: session,
+                  etiquetas: etiquetas,
+                );
               },
               child: const Text('Imprimir etiqueta'),
             ),
         ],
       ),
     );
+  }
+
+  List<String> _extrairEtiquetas(Map<String, dynamic> resultado) {
+    final out = <String>{};
+    void add(dynamic valor) {
+      if (valor is List) {
+        for (final e in valor) {
+          add(e);
+        }
+      } else if (valor is Map) {
+        for (final e in valor.values) {
+          add(e);
+        }
+      } else if (valor != null) {
+        final s = valor.toString().trim();
+        if (s.isNotEmpty) out.add(s);
+      }
+    }
+
+    add(resultado['etiqueta']);
+    add(resultado['tag']);
+    add(resultado['tags']);
+    add(resultado['labelNumber']);
+    final prods = resultado['products'];
+    if (prods is List) {
+      for (final p in prods.whereType<Map>()) {
+        add(p['labelNumber']);
+        add(p['tags']);
+        add(p['etiqueta']);
+        add(p['tag']);
+      }
+    }
+    return out.toList();
+  }
+
+  String _tradeIdResultado(Map<String, dynamic> resultado) {
+    for (final k in ['tradeId', 'trade_id', 'operationId', 'id', '_id']) {
+      final v = (resultado[k] ?? '').toString().trim();
+      if (v.isNotEmpty) return v;
+    }
+    return '';
+  }
+
+  Future<void> _abrirEtiquetaFinalizada({
+    required Map<String, dynamic> resultado,
+    required Map<String, dynamic> body,
+    required SessionManager session,
+    required List<String> etiquetas,
+  }) async {
+    var labels = etiquetas;
+    final tradeId = _tradeIdResultado(resultado);
+    if (labels.isEmpty && tradeId.isNotEmpty) {
+      try {
+        final detalhe = await _api.getOperacao(tradeId);
+        labels = _extrairEtiquetas(detalhe);
+      } catch (_) {}
+    }
+    if (labels.isEmpty) {
+      // Fallback: mantém o comportamento antigo se a API não devolver a etiqueta.
+      await abrirEtiquetaTroca();
+      if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+      return;
+    }
+
+    final produto = _selecionados
+        .map((s) => s.produto.name.isNotEmpty
+            ? s.produto.name
+            : s.produto.description)
+        .where((e) => e.trim().isNotEmpty)
+        .join(' | ');
+    final operationType =
+        (body['operationType'] ?? 'TROCA').toString().toUpperCase();
+    final modalidade = operationType == 'DEVOLUCAO' ? 'Devolução' : 'Físico';
+    final loja = (body['storeNumber'] ?? session.getUserStore()).toString();
+    final data = TrocaApi.fmtIsoDate((body['operationDate'] ?? '').toString());
+    final cause = (body['cause'] ?? '').toString();
+    final motivo = (body['reason'] ?? '').toString();
+
+    try {
+      final uri = await TrocaEtiquetaPdf.salvarNoDownloads(
+        labelNumbers: labels,
+        tradeId: tradeId.isNotEmpty ? tradeId : labels.first,
+        loja: loja,
+        data: data,
+        produto: produto,
+        motivo: motivo.isNotEmpty ? motivo : cause,
+        modalidade: modalidade,
+        cause: cause,
+      );
+      if (!mounted) return;
+      if (uri != null && uri.isNotEmpty) {
+        await const MethodChannel('com.ir/media')
+            .invokeMethod('openUri', {'uri': uri, 'mime': 'application/pdf'});
+        if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+      } else {
+        ToastUtils.showError(context, 'Não foi possível gerar a etiqueta');
+      }
+    } catch (_) {
+      if (mounted) {
+        ToastUtils.showError(context, 'Erro ao gerar a etiqueta');
+      }
+    }
   }
 
   @override

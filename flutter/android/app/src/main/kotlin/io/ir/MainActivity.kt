@@ -218,7 +218,10 @@ class MainActivity : FlutterActivity() {
                         Intent.FLAG_ACTIVITY_NEW_TASK
                 )
             }
-            startActivity(intent)
+            val chooser = Intent.createChooser(intent, "Abrir arquivo").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(chooser)
         } catch (_: Exception) {
         }
     }
