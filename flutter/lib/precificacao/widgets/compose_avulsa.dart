@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:inventario/widgets/auth_logo_animado.dart';
 
 const Color avulsaRed = Color(0xFFD32F2F);
 const Color avulsaLabelGrey = Color(0xFF8C9BA5);
@@ -163,14 +164,7 @@ class _BotaoBuscarAnimado extends StatelessWidget {
           height: 52,
           child: Center(
             child: buscando
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
-                    ),
-                  )
+                ? const AuthLogoAnimado(size: 24, color: Colors.white)
                 : const Icon(Icons.search, color: Colors.white, size: 22),
           ),
         ),

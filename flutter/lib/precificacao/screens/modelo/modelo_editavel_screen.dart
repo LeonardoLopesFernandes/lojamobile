@@ -12,6 +12,7 @@ import 'package:inventario/precificacao/screens/modelo/composite_preview_screen.
 import 'package:inventario/precificacao/utils/log_helper.dart';
 import 'package:inventario/precificacao/utils/session_expired_handler.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
+import 'package:inventario/widgets/auth_logo_animado.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -601,13 +602,13 @@ class _ModeloEditavelScreenState extends State<ModeloEditavelScreen> {
 
   Widget _buildPreviewArea() {
     if (_loadingPreview) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('Compondo pré-visualização...'),
+            const AuthLogoAnimado(size: 90, color: AppColors.primary),
+            const SizedBox(height: 12),
+            const Text('Compondo pré-visualização...'),
           ],
         ),
       );
