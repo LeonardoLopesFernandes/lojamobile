@@ -4,6 +4,7 @@ import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/models/models.dart';
 import 'package:inventario/precificacao/network/api_client.dart';
 import 'package:inventario/precificacao/network/api_service.dart';
+import 'product_image_dialog.dart';
 
 const Color _greenCheckbox = Color(0xFF1B5E20);
 const Color _red = Color(0xFFD32F2F);
@@ -654,10 +655,27 @@ class PriceTagCard extends StatefulWidget {
 
 class _PriceTagCardState extends State<PriceTagCard> {
   late TextEditingController _qty;
+  double? _saldo;
+
   @override
   void initState() {
     super.initState();
     _qty = TextEditingController(text: widget.tag.quantity.toString());
+    _carregarSaldo();
+  }
+
+  Future<void> _carregarSaldo() async {
+    try {
+      final api = ApiService(ApiClient.instance.getSlApiService());
+      final store = ApiClient.instance.sessionManager.getUserStore() ??
+          Constants.defaultStore;
+      final s = await api.getProductStock(
+        store,
+        ean: widget.tag.ean,
+        sapCode: widget.tag.sap,
+      );
+      if (mounted) setState(() => _saldo = s);
+    } catch (_) {}
   }
 
   @override
@@ -769,11 +787,19 @@ class _PriceTagCardState extends State<PriceTagCard> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(widget.tag.description,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: _descDark)),
+                  child: GestureDetector(
+                    onTap: () => mostrarImagemProduto(
+                      context,
+                      ean: widget.tag.ean,
+                      descricao: widget.tag.description,
+                      saldo: _saldo,
+                    ),
+                    child: Text(widget.tag.description,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: _descDark)),
+                  ),
                 ),
                 SizedBox(
                   width: 30,
@@ -916,10 +942,27 @@ class PapeletaDiariaCard extends StatefulWidget {
 
 class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
   late TextEditingController _qty;
+  double? _saldo;
+
   @override
   void initState() {
     super.initState();
     _qty = TextEditingController(text: widget.item.quantity.toString());
+    _carregarSaldo();
+  }
+
+  Future<void> _carregarSaldo() async {
+    try {
+      final api = ApiService(ApiClient.instance.getSlApiService());
+      final store = ApiClient.instance.sessionManager.getUserStore() ??
+          Constants.defaultStore;
+      final s = await api.getProductStock(
+        store,
+        ean: widget.item.ean,
+        sapCode: widget.item.sap,
+      );
+      if (mounted) setState(() => _saldo = s);
+    } catch (_) {}
   }
 
   @override
@@ -1034,11 +1077,19 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(widget.item.description,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: _descDark)),
+                  child: GestureDetector(
+                    onTap: () => mostrarImagemProduto(
+                      context,
+                      ean: widget.item.ean,
+                      descricao: widget.item.description,
+                      saldo: _saldo,
+                    ),
+                    child: Text(widget.item.description,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: _descDark)),
+                  ),
                 ),
                 SizedBox(
                   width: 30,

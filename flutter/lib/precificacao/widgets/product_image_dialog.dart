@@ -11,19 +11,29 @@ Future<void> mostrarImagemProduto(
   BuildContext context, {
   required String ean,
   String descricao = '',
+  double? saldo,
 }) {
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => _ProdutoImagemDialog(ean: ean, descricao: descricao),
+    builder: (_) => _ProdutoImagemDialog(
+      ean: ean,
+      descricao: descricao,
+      saldo: saldo,
+    ),
   );
 }
 
 class _ProdutoImagemDialog extends StatefulWidget {
   final String ean;
   final String descricao;
+  final double? saldo;
 
-  const _ProdutoImagemDialog({required this.ean, required this.descricao});
+  const _ProdutoImagemDialog({
+    required this.ean,
+    required this.descricao,
+    this.saldo,
+  });
 
   @override
   State<_ProdutoImagemDialog> createState() => _ProdutoImagemDialogState();
@@ -158,6 +168,28 @@ class _ProdutoImagemDialogState extends State<_ProdutoImagemDialog> {
                 ),
               ),
             ),
+            if (widget.saldo != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: widget.saldo! < 0
+                      ? const Color(0xFFFDECEC)
+                      : const Color(0xFFE7F4E8),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Estoque: ${widget.saldo!.toInt()}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: widget.saldo! < 0
+                        ? const Color(0xFFD81B3A)
+                        : const Color(0xFF2E7D32),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             if (_carregando)
               const SizedBox(
