@@ -22,6 +22,22 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
+            Positioned.fill(
+              child: Align(
+                alignment: const Alignment(0.75, 0.1),
+                child: Transform.scale(
+                  scale: 6.0,
+                  child: const Text(
+                    'a',
+                    style: TextStyle(
+                      fontSize: 320,
+                      color: Color(0x26111111),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
