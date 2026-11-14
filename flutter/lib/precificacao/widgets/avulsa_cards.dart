@@ -297,6 +297,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                       context,
                       ean: item.ean,
                       descricao: item.description,
+                      codSap: item.sap,
                     ),
                     child: Text(
                       item.description,
@@ -572,6 +573,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                       context,
                       ean: item.ean,
                       descricao: item.description,
+                      codSap: item.sap,
                     ),
                     child: Text(
                       item.description,

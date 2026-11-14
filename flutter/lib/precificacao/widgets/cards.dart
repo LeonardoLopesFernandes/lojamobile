@@ -775,6 +775,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                       context,
                       ean: widget.tag.ean,
                       descricao: widget.tag.description,
+                      codSap: widget.tag.sap,
                     ),
                     child: Text(widget.tag.description,
                         style: const TextStyle(
@@ -1047,6 +1048,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                       context,
                       ean: widget.item.ean,
                       descricao: widget.item.description,
+                      codSap: widget.item.sap,
                     ),
                     child: Text(widget.item.description,
                         style: const TextStyle(
