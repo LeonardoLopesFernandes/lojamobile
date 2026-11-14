@@ -3,7 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/constants.dart';
 import '../core/session_manager.dart';
+import '../network/api_client.dart';
+import '../network/api_service.dart';
 import '../services/product_image_service.dart';
 
 /// Abre o diálogo com a imagem do produto pelo EAN.
@@ -44,11 +47,24 @@ class _ProdutoImagemDialogState extends State<_ProdutoImagemDialog> {
   String? _fonte;
   Uint8List? _bytes;
   bool _carregando = true;
+  double? _saldo;
 
   @override
   void initState() {
     super.initState();
+    _saldo = widget.saldo;
     _carregar();
+    if (_saldo == null) _carregarEstoque();
+  }
+
+  Future<void> _carregarEstoque() async {
+    try {
+      final session = await SessionManager.getInstance();
+      final store = session.getUserStore() ?? Constants.defaultStore;
+      final saldo = await ApiService(ApiClient.instance.getSlApiService())
+          .getProductStock(store, ean: widget.ean);
+      if (mounted) setState(() => _saldo = saldo);
+    } catch (_) {}
   }
 
   Future<void> _carregar() async {
@@ -168,22 +184,22 @@ class _ProdutoImagemDialogState extends State<_ProdutoImagemDialog> {
                 ),
               ),
             ),
-            if (widget.saldo != null) ...[
+            if (_saldo != null) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: widget.saldo! < 0
+                  color: _saldo! < 0
                       ? const Color(0xFFFDECEC)
                       : const Color(0xFFE7F4E8),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'Estoque: ${widget.saldo!.toInt()}',
+                  'Estoque: ${_saldo!.toInt()}',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: widget.saldo! < 0
+                    color: _saldo! < 0
                         ? const Color(0xFFD81B3A)
                         : const Color(0xFF2E7D32),
                   ),
