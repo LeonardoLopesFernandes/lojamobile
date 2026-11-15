@@ -283,7 +283,7 @@ class _ProdutoImagemDialogState extends State<_ProdutoImagemDialog> {
                             child: Row(
                               children: [
                                 Flexible(
-                                  child: _linhaInfo('EAN', widget.ean.trim()),
+                                  child: _linhaInfo('EAN', widget.ean.trim(), destaque: true),
                                 ),
                                 const SizedBox(width: 6),
                                 const Icon(Icons.copy,
@@ -342,7 +342,7 @@ class _ProdutoImagemDialogState extends State<_ProdutoImagemDialog> {
     );
   }
 
-  Widget _linhaInfo(String label, String valor) => Padding(
+  Widget _linhaInfo(String label, String valor, {bool destaque = false}) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Text.rich(
           TextSpan(
@@ -353,8 +353,13 @@ class _ProdutoImagemDialogState extends State<_ProdutoImagemDialog> {
                       fontSize: 13, color: Color(0xFF666666))),
               TextSpan(
                   text: valor,
-                  style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF1A1A1A))),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: destaque
+                          ? const Color(0xFFD7193F)
+                          : const Color(0xFF1A1A1A),
+                      fontWeight:
+                          destaque ? FontWeight.bold : FontWeight.normal)),
             ],
           ),
         ),

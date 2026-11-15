@@ -16,7 +16,7 @@ String _brl(double v) {
   return 'R\$ $grouped,${parts[1]}';
 }
 
-String _num(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
+String _num(double v) => _brl(v).replaceFirst(r'R$ ', '');
 
 const Color _greenBadgeDark = Color(0xFF2E7D32);
 const Color _orangeBadge = Color(0xFFFF9800);
