@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app_navigator.dart';
 import 'widgets/truck_loader.dart';
 import 'widgets/voltar_hubs_guard.dart';
+import 'widgets/logo_refresh.dart';
 import 'utils/constants.dart';
 import 'network/session_manager.dart';
 import 'auth/hub_tokens.dart';
@@ -112,7 +113,7 @@ class MyApp extends StatelessWidget {
                         fontSize: 18,
                         fontWeight: FontWeight.w600)),
               ),
-              body: const EtiquetasFragment(),
+              body: const LogoRefreshPage(child: EtiquetasFragment()),
             ),
         '/precificacao_papeletas': (ctx) => Scaffold(
               appBar: AppBar(
@@ -126,10 +127,10 @@ class MyApp extends StatelessWidget {
                         fontSize: 18,
                         fontWeight: FontWeight.w600)),
               ),
-              body: const PapeletasFragment(),
+              body: const LogoRefreshPage(child: PapeletasFragment()),
             ),
-        '/etiquetas': (ctx) => const EtiquetasScreen(),
-        '/papeletas_diarias': (ctx) => const PapeletasDiariasScreen(),
+        '/etiquetas': (ctx) => const LogoRefreshPage(child: EtiquetasScreen()),
+        '/papeletas_diarias': (ctx) => const LogoRefreshPage(child: PapeletasDiariasScreen()),
         '/recebimento': (ctx) => const HomeScreen(),
         '/detalhes': (ctx) => const DetalhesViagemScreen(),
         '/itens': (ctx) => const ItensScreen(),
