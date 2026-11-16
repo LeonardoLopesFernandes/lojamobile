@@ -824,7 +824,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                   child: GestureDetector(
                     onTap: () => _copiarEan(context, widget.tag.ean),
                     child: Text(
-                      'EAN: ${widget.tag.ean} • Dep: ${widget.tag.department}',
+                      'Dep: ${widget.tag.department} • EAN: ${widget.tag.ean}',
                       style: const TextStyle(fontSize: 10, color: _eanGray),
                     ),
                   ),
@@ -1097,7 +1097,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                   child: GestureDetector(
                     onTap: () => _copiarEan(context, widget.item.ean),
                     child: Text(
-                      'EAN: ${widget.item.ean} • Dep: ${widget.item.department}',
+                      'Dep: ${widget.item.department} • EAN: ${widget.item.ean}',
                       style: const TextStyle(fontSize: 10, color: _eanGray),
                     ),
                   ),
