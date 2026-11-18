@@ -203,34 +203,43 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
 
   ({String? leve, String valor, String tipo, Color cor}) _calc() {
     final pd = widget.tag.printingData;
-    final precoNormal = pd?.price?.value ?? 0.0;
-    final precoPromo = pd?.promotionalPrice?.value;
-    final take = pd?.takeAndWin;
-    final inst = pd?.installments;
+    final ov = ValorOverrideStore.instance.overrides[widget.tag.ean];
+    final precoNormal =
+        (ov?['price'] as num?)?.toDouble() ?? pd?.price?.value ?? 0.0;
+    final precoPromo = (ov?['promotionPrice'] as num?)?.toDouble() ??
+        pd?.promotionalPrice?.value;
+    final takeQty =
+        (ov?['takeAndWinQuantity'] as int?) ?? pd?.takeAndWin?.qty;
+    final takeTotal = (ov?['takeAndWinPrice'] as num?)?.toDouble() ??
+        pd?.takeAndWin?.totalValue;
+    final instQty = (ov?['installmentQuantity'] as int?) ??
+        pd?.installments?.installmentQuantity;
+    final instValue = (ov?['installmentPrice'] as num?)?.toDouble() ??
+        pd?.installments?.installmentValue;
 
-    final valorParcCalc = (inst != null && inst.installmentValue > 0)
-        ? inst.installmentValue
+    final valorParcCalc = (instValue != null && instValue > 0)
+        ? instValue
         : (pd != null && pd.displayPrice > 0)
             ? pd.displayPrice
             : (pd != null && pd.unitValue > 0)
                 ? pd.unitValue
                 : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
 
-    final ehDeporParcelado = inst != null &&
-        inst.installmentQuantity > 0 &&
+    final ehDeporParcelado = instQty != null &&
+        instQty > 0 &&
         precoPromo != null &&
         precoPromo > 0 &&
         (precoNormal <= 0 || precoPromo < precoNormal);
 
-    if (take != null && take.qty > 0 && take.totalValue > 0) {
+    if (takeQty != null && takeQty > 0 && takeTotal != null && takeTotal > 0) {
       final totalLeve =
           (pd?.template == Constants.signTemplateLeveGanheCada &&
                   precoPromo != null &&
                   precoPromo > 0)
               ? precoPromo
-              : take.totalValue;
+              : takeTotal;
       return (
-        leve: 'Leve ${take.qty} por R\$ ${_num(totalLeve)}',
+        leve: 'Leve $takeQty por R\$ ${_num(totalLeve)}',
         valor: _brl(precoNormal),
         tipo: 'leve e ganhe',
         cor: _greenBadgeDark,
@@ -240,13 +249,13 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       return (
         leve: null,
         valor:
-            'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${inst.installmentQuantity}x de R\$${_num(valorParcCalc)}',
+            'Por R\$${_num(precoNormal)}|Por R\$${_num(precoPromo)}|${instQty}x de R\$${_num(valorParcCalc)}',
         tipo: 'parcelado',
         cor: _orangeBadge,
       );
     }
-    if (inst != null && inst.installmentQuantity > 0) {
-      final qtdParc = inst.installmentQuantity;
+    if (instQty != null && instQty > 0) {
+      final qtdParc = instQty;
       return (
         leve: null,
         valor: (precoPromo != null && precoPromo > 0)
