@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:inventario/precificacao/core/constants.dart';
 import 'package:inventario/precificacao/models/models.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
+import '../utils/valor_override_store.dart';
 import 'package:inventario/network/inventario_service.dart';
 import 'package:inventario/network/session_manager.dart';
 import 'compose_avulsa.dart';
@@ -271,6 +272,30 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
     );
   }
 
+  Future<void> _editarBadge() async {
+    final p = _calc();
+    final tipo = p.tipo == 'leve e ganhe'
+        ? 'Leve e Ganhe'
+        : p.tipo == 'de por'
+            ? 'De/Por'
+            : p.tipo == 'parcelado'
+                ? 'Parcelado'
+                : 'Normal';
+    final pd = widget.tag.printingData;
+    final ok = await editarValores(
+      context,
+      ean: widget.tag.ean,
+      tipo: tipo,
+      price: pd?.price?.value,
+      promotionPrice: pd?.promotionalPrice?.value,
+      takeAndWinQuantity: pd?.takeAndWin?.qty,
+      takeAndWinPrice: pd?.takeAndWin?.totalValue,
+      installmentQuantity: pd?.installments?.installmentQuantity,
+      installmentPrice: pd?.installments?.installmentValue,
+    );
+    if (ok && mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _calc();
@@ -336,10 +361,16 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                           saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
-                        _greenBadgeComLeve(p)
+                        GestureDetector(
+                          onTap: _editarBadge,
+                          child: _greenBadgeComLeve(p),
+                        )
                       else
-                        _greenBadge(p.valor, p.tipo, p.cor,
-                            parcelado: p.tipo == 'parcelado'),
+                        GestureDetector(
+                          onTap: _editarBadge,
+                          child: _greenBadge(p.valor, p.tipo, p.cor,
+                              parcelado: p.tipo == 'parcelado'),
+                        ),
                     ],
                   ),
                 ),
