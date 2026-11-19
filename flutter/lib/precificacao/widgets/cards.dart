@@ -19,6 +19,19 @@ const Color _eanGray = Color(0xFF666666);
 const Color _eanGray2 = Color(0xFF757575);
 const Color _green = Color(0xFF4CAF50);
 
+BoxDecoration _greenBadgeDecoration() => BoxDecoration(
+      color: _green,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: const Color(0xFF2E7D32), width: 1.5),
+      boxShadow: const [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 3,
+          offset: Offset(0, 1),
+        ),
+      ],
+    );
+
 void _copiarEan(BuildContext context, String ean) {
   Clipboard.setData(ClipboardData(text: ean));
   ScaffoldMessenger.of(context).showSnackBar(
@@ -114,21 +127,33 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
 
   ({String? leveGanhe, String? deporValor, String? deporBadge}) _price() {
     final pd = widget.tag.printingData;
-    final precoNormal = pd?.price?.value ?? 0.0;
-    final precoPromo = pd?.promotionalPrice?.value;
-    final take = pd?.takeAndWin;
+    final ov = ValorOverrideStore.instance.overrides[widget.tag.ean];
+    final precoNormal =
+        (ov?['price'] as num?)?.toDouble() ?? pd?.price?.value ?? 0.0;
+    final precoPromo = (ov?['promotionPrice'] as num?)?.toDouble() ??
+        pd?.promotionalPrice?.value;
+    final takeQty =
+        (ov?['takeAndWinQuantity'] as int?) ?? pd?.takeAndWin?.qty;
+    final takeTotal = (ov?['takeAndWinPrice'] as num?)?.toDouble() ??
+        pd?.takeAndWin?.totalValue;
     final movement = widget.tag.movement.toUpperCase();
-    if (take != null && take.qty > 0 && take.totalValue > 0) {
+    if (takeQty != null &&
+        takeQty > 0 &&
+        takeTotal != null &&
+        takeTotal > 0) {
       final totalLeve = (pd?.template == Constants.signTemplateLeveGanheCada &&
-                  precoPromo != null && precoPromo > 0)
-              ? precoPromo
-              : take.totalValue;
-      return (leveGanhe: 'Leve ${take.qty} por ${_brl(totalLeve)} | ${_brl(precoNormal)}', deporValor: null, deporBadge: null);
+              precoPromo != null && precoPromo > 0)
+          ? precoPromo
+          : takeTotal;
+      return (leveGanhe: 'Leve $takeQty por ${_brl(totalLeve)} | ${_brl(precoNormal)}', deporValor: null, deporBadge: null);
     }
-    final inst = pd?.installments;
-    final qtdParc = (inst != null && inst.installmentQuantity > 0) ? inst.installmentQuantity : null;
-    final valorParc = (inst != null && inst.installmentValue > 0)
-        ? inst.installmentValue
+    final instQty = (ov?['installmentQuantity'] as int?) ??
+        pd?.installments?.installmentQuantity;
+    final instValue = (ov?['installmentPrice'] as num?)?.toDouble() ??
+        pd?.installments?.installmentValue;
+    final qtdParc = (instQty != null && instQty > 0) ? instQty : null;
+    final valorParc = (instValue != null && instValue > 0)
+        ? instValue
         : (pd != null && pd.displayPrice > 0)
             ? pd.displayPrice
             : (pd != null && pd.unitValue > 0)
@@ -163,6 +188,30 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
     }
     final valor = precoNormal > 0 ? _brl(precoNormal) : widget.tag.price;
     return (leveGanhe: null, deporValor: valor, deporBadge: 'normal');
+  }
+
+  Future<void> _editarBadge() async {
+    final p = _price();
+    final tipo = p.leveGanhe != null
+        ? 'Leve e Ganhe'
+        : p.deporBadge == 'de por'
+            ? 'De/Por'
+            : p.deporBadge == 'parcelado'
+                ? 'Parcelado'
+                : 'Normal';
+    final pd = widget.tag.printingData;
+    final ok = await editarValores(
+      context,
+      ean: widget.tag.ean,
+      tipo: tipo,
+      price: pd?.price?.value,
+      promotionPrice: pd?.promotionalPrice?.value,
+      takeAndWinQuantity: pd?.takeAndWin?.qty,
+      takeAndWinPrice: pd?.takeAndWin?.totalValue,
+      installmentQuantity: pd?.installments?.installmentQuantity,
+      installmentPrice: pd?.installments?.installmentValue,
+    );
+    if (ok && mounted) setState(() {});
   }
 
   @override
@@ -243,13 +292,12 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                       ),
                       if (p.leveGanhe != null) ...[
                         const SizedBox(height: 4),
-                        Container(
+                        GestureDetector(
+                          onTap: _editarBadge,
+                          child: Container(
                           height: 28,
                           padding: const EdgeInsets.only(left: 10),
-                          decoration: BoxDecoration(
-                            color: _green,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+                          decoration: _greenBadgeDecoration(),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -268,7 +316,6 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                                   borderRadius: const BorderRadius.only(
                                       topRight: Radius.circular(6),
                                       bottomRight: Radius.circular(6)),
-                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: const Text('leve e ganhe',
                                     style: TextStyle(
@@ -279,15 +326,15 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                             ],
                           ),
                         ),
+                        ),
                       ] else if (p.deporValor != null) ...[
                         const SizedBox(height: 4),
-                        Container(
+                        GestureDetector(
+                          onTap: _editarBadge,
+                          child: Container(
                           height: 28,
                           padding: const EdgeInsets.only(left: 12),
-                          decoration: BoxDecoration(
-                            color: _green,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+                          decoration: _greenBadgeDecoration(),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -314,7 +361,6 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                                   borderRadius: const BorderRadius.only(
                                       topRight: Radius.circular(6),
                                       bottomRight: Radius.circular(6)),
-                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: Text(p.deporBadge!,
                                     style: TextStyle(
@@ -327,6 +373,7 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                               ),
                             ],
                           ),
+                        ),
                         ),
                       ],
                     ],
@@ -518,10 +565,7 @@ class _PapeletaCardState extends State<PapeletaCard> {
                         Container(
                           height: 28,
                           padding: const EdgeInsets.only(left: 10),
-                          decoration: BoxDecoration(
-                            color: _green,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+                          decoration: _greenBadgeDecoration(),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -540,7 +584,6 @@ class _PapeletaCardState extends State<PapeletaCard> {
                                   borderRadius: const BorderRadius.only(
                                       topRight: Radius.circular(6),
                                       bottomRight: Radius.circular(6)),
-                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: const Text('leve e ganhe',
                                     style: TextStyle(
@@ -556,10 +599,7 @@ class _PapeletaCardState extends State<PapeletaCard> {
                         Container(
                           height: 28,
                           padding: const EdgeInsets.only(left: 12),
-                          decoration: BoxDecoration(
-                            color: _green,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+                          decoration: _greenBadgeDecoration(),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -586,7 +626,6 @@ class _PapeletaCardState extends State<PapeletaCard> {
                                   borderRadius: const BorderRadius.only(
                                       topRight: Radius.circular(6),
                                       bottomRight: Radius.circular(6)),
-                                  border: Border.all(color: _green, width: 1),
                                 ),
                                 child: Text(p.deporBadge!,
                                     style: TextStyle(
@@ -879,10 +918,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                 child: Container(
                 height: 28,
                 padding: const EdgeInsets.only(left: 10),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: _greenBadgeDecoration(),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -909,7 +945,6 @@ class _PriceTagCardState extends State<PriceTagCard> {
                         borderRadius: const BorderRadius.only(
                             topRight: Radius.circular(6),
                             bottomRight: Radius.circular(6)),
-                        border: Border.all(color: _green, width: 1),
                       ),
                       child: Text(b.badge,
                           style: TextStyle(
@@ -928,10 +963,7 @@ class _PriceTagCardState extends State<PriceTagCard> {
                 child: Container(
                 height: 28,
                 padding: const EdgeInsets.only(left: 10),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: _greenBadgeDecoration(),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1181,10 +1213,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                 child: Container(
                 height: 28,
                 padding: const EdgeInsets.only(left: 10),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: _greenBadgeDecoration(),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1211,7 +1240,6 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                         borderRadius: const BorderRadius.only(
                             topRight: Radius.circular(6),
                             bottomRight: Radius.circular(6)),
-                        border: Border.all(color: _green, width: 1),
                       ),
                       child: Text(b.badge,
                           style: TextStyle(
@@ -1230,10 +1258,7 @@ class _PapeletaDiariaCardState extends State<PapeletaDiariaCard> {
                 child: Container(
                 height: 28,
                 padding: const EdgeInsets.only(left: 10),
-                decoration: BoxDecoration(
-                  color: _green,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: _greenBadgeDecoration(),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -23,6 +23,19 @@ const Color _greenBadgeDark = Color(0xFF2E7D32);
 const Color _orangeBadge = Color(0xFFFF9800);
 const Color _greyBadge = Color(0xFF9E9E9E);
 
+BoxDecoration _avulsaGreenBadgeDecoration() => BoxDecoration(
+      color: avulsaGreen,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: const Color(0xFF2E7D32), width: 1.5),
+      boxShadow: const [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 3,
+          offset: Offset(0, 1),
+        ),
+      ],
+    );
+
 /// Campo de quantidade: 28dp, branco, borda vermelha, até 3 dígitos.
 Widget _qtyBox(TextEditingController c, ValueChanged<int> onChange) {
   return SizedBox(
@@ -94,10 +107,7 @@ Widget _greenBadge(String valor, String tipo, Color cor, {bool parcelado = false
   return Container(
     height: 28,
     constraints: const BoxConstraints(minHeight: 28),
-    decoration: BoxDecoration(
-      color: avulsaGreen,
-      borderRadius: BorderRadius.circular(6),
-    ),
+    decoration: _avulsaGreenBadgeDecoration(),
     padding: const EdgeInsets.only(left: 12),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -124,12 +134,6 @@ Widget _greenBadge(String valor, String tipo, Color cor, {bool parcelado = false
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: const BoxDecoration(
             color: Colors.white,
-            border: Border(
-              top: BorderSide(color: avulsaGreen),
-              bottom: BorderSide(color: avulsaGreen),
-              right: BorderSide(color: avulsaGreen),
-              left: BorderSide(color: avulsaGreen),
-            ),
             borderRadius:
                 BorderRadius.horizontal(right: Radius.circular(6)),
           ),
@@ -395,10 +399,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
     return Container(
       height: 28,
       constraints: const BoxConstraints(minHeight: 28),
-      decoration: BoxDecoration(
-        color: avulsaGreen,
-        borderRadius: BorderRadius.circular(6),
-      ),
+      decoration: _avulsaGreenBadgeDecoration(),
       padding: const EdgeInsets.only(left: 10),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -452,12 +453,6 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: avulsaGreen),
-          bottom: BorderSide(color: avulsaGreen),
-          right: BorderSide(color: avulsaGreen),
-          left: BorderSide(color: avulsaGreen),
-        ),
         borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
       ),
       alignment: Alignment.center,
@@ -671,10 +666,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
     return Container(
       height: 28,
       constraints: const BoxConstraints(minHeight: 28),
-      decoration: BoxDecoration(
-        color: avulsaGreen,
-        borderRadius: BorderRadius.circular(6),
-      ),
+      decoration: _avulsaGreenBadgeDecoration(),
       padding: const EdgeInsets.only(left: 10),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -728,12 +720,6 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: avulsaGreen),
-          bottom: BorderSide(color: avulsaGreen),
-          right: BorderSide(color: avulsaGreen),
-          left: BorderSide(color: avulsaGreen),
-        ),
         borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
       ),
       alignment: Alignment.center,
