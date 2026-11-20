@@ -810,10 +810,7 @@ class _BooksScreenState extends State<BooksScreen> {
   }
 
   void _voltarParaBooks() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const BooksScreen()),
-      (route) => route.isFirst,
-    );
+    Navigator.of(context).pop();
   }
 
   Widget _linha(String label, String value) => Padding(
