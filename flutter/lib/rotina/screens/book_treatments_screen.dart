@@ -7,8 +7,10 @@ import 'package:inventario/rotina/types.dart';
 /// Fotos das lojas de um book (tratamentos), com filtro por loja.
 class BookTreatmentsScreen extends StatefulWidget {
   final BookStatus book;
+  final VoidCallback? onVoltar;
 
-  const BookTreatmentsScreen({super.key, required this.book});
+  const BookTreatmentsScreen(
+      {super.key, required this.book, this.onVoltar});
 
   @override
   State<BookTreatmentsScreen> createState() => _BookTreatmentsScreenState();
@@ -210,12 +212,32 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
     );
   }
 
+  void _voltar() {
+    final cb = widget.onVoltar;
+    if (cb != null) {
+      cb();
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final stores = _gridStores;
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _voltar();
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: _voltar,
+          icon: const Icon(Icons.arrow_back),
+        ),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         foregroundColor: _muted,
         elevation: 0,
@@ -314,6 +336,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -321,9 +344,9 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
     final regiao = DropdownButtonFormField<String>(
       value: _region ?? '',
       isExpanded: true,
-      decoration: _filtroDecoration('Região'),
+      decoration: _filtroDecoration('Regiões'),
       items: [
-        const DropdownMenuItem(value: '', child: Text('Todas as regiões')),
+        const DropdownMenuItem(value: '', child: Text('Regiões')),
         ..._regions.map(
           (r) => DropdownMenuItem(value: r, child: Text(r)),
         ),
@@ -340,9 +363,9 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
     final distrito = DropdownButtonFormField<String>(
       value: _district ?? '',
       isExpanded: true,
-      decoration: _filtroDecoration('Distrito'),
+      decoration: _filtroDecoration('Distritos'),
       items: [
-        const DropdownMenuItem(value: '', child: Text('Todos os distritos')),
+        const DropdownMenuItem(value: '', child: Text('Distritos')),
         ..._distritosVisiveis.map(
           (d) => DropdownMenuItem(
             value: d.code,

@@ -23,6 +23,7 @@ class _BooksScreenState extends State<BooksScreen> {
   static const int _perPage = 10;
   static List<BookStatus>? _cacheBooks;
   static Set<String>? _cachePendingIds;
+  static String? _ultimaLoja;
 
   final _searchController = TextEditingController();
   final _lojaController = TextEditingController();
@@ -37,6 +38,7 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   void initState() {
     super.initState();
+    _lojaController.text = _ultimaLoja ?? '';
     final cache = _cacheBooks;
     if (cache != null) {
       _books = cache;
@@ -62,6 +64,7 @@ class _BooksScreenState extends State<BooksScreen> {
   }
 
   void _aplicarLoja() {
+    _ultimaLoja = _lojaController.text.trim();
     setState(() {
       _page = 1;
       _loading = true;
@@ -800,7 +803,17 @@ class _BooksScreenState extends State<BooksScreen> {
 
   void _verFotos(BookStatus book) {
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => BookTreatmentsScreen(book: book)));
+        builder: (_) => BookTreatmentsScreen(
+              book: book,
+              onVoltar: _voltarParaBooks,
+            )));
+  }
+
+  void _voltarParaBooks() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const BooksScreen()),
+      (route) => route.isFirst,
+    );
   }
 
   Widget _linha(String label, String value) => Padding(
