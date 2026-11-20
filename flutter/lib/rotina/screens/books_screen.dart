@@ -32,6 +32,7 @@ class _BooksScreenState extends State<BooksScreen> {
   Set<String> _pendingIds = {};
   String _query = '';
   int _page = 1;
+  int _loadSeq = 0;
 
   @override
   void initState() {
@@ -52,42 +53,29 @@ class _BooksScreenState extends State<BooksScreen> {
     super.dispose();
   }
 
+  String _normalizarLoja(String raw) {
+    final s = raw.trim().toUpperCase();
+    if (RegExp(r'^\d{1,3}$').hasMatch(s)) {
+      return 'L${s.padLeft(3, '0')}';
+    }
+    return s;
+  }
+
   void _aplicarLoja() {
-    setState(() => _page = 1);
+    setState(() {
+      _page = 1;
+      _loading = true;
+      _books = [];
+      _pendingIds = {};
+    });
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _error = null;
-      if (_books.isEmpty) _loading = true;
-    });
-    final loja = _lojaController.text.trim();
-    var falhou = false;
-
-    Future<List<BookStatus>> safe(Future<List<BookStatus>> future) async {
-      try {
-        return await future;
-      } catch (_) {
-        falhou = true;
-        return <BookStatus>[];
-      }
-    }
-
-    // Carrega pendentes e histórico em paralelo e só monta a lista quando os
-    // dois terminam, para não exibir apenas os pendentes por alguns segundos.
-    final results = await Future.wait([
-      safe(getBooks(loja: loja).timeout(const Duration(seconds: 20))),
-      safe(getAllBooks(loja: loja)),
-    ]);
-    final pendentes = results[0];
-    final historico = results[1];
+  void _exibirLivros(
+      List<BookStatus> base, Set<String> pendentes, String loja, bool falhou) {
     final porId = <String, BookStatus>{
-      for (final b in historico) b.bookId: b,
+      for (final b in base) b.bookId: b,
     };
-    for (final p in pendentes) {
-      porId[p.bookId] = p;
-    }
     final books = porId.values.toList();
     if (!mounted) return;
     if (books.isEmpty) {
@@ -100,7 +88,7 @@ class _BooksScreenState extends State<BooksScreen> {
       return;
     }
     final pendingIds = {
-      ...pendentes.map((b) => b.bookId),
+      ...pendentes,
       for (final b in books)
         if (b.pendente) b.bookId,
     };
@@ -124,6 +112,50 @@ class _BooksScreenState extends State<BooksScreen> {
     });
   }
 
+  Future<void> _load() async {
+    final seq = ++_loadSeq;
+    setState(() {
+      _error = null;
+      if (_books.isEmpty) _loading = true;
+    });
+    final loja = _normalizarLoja(_lojaController.text);
+    var falhou = false;
+
+    Future<List<BookStatus>> safe(Future<List<BookStatus>> future) async {
+      try {
+        return await future;
+      } catch (_) {
+        falhou = true;
+        return <BookStatus>[];
+      }
+    }
+
+    // Busca por loja: usa direto o paginado com o código normalizado (L291).
+    // Não espera o histórico global, então a lista aparece muito mais rápido.
+    if (loja.isNotEmpty) {
+      final historico = await safe(
+        getAllBooks(loja: loja).timeout(const Duration(seconds: 20)),
+      );
+      if (!mounted || seq != _loadSeq) return;
+      _exibirLivros(historico, <String>{}, loja, falhou);
+      return;
+    }
+
+    // Sem loja: pendentes primeiro e histórico depois, em paralelo.
+    final results = await Future.wait([
+      safe(getBooks(loja: loja).timeout(const Duration(seconds: 20))),
+      safe(getAllBooks(loja: loja)),
+    ]);
+    if (!mounted || seq != _loadSeq) return;
+    final pendentes = results[0];
+    final historico = results[1];
+    _exibirLivros(
+      [...historico, ...pendentes],
+      pendentes.map((b) => b.bookId).toSet(),
+      loja,
+      falhou,
+    );
+  }
   List<BookStatus> get _filtrados {
     final q = _query.trim().toLowerCase();
     if (q.isEmpty) return _books;
