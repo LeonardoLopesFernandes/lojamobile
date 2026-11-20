@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
+import '../precificacao/screens/spinner_celular_screen.dart';
 
 /// Submenu da Precificação: Etiquetas e Papeletas Avulsas.
 class PrecificacaoMenuScreen extends StatelessWidget {
@@ -49,6 +50,16 @@ class PrecificacaoMenuScreen extends StatelessWidget {
             'Papeletas Diárias',
             Icons.receipt,
             () => Navigator.of(context).pushNamed('/papeletas_diarias'),
+          ),
+          const SizedBox(height: 16),
+          _item(
+            context,
+            'Spinner Celular da Semana',
+            Icons.auto_awesome,
+            () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const SpinnerCelularScreen()),
+            ),
           ),
         ],
       ),
