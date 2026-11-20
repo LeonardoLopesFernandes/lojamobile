@@ -54,7 +54,7 @@ class PrecificacaoMenuScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _item(
             context,
-            'Spinner Celular da Semana',
+            'Celular da Semana',
             Icons.auto_awesome,
             () => Navigator.of(context).push(
               MaterialPageRoute(
