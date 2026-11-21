@@ -16,7 +16,14 @@ import 'package:inventario/precificacao/utils/celular_semana.dart';
 import 'package:inventario/precificacao/widgets/celular_semana_poster.dart';
 
 class SpinnerCelularScreen extends StatefulWidget {
-  const SpinnerCelularScreen({super.key});
+  final String? descricaoInicial;
+  final double? precoInicial;
+
+  const SpinnerCelularScreen({
+    super.key,
+    this.descricaoInicial,
+    this.precoInicial,
+  });
 
   @override
   State<SpinnerCelularScreen> createState() => _SpinnerCelularScreenState();
@@ -46,6 +53,13 @@ class _SpinnerCelularScreenState extends State<SpinnerCelularScreen> {
     final now = DateTime.now();
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final sunday = monday.add(const Duration(days: 6));
+    if (widget.descricaoInicial != null) {
+      _descCtrl.text = widget.descricaoInicial!;
+    }
+    if (widget.precoInicial != null && widget.precoInicial! > 0) {
+      _priceCtrl.text =
+          _fmtCurrency((widget.precoInicial! * 100).round().toString());
+    }
     _startCtrl.text = _dateText(monday);
     _endCtrl.text = _dateText(sunday);
     _loadDraft();
@@ -193,7 +207,7 @@ class _SpinnerCelularScreenState extends State<SpinnerCelularScreen> {
   Future<Uint8List> _capturePng() async {
     final boundary =
         _posterKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 2);
+    final image = await boundary.toImage(pixelRatio: 2.35);
     try {
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       return data!.buffer.asUint8List();
@@ -447,8 +461,7 @@ class _SpinnerCelularScreenState extends State<SpinnerCelularScreen> {
           _textField(
             _descCtrl,
             'Descrição do celular',
-            hint: 'Ex: MOTOROLA MOTO G17 128GB',
-            caps: TextCapitalization.characters,
+            hint: 'Ex: Motorola Moto G17 128GB',
           ),
           const SizedBox(height: 10),
           Row(
@@ -698,8 +711,10 @@ class _SpinnerCelularScreenState extends State<SpinnerCelularScreen> {
     return 'R\$ ${_brInt(cents ~/ 100)},${(cents % 100).toString().padLeft(2, '0')}';
   }
 
-  static String _fmtMoney(double value) =>
-      value.toStringAsFixed(2).replaceAll('.', ',');
+  static String _fmtMoney(double value) {
+    final fixed = value.toStringAsFixed(2).split('.');
+    return '${_brInt(int.tryParse(fixed[0]) ?? 0)},${fixed[1]}';
+  }
 
   static String _brInt(int value) {
     final reversed = value.toString().split('').reversed.toList();

@@ -14,6 +14,7 @@ import 'package:inventario/precificacao/utils/price_tag_mapper.dart';
 import 'package:inventario/precificacao/widgets/avulsa_cards.dart';
 import 'package:inventario/precificacao/widgets/compose_avulsa.dart';
 import 'package:inventario/precificacao/widgets/action_swipe_card.dart';
+import 'package:inventario/precificacao/screens/spinner_celular_screen.dart';
 
 enum _AcaoSucesso { nenhuma, limpar }
 
@@ -161,8 +162,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
   bool _isComumElegivel(PriceSign item) {
     final d = item.printingData;
     if (d == null) return true;
-    final hasInst =
-        d.installmentQuantity != null && d.installmentQuantity! > 0;
+    final hasInst = d.installmentQuantity != null && d.installmentQuantity! > 0;
     final hasPromo = d.promotionPrice != null && d.promotionPrice! > 0;
     final hasTW = d.takeAndWinQuantity != null && d.takeAndWinQuantity! > 0;
     if (hasInst && !hasPromo && !hasTW) return (d.price) > 149.99;
@@ -170,9 +170,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
   }
 
   PapeletaPrintingData _eletroData(PapeletaPrintingData d) {
-    final qtd = (d.installmentQuantity ?? 0) > 0
-        ? d.installmentQuantity!
-        : 10;
+    final qtd = (d.installmentQuantity ?? 0) > 0 ? d.installmentQuantity! : 10;
     return d.copyWith(
       template: Constants.signTemplateEletroSemana,
       quantity: 1,
@@ -348,8 +346,8 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
         final lista = List.generate(
             qty,
             (_) => _ajustarDadosLeveGanhe(signData.copyWith(
-                  template: signData.template ??
-                      _templatePorMovimento(item.movement),
+                  template:
+                      signData.template ?? _templatePorMovimento(item.movement),
                   quantity: 1,
                   size: tamanho,
                 )));
@@ -445,8 +443,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
             if (d == null) continue;
             for (int i = 0; i < item.quantity; i++) {
               lista.add(_ajustarDadosLeveGanhe(d.copyWith(
-                template:
-                    d.template ?? _templatePorMovimento(item.movement),
+                template: d.template ?? _templatePorMovimento(item.movement),
                 quantity: 1,
                 size: tamanho,
               )));
@@ -479,16 +476,18 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
             if (d == null) continue;
             for (int i = 0; i < item.quantity; i++) {
               lista.add(_ajustarDadosLeveGanhe(d.copyWith(
-                template:
-                    d.template ?? _templatePorMovimento(item.movement),
+                template: d.template ?? _templatePorMovimento(item.movement),
                 quantity: 1,
                 size: tamanho,
               )));
             }
           }
           if (lista.isEmpty) {
-            ToastUtils.show(context,
-                _usarComumEditavel ? 'Nenhum item do tipo Comum' : 'Nenhum item na lista');
+            ToastUtils.show(
+                context,
+                _usarComumEditavel
+                    ? 'Nenhum item do tipo Comum'
+                    : 'Nenhum item na lista');
             return;
           }
           await _abrirModelo(lista,
@@ -576,11 +575,9 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
   Future<void> _send(List<PapeletaPrintingData> lista) async {
     setState(() => _loading = true);
     try {
-      await _api.sendPriceSigns(
-          _store, SendPriceSignRequest(products: lista));
+      await _api.sendPriceSigns(_store, SendPriceSignRequest(products: lista));
       if (!mounted) return;
-      ToastUtils.showSuccess(
-          context, '${lista.length} papeletas enviadas!');
+      ToastUtils.showSuccess(context, '${lista.length} papeletas enviadas!');
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         SessionExpiredHandler.handleSessionExpired(context);
@@ -611,19 +608,19 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
       ToastUtils.show(context, 'Dados de impressão não disponíveis');
       return;
     }
-    final result = await Navigator.pushNamed(context, '/modelo_editavel',
-        arguments: {
-          'items': lista,
-          'size': _size,
-          'mostrarCheckboxOverlay': mostrarCheckboxOverlay,
-          'modoEditavel': modoEditavel,
-          'modoVencimentos': modoVencimentos,
-          'semOverlay': semOverlay,
-          'apiSemOverlay': apiSemOverlay,
-          'hideGerarPreview': hideGerarPreview,
-          'quantidadesCsv': quantidadesCsv,
-          'title': modoVencimentos ? 'PAPELETA DE VENCIMENTOS' : null,
-        });
+    final result =
+        await Navigator.pushNamed(context, '/modelo_editavel', arguments: {
+      'items': lista,
+      'size': _size,
+      'mostrarCheckboxOverlay': mostrarCheckboxOverlay,
+      'modoEditavel': modoEditavel,
+      'modoVencimentos': modoVencimentos,
+      'semOverlay': semOverlay,
+      'apiSemOverlay': apiSemOverlay,
+      'hideGerarPreview': hideGerarPreview,
+      'quantidadesCsv': quantidadesCsv,
+      'title': modoVencimentos ? 'PAPELETA DE VENCIMENTOS' : null,
+    });
     if (!mounted) return;
     if (result == true) {
       setState(() {
@@ -685,55 +682,44 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
                     padding: const EdgeInsets.all(12),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: AvulsaSpinnerDropdown(
-                                label: 'TIPO',
-                                icon: Icons.receipt_long,
-                                value: _tipo,
-                                options: const ['Normal', 'Promocional'],
-                                onChanged: (v) {
-                                  if (v != null) setState(() => _tipo = v);
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: AvulsaSpinnerDropdown(
-                                label: 'MODELO',
-                                icon: Icons.tune,
-                                value: _modelo,
-                                options: const [
-                                  'Misto',
-                                  'Promocional',
-                                  'Promocional Editável',
-                                  'Normal',
-                                  'Normal Editável',
-                                  'Vencimentos',
-                                  'Eletro da semana',
-                                ],
-                                onChanged: (v) {
-                                  if (v == null) return;
-                                  setState(() {
-                                    _modelo = v;
-                                    if (v == 'Promocional Editável') {
-                                      _tipo = 'Promocional';
-                                    }
-                                    if (v == 'Normal Editável') {
-                                      _tipo = 'Normal';
-                                    }
-                                    if (v == 'Eletro da semana' &&
-                                        _size != '1×1' &&
-                                        _size != '2×1' &&
-                                        _size != '4×1') {
-                                      _size = '4×1';
-                                    }
-                                  });
-                                },
-                              ),
-                            ),
+                        AvulsaSpinnerDropdown(
+                          label: 'MODELO',
+                          icon: Icons.tune,
+                          value: _modelo,
+                          options: const [
+                            'Misto',
+                            'Promocional Editável',
+                            'Normal Editável',
+                            'Vencimentos',
+                            'Eletro da semana',
+                            'Celular da semana',
                           ],
+                          onChanged: (v) {
+                            if (v == null) return;
+                            if (v == 'Celular da semana') {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SpinnerCelularScreen(),
+                                ),
+                              );
+                              return;
+                            }
+                            setState(() {
+                              _modelo = v;
+                              if (v == 'Promocional Editável') {
+                                _tipo = 'Promocional';
+                              }
+                              if (v == 'Normal Editável') {
+                                _tipo = 'Normal';
+                              }
+                              if (v == 'Eletro da semana' &&
+                                  _size != '1×1' &&
+                                  _size != '2×1' &&
+                                  _size != '4×1') {
+                                _size = '4×1';
+                              }
+                            });
+                          },
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -743,7 +729,11 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
                                 label: 'BUSCA',
                                 icon: Icons.qr_code,
                                 value: _buscaTipo,
-                                options: const ['EAN', 'SAP', 'Descrição do item'],
+                                options: const [
+                                  'EAN',
+                                  'SAP',
+                                  'Descrição do item'
+                                ],
                                 onChanged: (v) {
                                   if (v == null) return;
                                   setState(() {
