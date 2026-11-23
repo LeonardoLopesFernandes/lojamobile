@@ -94,25 +94,16 @@ class TreatmentBadgeModal extends StatelessWidget {
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
+                                      SizedBox(
                                         width: 20,
                                         height: 20,
-                                        decoration: BoxDecoration(
-                                          color: active
-                                              ? AppColors.success.withOpacity(0.15)
-                                              : AppColors.danger.withOpacity(0.15),
-                                          shape: BoxShape.circle,
-                                        ),
                                         child: Center(
-                                          child: Text(
-                                            active ? '✓' : '×',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: active
-                                                  ? AppColors.success
-                                                  : AppColors.danger,
-                                            ),
+                                          child: Icon(
+                                            active ? Icons.check : Icons.close,
+                                            size: 18,
+                                            color: active
+                                                ? AppColors.success
+                                                : AppColors.danger,
                                           ),
                                         ),
                                       ),

@@ -365,19 +365,15 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                                   ? Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Container(
+                                        const SizedBox(
                                           width: 20,
                                           height: 20,
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.success,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Center(
-                                            child: Text('✓',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 12)),
+                                          child: Center(
+                                            child: Icon(
+                                              Icons.check,
+                                              size: 18,
+                                              color: AppColors.success,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
