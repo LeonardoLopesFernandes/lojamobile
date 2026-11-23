@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:inventario/precificacao/utils/celular_semana.dart';
 
-String _money(double value) {
+String _money(double value, {bool omitZeroCents = false}) {
   final fixed = value.toStringAsFixed(2).split('.');
   final inteiro = (int.tryParse(fixed[0]) ?? 0).toString();
   final buf = StringBuffer();
@@ -11,6 +11,7 @@ String _money(double value) {
     if (i > 0 && (inteiro.length - i) % 3 == 0) buf.write('.');
     buf.write(inteiro[i]);
   }
+  if (omitZeroCents && fixed[1] == '00') return buf.toString();
   return '${buf.toString()},${fixed[1]}';
 }
 
@@ -42,6 +43,7 @@ class CelularSemanaPoster extends StatelessWidget {
           _descricao(),
           _de(),
           _por(),
+          _planoControle(),
           _comboValores(),
           _letraMiuda(),
         ],
@@ -53,18 +55,25 @@ class CelularSemanaPoster extends StatelessWidget {
     final path = data.imagemPath.trim();
     final file = path.isEmpty ? null : File(path);
     return Positioned(
-      left: 25,
-      top: 322,
-      width: 480,
-      height: 565,
-      child: file != null && file.existsSync()
-          ? Image.file(
-              file,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              errorBuilder: (_, __, ___) => _semFoto(),
-            )
-          : _semFoto(),
+      left: 85 + data.fotoDx,
+      top: 390 + data.fotoDy,
+      width: 407,
+      height: 620,
+      child: ClipRect(
+        child: Transform.scale(
+          scale: data.fotoScale,
+          alignment: Alignment.center,
+          child: file != null && file.existsSync()
+              ? Image.file(
+                  file,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.centerRight,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (_, __, ___) => _semFoto(),
+                )
+              : _semFoto(),
+        ),
+      ),
     );
   }
 
@@ -77,9 +86,9 @@ class CelularSemanaPoster extends StatelessWidget {
   Widget _descricao() {
     final partes = _partesDescricao(data.descricao);
     return Positioned(
-      left: 515,
-      top: 340,
-      width: 510,
+      left: 503,
+      top: 425,
+      width: 489,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -90,9 +99,9 @@ class CelularSemanaPoster extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'SFProDisplay',
               color: _ink,
-              fontSize: 40,
+              fontSize: 58,
               fontWeight: FontWeight.w400,
-              height: 1,
+              height: 0.9,
               letterSpacing: -0.5,
             ),
           ),
@@ -104,9 +113,9 @@ class CelularSemanaPoster extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'SFProDisplay',
               color: _ink,
-              fontSize: 60,
+              fontSize: 62,
               fontWeight: FontWeight.w700,
-              height: 0.95,
+              height: 0.9,
               letterSpacing: -1.2,
             ),
           ),
@@ -116,26 +125,34 @@ class CelularSemanaPoster extends StatelessWidget {
   }
 
   (String, String) _partesDescricao(String descricao) {
-    final palavras = descricao.trim().split(RegExp(r'\s+'));
-    if (palavras.isEmpty || palavras.first.isEmpty) {
-      return ('', '');
+    final texto = descricao.trim();
+    if (texto.isEmpty) return ('', '');
+    const prefixos = [
+      'Samsung Galaxy ',
+      'Motorola Moto ',
+      'Samsung ',
+      'Motorola ',
+      'Galaxy ',
+      'Moto ',
+    ];
+    final lower = texto.toLowerCase();
+    for (final prefixo in prefixos) {
+      if (lower.startsWith(prefixo.toLowerCase())) {
+        final marca = texto.substring(0, prefixo.length).trimRight();
+        final modelo = texto.substring(prefixo.length).trim();
+        if (modelo.isNotEmpty) return (marca, modelo);
+      }
     }
-    var n = 2;
-    if (palavras.length <= 2) {
-      n = 1;
-    } else if (RegExp(r'\d').hasMatch(palavras[1])) {
-      n = 1;
-    }
-    final primeira = palavras.take(n).join(' ');
-    final segunda = palavras.skip(n).join(' ');
-    return (primeira, segunda);
+    final palavras = texto.split(RegExp(r'\s+'));
+    final n = palavras.length <= 2 ? 1 : 2;
+    return (palavras.take(n).join(' '), palavras.skip(n).join(' '));
   }
 
   Widget _de() {
     return Positioned(
-      left: 515,
-      top: 455,
-      width: 510,
+      left: 503,
+      top: 541,
+      width: 489,
       child: Text(
         'de: R\$ ${_money(data.precoOriginal)} à vista',
         style: const TextStyle(
@@ -150,74 +167,112 @@ class CelularSemanaPoster extends StatelessWidget {
 
   Widget _por() {
     return Positioned(
-      left: 515,
-      top: 500,
-      width: 510,
-      height: 104,
+      left: 503,
+      top: 590,
+      width: 489,
+      height: 88,
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text.rich(
-          TextSpan(
-            children: [
-              const TextSpan(
-                text: 'por: ',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w400,
-                ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              'por:',
+              style: TextStyle(
+                fontFamily: 'SFProDisplay',
+                color: _ink,
+                fontSize: 32,
+                fontWeight: FontWeight.w400,
+                height: 1,
               ),
-              TextSpan(
-                text: 'R\$ ${_money(data.precoFinal)}',
-                style: const TextStyle(
-                  fontSize: 90,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -2.8,
-                ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'R\$ ${_money(data.precoFinal)}',
+              style: const TextStyle(
+                fontFamily: 'SFProDisplay',
+                color: _ink,
+                fontSize: 82,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -2.8,
+                height: 1,
               ),
-            ],
-          ),
-          style: const TextStyle(
-            fontFamily: 'SFProDisplay',
-            color: _ink,
-            height: 1,
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  Widget _planoControle() {
+    return Positioned(
+      left: 503,
+      top: 700,
+      width: 489,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            '+ plano controle',
+            style: TextStyle(
+              fontFamily: 'SFProDisplay',
+              color: _ink,
+              fontSize: 46,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '(válido na portabilidade para quaisquer bandeiras*)',
+            style: TextStyle(
+              fontFamily: 'SFProDisplay',
+              color: _ink,
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _comboValores() {
+    final temCentavos =
+        ((data.precoOriginal * 100).round() % 100) != 0;
     return Positioned.fill(
       child: Stack(
         children: [
           _valorCaixa(
-            left: 35,
-            width: 210,
-            top: 1030,
-            texto: 'R\$ ${_money(data.precoOriginal)}',
-            fontSize: 34,
+            left: 99,
+            width: 191,
+            top: 1150,
+            texto: 'R\$ ${_money(data.precoOriginal, omitZeroCents: true)}',
+            fontSize: temCentavos ? 32 : 38,
           ),
           _valorCaixa(
-            left: 280,
-            width: 235,
-            top: 1038,
+            left: 302,
+            width: 190,
+            top: 1155,
             texto: 'R\$ ${_money(data.descontoPortabilidade)}',
-            fontSize: 32,
+            fontSize: 36,
           ),
           _valorCaixa(
-            left: 550,
-            width: 235,
-            top: 1030,
+            left: 526,
+            width: 191,
+            top: 1150,
             texto: '${data.percentualFormatado}% OFF',
-            fontSize: 42,
+            fontSize: 38,
           ),
           _valorCaixa(
-            left: 820,
-            width: 200,
-            top: 1028,
+            left: 750,
+            width: 190,
+            top: 1150,
             texto: 'R\$ ${_money(data.seguro)}',
-            fontSize: 30,
+            fontSize: 36,
           ),
         ],
       ),
@@ -258,33 +313,30 @@ class CelularSemanaPoster extends StatelessWidget {
         'O desconto do seguro não está atrelado à venda de nenhum item e a '
         'contratação é opcional.\n'
         'Parcelamento disponível no crédito para todas as bandeiras, '
-        'disponível apenas para ${data.descricao}.\n'
+        'disponível apenas para ${data.descricao.toUpperCase()}.\n'
         'Desconto do plano controle disponível para portabilidade para '
         'quaisquer bandeiras, consulte planos\n'
         'e condições. Ofertas válidas de ${data.ofertaInicio} a '
         '${data.ofertaFim} podendo encerrar sem aviso prévio.';
     return Positioned(
-      left: 35,
-      top: 1084,
-      width: 985,
-      height: 176,
-      child: ColoredBox(
-        color: Colors.white,
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: SizedBox(
-              width: 965,
-              child: Text(
-                texto,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'SFProDisplay',
-                  color: _ink,
-                  fontSize: 20.5,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                ),
+      left: 57,
+      top: 1210,
+      width: 935,
+      height: 150,
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: 935,
+            child: Text(
+              texto,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'SFProDisplay',
+                color: _ink,
+                fontSize: 19.0,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
               ),
             ),
           ),
