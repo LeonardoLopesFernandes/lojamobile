@@ -6,6 +6,7 @@ import 'package:inventario/precificacao/utils/toast_utils.dart';
 import '../models/avaliacao.dart';
 import '../network/troca_api.dart';
 import '../services/etiqueta_pdf.dart';
+import 'etiqueta_preview_screen.dart';
 
 const _vermelho = Color(0xFFE60023);
 const _fundo = Color(0xFFF8F8F8);
@@ -217,7 +218,7 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
     );
     setState(() => _abrindo = true);
     try {
-      final uri = await TrocaEtiquetaPdf.salvarNoDownloads(
+      final bytes = await TrocaEtiquetaPdf.gerar(
         labelNumbers: selecionadas,
         tradeId: _op.tradeId,
         loja: _loja,
@@ -228,14 +229,14 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
         cause: _op.cause.isNotEmpty ? _op.cause : _s(_det?['cause']),
       );
       if (!mounted) return;
-      if (uri == null || uri.isEmpty) {
-        ToastUtils.showError(context, 'Não foi possível salvar a etiqueta');
-        return;
-      }
-      await const MethodChannel('com.ir/media').invokeMethod('openUri', {
-        'uri': uri,
-        'mime': 'application/pdf',
-      });
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => EtiquetaPreviewScreen(
+            titulo: 'Etiqueta de troca',
+            bytes: bytes,
+          ),
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ToastUtils.showError(context, 'Erro ao abrir a etiqueta');

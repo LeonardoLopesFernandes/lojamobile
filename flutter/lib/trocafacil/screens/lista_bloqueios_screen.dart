@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
 import '../models/bloqueio.dart';
 import '../network/troca_api.dart';
 import '../network/troca_session.dart';
 import '../services/bloqueio_pdf.dart';
+import 'etiqueta_preview_screen.dart';
 
 /// Lista de itens bloqueados (Troca Fácil).
 class ListaBloqueiosScreen extends StatefulWidget {
@@ -258,18 +258,21 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
       }
     }
     try {
-      final uri = await BloqueioEtiquetaPdf.salvarNoDownloads(
+      final bytes = await BloqueioEtiquetaPdf.gerar(
         numeroOperacao: op.id,
         loja: op.store,
         dataBloqueio: TrocaApi.fmtIsoDate(op.createdAt),
         itens: itens,
       );
       if (!mounted) return;
-      if (uri != null && uri.isNotEmpty) {
-        await _abrirPdf(uri);
-      } else {
-        ToastUtils.showError(context, 'Não foi possível salvar a etiqueta');
-      }
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => EtiquetaPreviewScreen(
+            titulo: 'Etiqueta de bloqueio',
+            bytes: bytes,
+          ),
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ToastUtils.showError(context, 'Erro ao gerar a etiqueta');
@@ -299,33 +302,24 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
     }
     if (itens.isEmpty) return;
     try {
-      final uri = await BloqueioEtiquetaPdf.salvarNoDownloads(
+      final bytes = await BloqueioEtiquetaPdf.gerar(
         numeroOperacao: op.id,
         loja: op.store,
         dataBloqueio: TrocaApi.fmtIsoDate(op.createdAt),
         itens: itens,
       );
       if (!mounted) return;
-      if (uri != null && uri.isNotEmpty) {
-        await _abrirPdf(uri);
-      } else {
-        ToastUtils.showError(context, 'Não foi possível salvar a etiqueta');
-      }
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => EtiquetaPreviewScreen(
+            titulo: 'Etiquetas de bloqueio',
+            bytes: bytes,
+          ),
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ToastUtils.showError(context, 'Erro ao gerar a etiqueta');
-      }
-    }
-  }
-
-  Future<void> _abrirPdf(String uri) async {
-    try {
-      const channel = MethodChannel('com.ir/media');
-      await channel
-          .invokeMethod('openUri', {'uri': uri, 'mime': 'application/pdf'});
-    } catch (_) {
-      if (mounted) {
-        ToastUtils.showError(context, 'Não foi possível abrir o PDF');
       }
     }
   }
