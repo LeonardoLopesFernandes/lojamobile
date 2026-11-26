@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:barcode/barcode.dart';
 import 'package:inventario/network/session_manager.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
 
@@ -738,7 +739,7 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
                           style: TextStyle(color: _texto),
                         ),
                         const SizedBox(height: 8),
-                        const _BarcodeVisual(),
+                        _BarcodeVisual(data: _op.tradeId),
                         const SizedBox(height: 5),
                         Text(
                           _op.tradeId,
@@ -810,77 +811,50 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
 }
 
 class _BarcodeVisual extends StatelessWidget {
-  const _BarcodeVisual();
+  final String data;
+  const _BarcodeVisual({required this.data});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 65,
       width: double.infinity,
-      child: CustomPaint(painter: _BarcodePainter()),
+      child: CustomPaint(painter: _BarcodePainter(data)),
     );
   }
 }
 
 class _BarcodePainter extends CustomPainter {
+  final String data;
+  _BarcodePainter(this.data);
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) return;
     final paint = Paint()..color = _texto;
-    const barras = [
-      2,
-      1,
-      3,
-      1,
-      1,
-      2,
-      4,
-      1,
-      2,
-      1,
-      3,
-      2,
-      1,
-      1,
-      4,
-      2,
-      1,
-      3,
-      1,
-      2,
-      2,
-      1,
-      4,
-      1,
-      3,
-      1,
-      2,
-      2,
-      1,
-      3,
-      1,
-      2,
-      4,
-      1,
-      2,
-      1,
-      3,
-      1,
-      2,
-      3,
-    ];
-    double x = 0;
-    for (final largura in barras) {
-      canvas.drawRect(
-        Rect.fromLTWH(x, 0, largura.toDouble(), size.height),
-        paint,
-      );
-      x += largura + 2;
-      if (x > size.width) break;
+    final elements = Barcode.code128().make(
+      data,
+      width: size.width,
+      height: size.height,
+    );
+    for (final element in elements) {
+      if (element is BarcodeBar && element.black) {
+        canvas.drawRect(
+          Rect.fromLTWH(
+            element.left,
+            element.top,
+            element.width,
+            element.height,
+          ),
+          paint,
+        );
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BarcodePainter oldDelegate) =>
+      oldDelegate.data != data;
 }
 
 class _DashedBorderPainter extends CustomPainter {
