@@ -19,7 +19,8 @@ import 'package:inventario/precificacao/screens/spinner_celular_screen.dart';
 enum _AcaoSucesso { nenhuma, limpar }
 
 class PapeletasFragment extends StatefulWidget {
-  const PapeletasFragment({super.key});
+  final bool amanha;
+  const PapeletasFragment({super.key, this.amanha = false});
 
   @override
   State<PapeletasFragment> createState() => _PapeletasFragmentState();
@@ -54,7 +55,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
   void initState() {
     super.initState();
     _store = _session.getUserStore();
-    _startDate = _today();
+    _startDate = widget.amanha ? _amanha() : _today();
     _loadSaved();
     _carregarColagem();
   }
@@ -65,13 +66,16 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
     super.dispose();
   }
 
-  String _today() {
-    final now = DateTime.now();
-    final y = now.year.toString().padLeft(4, '0');
-    final m = now.month.toString().padLeft(2, '0');
-    final d = now.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
+  String _fmt(DateTime d) {
+    final y = d.year.toString().padLeft(4, '0');
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '$y-$m-$day';
   }
+
+  String _today() => _fmt(DateTime.now());
+
+  String _amanha() => _fmt(DateTime.now().add(const Duration(days: 1)));
 
   bool get _buscaNumerica => _buscaTipo == 'EAN' || _buscaTipo == 'SAP';
 
@@ -114,7 +118,8 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
   Future<void> _loadSaved() async {
     setState(() => _loading = true);
     try {
-      _items = List<PriceSign>.from(await ListaStore.instance.getPapeletas());
+      _items = List<PriceSign>.from(
+          await ListaStore.instance.getPapeletas(amanha: widget.amanha));
     } catch (e) {
       LogHelper.e('Erro ao carregar papeletas', e);
     } finally {
@@ -123,7 +128,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
   }
 
   Future<void> _persist() async {
-    await ListaStore.instance.savePapeletas(_items);
+    await ListaStore.instance.savePapeletas(_items, amanha: widget.amanha);
   }
 
   void _delete(PriceSign item) {
@@ -133,7 +138,7 @@ class _PapeletasFragmentState extends State<PapeletasFragment>
       _items.removeWhere((e) => e.id == item.id);
       _deletingId = null;
     });
-    ListaStore.instance.removePapeleta(item);
+    ListaStore.instance.removePapeleta(item, amanha: widget.amanha);
   }
 
   static String _templatePorMovimento(String? movement) {

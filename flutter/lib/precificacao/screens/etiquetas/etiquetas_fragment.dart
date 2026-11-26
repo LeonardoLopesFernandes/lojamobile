@@ -26,7 +26,8 @@ String _formatToday() {
 }
 
 class EtiquetasFragment extends StatefulWidget {
-  const EtiquetasFragment({super.key});
+  final bool amanha;
+  const EtiquetasFragment({super.key, this.amanha = false});
 
   @override
   State<EtiquetasFragment> createState() => _EtiquetasFragmentState();
@@ -70,8 +71,13 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
   @override
   void initState() {
     super.initState();
-    _storeId = SessionManager.instance?.getUserStore() ?? Constants.defaultStore;
-    _today = _formatToday();
+    _storeId =
+        SessionManager.instance?.getUserStore() ?? Constants.defaultStore;
+    final data = widget.amanha
+        ? DateTime.now().add(const Duration(days: 1))
+        : DateTime.now();
+    _today = '${data.year}-${data.month.toString().padLeft(2, '0')}-'
+        '${data.day.toString().padLeft(2, '0')}';
     _loadSaved();
     _carregarColagem();
     _eanFocus.addListener(() {
@@ -91,7 +97,8 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
   Future<void> _loadSaved() async {
     setState(() => _loading = true);
     try {
-      _tags = List<PriceTag>.from(await ListaStore.instance.getEtiquetas());
+      _tags = List<PriceTag>.from(
+          await ListaStore.instance.getEtiquetas(amanha: widget.amanha));
     } catch (e) {
       LogHelper.e('EtiquetasFragment: erro ao carregar', e);
     } finally {
@@ -100,7 +107,7 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
   }
 
   Future<void> _persist() async {
-    await ListaStore.instance.saveEtiquetas(_tags);
+    await ListaStore.instance.saveEtiquetas(_tags, amanha: widget.amanha);
   }
 
   void _deleteTag(PriceTag tag) {
@@ -110,14 +117,15 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
       _tags.removeWhere((e) => e.id == tag.id);
       _deletingId = null;
     });
-    ListaStore.instance.removeEtiqueta(tag);
+    ListaStore.instance.removeEtiqueta(tag, amanha: widget.amanha);
   }
 
   Future<void> _addByScan() async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) => const BarcodeScannerScreen(continuo: true)),
+          builder: (_) =>
+              BarcodeScannerScreen(continuo: true, amanha: widget.amanha)),
     );
     await _loadSaved();
     await _carregarColagem();
@@ -225,8 +233,7 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
       }
       setState(() {});
       await _persist();
-      ToastUtils.showSuccess(
-          context, _mensagemBusca(added, incremented));
+      ToastUtils.showSuccess(context, _mensagemBusca(added, incremented));
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         SessionExpiredHandler.handleSessionExpired(context);
@@ -270,8 +277,7 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
           ? Constants.signTemplateModelo
           : Constants.templateNormalizado(pd.template);
       for (int i = 0; i < t.quantity; i++) {
-        printingDataList
-            .add(pd.copyWith(quantity: 1, template: template));
+        printingDataList.add(pd.copyWith(quantity: 1, template: template));
       }
     }
     if (printingDataList.isEmpty) {
@@ -376,12 +382,11 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
     final printerId = _printer == 'Zebra 1'
         ? Constants.printerZebra1
         : Constants.printerZebra2;
-    await Navigator.pushNamed(context, '/gondola_editavel',
-        arguments: {
-          'items': lista,
-          'printerId': printerId,
-          'barcode': barcode
-        });
+    await Navigator.pushNamed(context, '/gondola_editavel', arguments: {
+      'items': lista,
+      'printerId': printerId,
+      'barcode': barcode
+    });
   }
 
   Future<void> _imprimirTodas() async {
@@ -603,8 +608,7 @@ class _EtiquetasFragmentState extends State<EtiquetasFragment>
                   IconButton(
                     onPressed: _gerarPdfEtiquetas,
                     tooltip: 'Gerar PDF da lista',
-                    icon:
-                        const Icon(Icons.picture_as_pdf, color: primaryRed),
+                    icon: const Icon(Icons.picture_as_pdf, color: primaryRed),
                   ),
                 ],
               ),

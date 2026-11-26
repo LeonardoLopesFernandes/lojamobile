@@ -6,74 +6,78 @@ class ListaStore {
   ListaStore._();
 
   // ========== ETIQUETAS ==========
-  Future<List<PriceTag>> getEtiquetas() async {
+  Future<List<PriceTag>> getEtiquetas({bool amanha = false}) async {
     try {
-      return await AppDatabase.recuperarEtiquetas();
+      return await AppDatabase.recuperarEtiquetas(amanha: amanha);
     } catch (e) {
       return [];
     }
   }
 
-  Future<void> saveEtiquetas(List<PriceTag> list) async {
+  Future<void> saveEtiquetas(List<PriceTag> list, {bool amanha = false}) async {
     try {
-      await AppDatabase.salvarEtiquetas(list);
+      await AppDatabase.salvarEtiquetas(list, amanha: amanha);
     } catch (e) {}
   }
 
-  Future<void> addEtiqueta(PriceTag item) async {
-    final current = await getEtiquetas();
+  Future<void> addEtiqueta(PriceTag item, {bool amanha = false}) async {
+    final current = await getEtiquetas(amanha: amanha);
     current.add(item);
-    await saveEtiquetas(current);
+    await saveEtiquetas(current, amanha: amanha);
   }
 
-  Future<void> addEtiquetas(List<PriceTag> items) async {
-    final current = await getEtiquetas();
+  Future<void> addEtiquetas(List<PriceTag> items, {bool amanha = false}) async {
+    final current = await getEtiquetas(amanha: amanha);
     current.addAll(items);
-    await saveEtiquetas(current);
+    await saveEtiquetas(current, amanha: amanha);
   }
 
-  Future<void> removeEtiqueta(PriceTag item) async {
-    final current = await getEtiquetas();
+  Future<void> removeEtiqueta(PriceTag item, {bool amanha = false}) async {
+    final current = await getEtiquetas(amanha: amanha);
     current.removeWhere((e) => e.id == item.id);
-    await saveEtiquetas(current);
+    await saveEtiquetas(current, amanha: amanha);
   }
 
-  Future<void> clearEtiquetas() async => saveEtiquetas([]);
+  Future<void> clearEtiquetas({bool amanha = false}) async =>
+      saveEtiquetas([], amanha: amanha);
 
   // ========== PAPELETAS ==========
-  Future<List<PriceSign>> getPapeletas() async {
+  Future<List<PriceSign>> getPapeletas({bool amanha = false}) async {
     try {
-      return await AppDatabase.recuperarPapeletas();
+      return await AppDatabase.recuperarPapeletas(amanha: amanha);
     } catch (e) {
       return [];
     }
   }
 
-  Future<void> savePapeletas(List<PriceSign> list) async {
+  Future<void> savePapeletas(List<PriceSign> list,
+      {bool amanha = false}) async {
     try {
-      await AppDatabase.salvarPapeletas(list);
+      await AppDatabase.salvarPapeletas(list, amanha: amanha);
     } catch (e) {}
   }
 
-  Future<void> addPapeleta(PriceSign item) async {
-    final current = await getPapeletas();
+  Future<void> addPapeleta(PriceSign item, {bool amanha = false}) async {
+    final current = await getPapeletas(amanha: amanha);
     current.add(item);
-    await savePapeletas(current);
+    await savePapeletas(current, amanha: amanha);
   }
 
-  Future<void> addPapeletas(List<PriceSign> items) async {
-    final current = await getPapeletas();
+  Future<void> addPapeletas(List<PriceSign> items,
+      {bool amanha = false}) async {
+    final current = await getPapeletas(amanha: amanha);
     current.addAll(items);
-    await savePapeletas(current);
+    await savePapeletas(current, amanha: amanha);
   }
 
-  Future<void> removePapeleta(PriceSign item) async {
-    final current = await getPapeletas();
+  Future<void> removePapeleta(PriceSign item, {bool amanha = false}) async {
+    final current = await getPapeletas(amanha: amanha);
     current.removeWhere((e) => e.id == item.id);
-    await savePapeletas(current);
+    await savePapeletas(current, amanha: amanha);
   }
 
-  Future<void> clearPapeletas() async => savePapeletas([]);
+  Future<void> clearPapeletas({bool amanha = false}) async =>
+      savePapeletas([], amanha: amanha);
 
   // ========== ÁREA DE COLAGEM ==========
   Future<String> getColagem() async {

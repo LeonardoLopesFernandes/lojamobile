@@ -132,6 +132,34 @@ class MyApp extends StatelessWidget {
               ),
               body: const LogoRefreshPage(child: PapeletasFragment()),
             ),
+        '/precificacao_etiquetas_amanha': (ctx) => Scaffold(
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                centerTitle: true,
+                automaticallyImplyLeading: false,
+                title: const Text('Etiquetas avulsas amanhã',
+                    style: TextStyle(
+                        color: Color(0xFFD32F2F),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600)),
+              ),
+              body: LogoRefreshPage(child: EtiquetasFragment(amanha: true)),
+            ),
+        '/precificacao_papeletas_amanha': (ctx) => Scaffold(
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                centerTitle: true,
+                automaticallyImplyLeading: false,
+                title: const Text('Papeletas avulsas amanhã',
+                    style: TextStyle(
+                        color: Color(0xFFD32F2F),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600)),
+              ),
+              body: LogoRefreshPage(child: PapeletasFragment(amanha: true)),
+            ),
         '/etiquetas_diarias': (ctx) =>
             const LogoRefreshPage(child: EtiquetasDiariasResumoScreen()),
         '/etiquetas': (ctx) => const LogoRefreshPage(child: EtiquetasScreen()),

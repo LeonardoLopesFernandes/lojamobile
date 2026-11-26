@@ -12,8 +12,8 @@ import 'product_image_dialog.dart';
 String _brl(double v) {
   final s = v.toStringAsFixed(2);
   final parts = s.split('.');
-  final grouped = parts[0].replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+  final grouped = parts[0]
+      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
   return 'R\$ $grouped,${parts[1]}';
 }
 
@@ -55,7 +55,9 @@ Widget _qtyBox(TextEditingController c, ValueChanged<int> onChange) {
         keyboardType: TextInputType.number,
         maxLength: 3,
         style: const TextStyle(
-            fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF212121)),
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF212121)),
         decoration: const InputDecoration(
           border: InputBorder.none,
           isCollapsed: true,
@@ -103,7 +105,8 @@ Widget _eanLinha(BuildContext context, String texto, String ean,
 }
 
 /// Container verde + badge branco anexado à direita (fiel ao Compose).
-Widget _greenBadge(String valor, String tipo, Color cor, {bool parcelado = false}) {
+Widget _greenBadge(String valor, String tipo, Color cor,
+    {bool parcelado = false}) {
   return Container(
     height: 28,
     constraints: const BoxConstraints(minHeight: 28),
@@ -134,8 +137,7 @@ Widget _greenBadge(String valor, String tipo, Color cor, {bool parcelado = false
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius:
-                BorderRadius.horizontal(right: Radius.circular(6)),
+            borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -212,8 +214,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
         (ov?['price'] as num?)?.toDouble() ?? pd?.price?.value ?? 0.0;
     final precoPromo = (ov?['promotionPrice'] as num?)?.toDouble() ??
         pd?.promotionalPrice?.value;
-    final takeQty =
-        (ov?['takeAndWinQuantity'] as int?) ?? pd?.takeAndWin?.qty;
+    final takeQty = (ov?['takeAndWinQuantity'] as int?) ?? pd?.takeAndWin?.qty;
     final takeTotal = (ov?['takeAndWinPrice'] as num?)?.toDouble() ??
         pd?.takeAndWin?.totalValue;
     final instQty = (ov?['installmentQuantity'] as int?) ??
@@ -227,7 +228,9 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
             ? pd.displayPrice
             : (pd != null && pd.unitValue > 0)
                 ? pd.unitValue
-                : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
+                : (precoPromo != null && precoPromo > 0
+                    ? precoPromo
+                    : precoNormal);
 
     final ehDeporParcelado = instQty != null &&
         instQty > 0 &&
@@ -236,12 +239,11 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
         (precoNormal <= 0 || precoPromo < precoNormal);
 
     if (takeQty != null && takeQty > 0 && takeTotal != null && takeTotal > 0) {
-      final totalLeve =
-          (pd?.template == Constants.signTemplateLeveGanheCada &&
-                  precoPromo != null &&
-                  precoPromo > 0)
-              ? precoPromo
-              : takeTotal;
+      final totalLeve = (pd?.template == Constants.signTemplateLeveGanheCada &&
+              precoPromo != null &&
+              precoPromo > 0)
+          ? precoPromo
+          : takeTotal;
       return (
         leve: 'Leve $takeQty por R\$ ${_num(totalLeve)}',
         valor: _brl(precoNormal),
@@ -299,6 +301,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
       context,
       ean: widget.tag.ean,
       tipo: tipo,
+      description: widget.tag.description,
       price: pd?.price?.value,
       promotionPrice: pd?.promotionalPrice?.value,
       takeAndWinQuantity: pd?.takeAndWin?.qty,
@@ -314,6 +317,8 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
     final p = _calc();
     final deptNum = widget.tag.department.split(' -').first.trim();
     final item = widget.tag;
+    final ean = eanExibido(item.ean);
+    final descricao = descricaoExibida(item.ean, item.description);
     return Card(
       margin: EdgeInsets.zero,
       elevation: 2,
@@ -333,12 +338,12 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                   child: GestureDetector(
                     onTap: () => mostrarImagemProduto(
                       context,
-                      ean: item.ean,
-                      descricao: item.description,
+                      ean: ean,
+                      descricao: descricao,
                       codSap: item.sap,
                     ),
                     child: Text(
-                      item.description,
+                      descricao,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -351,8 +356,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                 IconButton(
                   onPressed: () =>
                       widget.onImprimir(int.tryParse(_qty.text) ?? 1),
-                  icon: const Icon(Icons.print,
-                      color: avulsaGreen, size: 20),
+                  icon: const Icon(Icons.print, color: avulsaGreen, size: 20),
                   padding: const EdgeInsets.all(2),
                   constraints:
                       const BoxConstraints(maxWidth: 28, maxHeight: 28),
@@ -368,10 +372,8 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _eanLinha(context,
-                          'DEP: $deptNum | EAN: ${item.ean} / SAP: ${item.sap}',
-                          item.ean,
-                          descricao: item.description,
-                          saldo: _saldo),
+                          'DEP: $deptNum | EAN: ${ean} / SAP: ${item.sap}', ean,
+                          descricao: descricao, saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
                         GestureDetector(
@@ -395,7 +397,8 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
     );
   }
 
-  Widget _greenBadgeComLeve(({String? leve, String valor, String tipo, Color cor}) p) {
+  Widget _greenBadgeComLeve(
+      ({String? leve, String valor, String tipo, Color cor}) p) {
     return Container(
       height: 28,
       constraints: const BoxConstraints(minHeight: 28),
@@ -528,9 +531,10 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
     final takePrice = pd?.takeAndWinPrice;
 
     final qtdParc = pd?.installmentQuantity ?? 0;
-    final valorParc = (pd?.installmentPrice != null && pd!.installmentPrice! > 0)
-        ? pd.installmentPrice!
-        : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
+    final valorParc =
+        (pd?.installmentPrice != null && pd!.installmentPrice! > 0)
+            ? pd.installmentPrice!
+            : (precoPromo != null && precoPromo > 0 ? precoPromo : precoNormal);
     final ehDeporParcelado = qtdParc > 0 &&
         precoPromo != null &&
         precoPromo > 0 &&
@@ -587,6 +591,8 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
     final p = _calc();
     final deptNum = widget.item.department.split(' -').first.trim();
     final item = widget.item;
+    final ean = eanExibido(item.ean);
+    final descricao = descricaoExibida(item.ean, item.description);
     return Card(
       margin: EdgeInsets.zero,
       elevation: 2,
@@ -606,12 +612,12 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                   child: GestureDetector(
                     onTap: () => mostrarImagemProduto(
                       context,
-                      ean: item.ean,
-                      descricao: item.description,
+                      ean: ean,
+                      descricao: descricao,
                       codSap: item.sap,
                     ),
                     child: Text(
-                      item.description,
+                      descricao,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -624,8 +630,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                 IconButton(
                   onPressed: () =>
                       widget.onImprimir(int.tryParse(_qty.text) ?? 1),
-                  icon: const Icon(Icons.print,
-                      color: avulsaGreen, size: 20),
+                  icon: const Icon(Icons.print, color: avulsaGreen, size: 20),
                   padding: const EdgeInsets.all(2),
                   constraints:
                       const BoxConstraints(maxWidth: 28, maxHeight: 28),
@@ -641,10 +646,8 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _eanLinha(context,
-                          'DEP: $deptNum | EAN: ${item.ean} / SAP: ${item.sap}',
-                          item.ean,
-                          descricao: item.description,
-                          saldo: _saldo),
+                          'DEP: $deptNum | EAN: ${ean} / SAP: ${item.sap}', ean,
+                          descricao: descricao, saldo: _saldo),
                       const SizedBox(height: 2),
                       if (p.leve != null)
                         _greenBadgeComLeve(p)
@@ -662,7 +665,8 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
     );
   }
 
-  Widget _greenBadgeComLeve(({String? leve, String valor, String tipo, Color cor}) p) {
+  Widget _greenBadgeComLeve(
+      ({String? leve, String valor, String tipo, Color cor}) p) {
     return Container(
       height: 28,
       constraints: const BoxConstraints(minHeight: 28),

@@ -39,6 +39,22 @@ class PrecificacaoMenuScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _item(
             context,
+            'Etiquetas Avulsas Amanhã',
+            Icons.sell_outlined,
+            () => Navigator.of(context)
+                .pushNamed('/precificacao_etiquetas_amanha'),
+          ),
+          const SizedBox(height: 16),
+          _item(
+            context,
+            'Papeletas Avulsas Amanhã',
+            Icons.receipt_long_outlined,
+            () => Navigator.of(context)
+                .pushNamed('/precificacao_papeletas_amanha'),
+          ),
+          const SizedBox(height: 16),
+          _item(
+            context,
             'Etiquetas Diárias',
             Icons.sell,
             () => Navigator.of(context).pushNamed('/etiquetas_diarias'),

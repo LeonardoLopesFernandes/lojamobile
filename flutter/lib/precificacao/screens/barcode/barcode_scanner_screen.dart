@@ -18,8 +18,13 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 class BarcodeScannerScreen extends StatefulWidget {
   /// Modo contínuo (etiquetas): fica na câmera adicionando itens à lista.
   final bool continuo;
+  final bool amanha;
 
-  const BarcodeScannerScreen({super.key, this.continuo = false});
+  const BarcodeScannerScreen({
+    super.key,
+    this.continuo = false,
+    this.amanha = false,
+  });
 
   @override
   State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
@@ -112,7 +117,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         Beep.error();
         return;
       }
-      final lista = await ListaStore.instance.getEtiquetas();
+      final lista =
+          await ListaStore.instance.getEtiquetas(amanha: widget.amanha);
       for (final item in resp.items) {
         final idx = lista.indexWhere((t) => t.ean == item.ean);
         if (idx >= 0) {
@@ -121,7 +127,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           lista.add(singleToPriceTag(item));
         }
       }
-      await ListaStore.instance.saveEtiquetas(lista);
+      await ListaStore.instance.saveEtiquetas(lista, amanha: widget.amanha);
       await ListaStore.instance.setColagem(ean);
       if (!mounted) return;
       setState(() => _added += resp.items.length);
@@ -142,7 +148,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   Future<void> _escolherImpressoraEEnviar() async {
-    final etiquetas = await ListaStore.instance.getEtiquetas();
+    final etiquetas =
+        await ListaStore.instance.getEtiquetas(amanha: widget.amanha);
     if (!mounted) return;
     if (etiquetas.isEmpty) {
       ToastUtils.show(context, 'Nenhuma etiqueta adicionada');
@@ -229,7 +236,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   Future<void> _abrirPreviewPapeleta() async {
-    final etiquetas = await ListaStore.instance.getEtiquetas();
+    final etiquetas =
+        await ListaStore.instance.getEtiquetas(amanha: widget.amanha);
     if (!mounted) return;
     if (etiquetas.isEmpty) {
       ToastUtils.show(context, 'Nenhuma etiqueta adicionada');

@@ -9,6 +9,18 @@ class ValorOverrideStore {
   final Map<String, Map<String, dynamic>> overrides = {};
 }
 
+String eanExibido(String ean) {
+  final v = ValorOverrideStore.instance.overrides[ean]?['ean'];
+  final s = (v ?? '').toString().trim();
+  return s.isEmpty ? ean : s;
+}
+
+String descricaoExibida(String ean, String original) {
+  final v = ValorOverrideStore.instance.overrides[ean]?['description'];
+  final s = (v ?? '').toString().trim();
+  return s.isEmpty ? original : s;
+}
+
 String _txt(num? v) => v == null ? '' : v.toString().replaceAll('.', ',');
 
 String _txtInt(int? v) => v?.toString() ?? '';
@@ -42,12 +54,12 @@ Future<bool> editarValores(
   final store = ValorOverrideStore.instance.overrides;
   final ov = store[ean] ?? const <String, dynamic>{};
 
-  final descCtrl = TextEditingController(
-      text: (ov['description'] as String?) ?? description ?? '');
-  final priceCtrl =
-      TextEditingController(text: _txt(ov['price'] ?? price));
-  final promoCtrl = TextEditingController(
-      text: _txt(ov['promotionPrice'] ?? promotionPrice));
+  final eanCtrl = TextEditingController(text: eanExibido(ean));
+  final descCtrl =
+      TextEditingController(text: descricaoExibida(ean, description ?? ''));
+  final priceCtrl = TextEditingController(text: _txt(ov['price'] ?? price));
+  final promoCtrl =
+      TextEditingController(text: _txt(ov['promotionPrice'] ?? promotionPrice));
   final takeQtyCtrl = TextEditingController(
       text: _txtInt(ov['takeAndWinQuantity'] ?? takeAndWinQuantity));
   final takePriceCtrl = TextEditingController(
@@ -78,6 +90,7 @@ Future<bool> editarValores(
     ));
   }
 
+  add('EAN', eanCtrl, texto: true);
   add('Descrição', descCtrl, texto: true);
 
   if (tipo == 'Normal') {
@@ -143,6 +156,7 @@ Future<bool> editarValores(
   );
 
   final controllers = [
+    eanCtrl,
     descCtrl,
     priceCtrl,
     promoCtrl,
@@ -159,7 +173,9 @@ Future<bool> editarValores(
   }
 
   final novo = <String, dynamic>{};
+  final eanNovo = eanCtrl.text.trim();
   final desc = descCtrl.text.trim();
+  if (eanNovo.isNotEmpty) novo['ean'] = eanNovo;
   if (desc.isNotEmpty) novo['description'] = desc;
   final p = _parseD(priceCtrl);
   final promo = _parseD(promoCtrl);

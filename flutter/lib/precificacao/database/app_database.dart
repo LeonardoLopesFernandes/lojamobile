@@ -18,17 +18,21 @@ class AppDatabase {
     return _db!;
   }
 
-  static Future<void> salvarEtiquetas(List<PriceTag> list) async {
+  static Future<void> salvarEtiquetas(List<PriceTag> list,
+      {bool amanha = false}) async {
     final db = await database;
     final json = jsonEncode(list.map((e) => e.toJson()).toList());
-    await db.insert('cache', {'key': 'etiquetas', 'json': json},
+    final key = amanha ? 'etiquetas_amanha' : 'etiquetas';
+    await db.insert('cache', {'key': key, 'json': json},
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<List<PriceTag>> recuperarEtiquetas() async {
+  static Future<List<PriceTag>> recuperarEtiquetas(
+      {bool amanha = false}) async {
     final db = await database;
+    final key = amanha ? 'etiquetas_amanha' : 'etiquetas';
     final cursor = await db.query('cache',
-        columns: ['json'], where: 'key = ?', whereArgs: ['etiquetas']);
+        columns: ['json'], where: 'key = ?', whereArgs: [key]);
     if (cursor.isNotEmpty) {
       final json = cursor.first['json'] as String;
       try {
@@ -41,17 +45,21 @@ class AppDatabase {
     return [];
   }
 
-  static Future<void> salvarPapeletas(List<PriceSign> list) async {
+  static Future<void> salvarPapeletas(List<PriceSign> list,
+      {bool amanha = false}) async {
     final db = await database;
     final json = jsonEncode(list.map((e) => e.toJson()).toList());
-    await db.insert('cache', {'key': 'papeletas', 'json': json},
+    final key = amanha ? 'papeletas_amanha' : 'papeletas';
+    await db.insert('cache', {'key': key, 'json': json},
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<List<PriceSign>> recuperarPapeletas() async {
+  static Future<List<PriceSign>> recuperarPapeletas(
+      {bool amanha = false}) async {
     final db = await database;
+    final key = amanha ? 'papeletas_amanha' : 'papeletas';
     final cursor = await db.query('cache',
-        columns: ['json'], where: 'key = ?', whereArgs: ['papeletas']);
+        columns: ['json'], where: 'key = ?', whereArgs: [key]);
     if (cursor.isNotEmpty) {
       final json = cursor.first['json'] as String;
       try {
