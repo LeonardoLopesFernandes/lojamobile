@@ -64,8 +64,8 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
   String _brl(double v) {
     final s = v.toStringAsFixed(2);
     final parts = s.split('.');
-    final grouped = parts[0].replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+    final grouped = parts[0]
+        .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
     return 'R\$ $grouped,${parts[1]}';
   }
 
@@ -143,8 +143,7 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
                       const SizedBox(width: 8),
                       Text(
                         '•  ${TrocaApi.fmtIsoDate(op.createdAt)}',
-                        style:
-                            TextStyle(color: Colors.grey[600], fontSize: 13),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ],
                   ),
@@ -172,12 +171,26 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
                           const SizedBox(height: 12),
                           const Divider(height: 1, color: Color(0xFFDEE2E6)),
                           const SizedBox(height: 12),
-                          _buildDetailRow('Etiqueta:', _etiqueta(it)),
+                          Row(
+                            children: [
+                              Expanded(
+                                child:
+                                    _buildDetailRow('Etiqueta:', _etiqueta(it)),
+                              ),
+                              IconButton(
+                                tooltip: 'Visualizar etiqueta',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: const Icon(Icons.open_in_new, size: 18),
+                                onPressed: () =>
+                                    _visualizarEtiquetaItem(op, it),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 8),
                           _buildDetailRow('Motivo:', it.reasonBlocking),
                           const SizedBox(height: 8),
-                          _buildDetailRow(
-                              'Quantidade:', '${it.quantity}x'),
+                          _buildDetailRow('Quantidade:', '${it.quantity}x'),
                           const SizedBox(height: 8),
                           _buildDetailRow('Valor:',
                               it.precovigente.isEmpty ? '-' : it.precovigente,
@@ -198,9 +211,9 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      icon: const Icon(Icons.print_outlined, size: 18),
+                      icon: const Icon(Icons.visibility_outlined, size: 18),
                       label: const Text(
-                        'REIMPRIMIR',
+                        'VISUALIZAR ETIQUETAS',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -224,6 +237,44 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
   String _etiqueta(ItemBloqueado it) {
     if (it.tags.isNotEmpty) return it.tags.join(', ');
     return it.ean.isEmpty ? '-' : it.ean;
+  }
+
+  Future<void> _visualizarEtiquetaItem(
+      BloqueioOperacao op, ItemBloqueado it) async {
+    final itens = <BloqueioEtiquetaItem>[];
+    if (it.tags.isEmpty) {
+      itens.add(BloqueioEtiquetaItem(
+        descricao: it.description,
+        motivo: it.reasonBlocking,
+        etiqueta: '',
+      ));
+    } else {
+      for (final tag in it.tags) {
+        itens.add(BloqueioEtiquetaItem(
+          descricao: it.description,
+          motivo: it.reasonBlocking,
+          etiqueta: tag,
+        ));
+      }
+    }
+    try {
+      final uri = await BloqueioEtiquetaPdf.salvarNoDownloads(
+        numeroOperacao: op.id,
+        loja: op.store,
+        dataBloqueio: TrocaApi.fmtIsoDate(op.createdAt),
+        itens: itens,
+      );
+      if (!mounted) return;
+      if (uri != null && uri.isNotEmpty) {
+        await _abrirPdf(uri);
+      } else {
+        ToastUtils.showError(context, 'Não foi possível salvar a etiqueta');
+      }
+    } catch (_) {
+      if (mounted) {
+        ToastUtils.showError(context, 'Erro ao gerar a etiqueta');
+      }
+    }
   }
 
   Future<void> _reimprimir(BloqueioOperacao op) async {
@@ -256,13 +307,7 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
       );
       if (!mounted) return;
       if (uri != null && uri.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Etiqueta salva em Download/Troca'),
-          action: SnackBarAction(
-            label: 'Abrir',
-            onPressed: () => _abrirPdf(uri),
-          ),
-        ));
+        await _abrirPdf(uri);
       } else {
         ToastUtils.showError(context, 'Não foi possível salvar a etiqueta');
       }
@@ -276,8 +321,8 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
   Future<void> _abrirPdf(String uri) async {
     try {
       const channel = MethodChannel('com.ir/media');
-      await channel.invokeMethod('openUri',
-          {'uri': uri, 'mime': 'application/pdf'});
+      await channel
+          .invokeMethod('openUri', {'uri': uri, 'mime': 'application/pdf'});
     } catch (_) {
       if (mounted) {
         ToastUtils.showError(context, 'Não foi possível abrir o PDF');
@@ -326,8 +371,7 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
           const SizedBox(height: 80),
           Center(
               child: Text(_erro!,
-                  style:
-                      const TextStyle(color: Colors.black54, fontSize: 15))),
+                  style: const TextStyle(color: Colors.black54, fontSize: 15))),
           const SizedBox(height: 12),
           Center(
               child: OutlinedButton(
@@ -351,8 +395,9 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) {
         final op = _lista[i];
-        final motivo =
-            op.itemsBlocked.isNotEmpty ? op.itemsBlocked.first.reasonBlocking : '';
+        final motivo = op.itemsBlocked.isNotEmpty
+            ? op.itemsBlocked.first.reasonBlocking
+            : '';
         return GestureDetector(
           onTap: () => _abrir(op),
           child: Container(
@@ -394,8 +439,7 @@ class _ListaBloqueiosScreenState extends State<ListaBloqueiosScreen> {
   }
 }
 
-Widget _buildDetailRow(String label, String value,
-    {bool isHighlight = false}) {
+Widget _buildDetailRow(String label, String value, {bool isHighlight = false}) {
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -411,9 +455,8 @@ Widget _buildDetailRow(String label, String value,
           style: TextStyle(
             fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
-            color: isHighlight
-                ? const Color(0xFFD32F2F)
-                : const Color(0xFF343A40),
+            color:
+                isHighlight ? const Color(0xFFD32F2F) : const Color(0xFF343A40),
           ),
         ),
       ),

@@ -27,6 +27,7 @@ import 'trocafacil/screens/lista_bloqueios_screen.dart';
 import 'trocafacil/screens/bloquear_item_screen.dart';
 import 'precificacao/screens/etiquetas/etiquetas_fragment.dart';
 import 'precificacao/screens/etiquetas/etiquetas_screen.dart';
+import 'precificacao/screens/diarias/diarias_resumo_screens.dart';
 import 'precificacao/screens/papeletas/papeletas_fragment.dart';
 import 'precificacao/screens/papeletas/papeletas_diarias_screen.dart';
 import 'precificacao/screens/barcode/barcode_scanner_screen.dart';
@@ -60,7 +61,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Loja Mobile',
+      title: 'Loja Mobile',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
       localizationsDelegates: const [
@@ -94,9 +95,11 @@ class MyApp extends StatelessWidget {
         '/': (ctx) => const SplashDecider(),
         '/login': (ctx) => const LoginScreen(),
         '/login_webview': (ctx) => const LoginWebViewScreen(),
-        '/inventario': (ctx) => const VoltarHubsGuard(child: ListaInventarioScreen()),
+        '/inventario': (ctx) =>
+            const VoltarHubsGuard(child: ListaInventarioScreen()),
         '/quebras': (ctx) => const VoltarHubsGuard(child: QuebrasMenuScreen()),
-        '/precificacao': (ctx) => const VoltarHubsGuard(child: PrecificacaoMenuScreen()),
+        '/precificacao': (ctx) =>
+            const VoltarHubsGuard(child: PrecificacaoMenuScreen()),
         '/rotina': (ctx) => const RotinaHubScreen(),
         'DepartmentDetail': (ctx) => const DepartmentDetailScreen(),
         'SpecialItems': (ctx) => const SpecialItemsScreen(),
@@ -129,8 +132,13 @@ class MyApp extends StatelessWidget {
               ),
               body: const LogoRefreshPage(child: PapeletasFragment()),
             ),
+        '/etiquetas_diarias': (ctx) =>
+            const LogoRefreshPage(child: EtiquetasDiariasResumoScreen()),
         '/etiquetas': (ctx) => const LogoRefreshPage(child: EtiquetasScreen()),
-        '/papeletas_diarias': (ctx) => const LogoRefreshPage(child: PapeletasDiariasScreen()),
+        '/papeletas_diarias_resumo': (ctx) =>
+            const LogoRefreshPage(child: PapeletasDiariasResumoScreen()),
+        '/papeletas_diarias': (ctx) =>
+            const LogoRefreshPage(child: PapeletasDiariasScreen()),
         '/recebimento': (ctx) => const HomeScreen(),
         '/detalhes': (ctx) => const DetalhesViagemScreen(),
         '/itens': (ctx) => const ItensScreen(),
@@ -144,16 +152,17 @@ class MyApp extends StatelessWidget {
           final args =
               ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
           return GondolaEditavelScreen(
-            items: (args?['items'] as List?)
-                    ?.cast<prec_models.PrintingData>() ??
-                [],
+            items:
+                (args?['items'] as List?)?.cast<prec_models.PrintingData>() ??
+                    [],
             printerId: args?['printerId'] as String? ?? 'ZEBRA_1',
             barcode: args?['barcode'] as bool? ?? false,
           );
         },
         '/modelo_editavel': (ctx) => const ModeloEditavelScreen(),
         '/pdf_viewer': (ctx) => const PdfViewerScreen(),
-        '/troca_facil': (ctx) => const VoltarHubsGuard(child: TrocaFacilMenuScreen()),
+        '/troca_facil': (ctx) =>
+            const VoltarHubsGuard(child: TrocaFacilMenuScreen()),
         '/troca_login': (ctx) => const TrocaLoginWebViewScreen(),
         '/troca_etiqueta': (ctx) {
           final args = ModalRoute.of(ctx)?.settings.arguments;

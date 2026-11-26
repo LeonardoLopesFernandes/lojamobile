@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:inventario/network/session_manager.dart';
 import 'package:inventario/precificacao/utils/toast_utils.dart';
 import '../models/cupom.dart';
+import '../models/avaliacao.dart';
 import '../network/troca_api.dart';
 import '../network/troca_session.dart';
 import '../services/etiqueta_launcher.dart';
 import '../services/etiqueta_pdf.dart';
 import 'realizar_troca_itens_screen.dart' show ProdutoSelecionado;
+import 'operacao_troca_screen.dart';
 
 /// Tela 2 — Avaliação do(s) produto(s) selecionado(s) (Sim/Não por questão).
 class AvaliacaoProdutoScreen extends StatefulWidget {
@@ -42,8 +44,7 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is Map) {
       _cupom = args['cupom'] as Cupom;
-      _selecionados =
-          (args['selecionados'] as List).cast<ProdutoSelecionado>();
+      _selecionados = (args['selecionados'] as List).cast<ProdutoSelecionado>();
       _cliente = Map<String, dynamic>.from(args['cliente'] ?? {});
       _cause = args['cause'] ?? 'INSATISFACAO';
       _reason = args['reason'] ?? '';
@@ -58,7 +59,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
       for (final sel in _selecionados) {
         final p = sel.produto;
         final infos = '${p.departmentCode},${p.line};';
-        final resp = await _api.getQuestions(cause: _cause, infosProduct: infos);
+        final resp =
+            await _api.getQuestions(cause: _cause, infosProduct: infos);
         final lista = <Map<String, dynamic>>[];
         for (final bloco in resp) {
           final qs = bloco['questionsProduct'];
@@ -110,8 +112,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
   String _brl(double v) {
     final s = v.toStringAsFixed(2);
     final parts = s.split('.');
-    final grouped = parts[0].replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+    final grouped = parts[0]
+        .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
     return 'R\$ $grouped,${parts[1]}';
   }
 
@@ -141,8 +143,7 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
         produtosBody.add({
           'EAN': p.ean,
           'SKU': p.sku,
-          'productDescription':
-              p.name.isNotEmpty ? p.name : p.description,
+          'productDescription': p.name.isNotEmpty ? p.name : p.description,
           'qtProduct': sel.quantidade,
           'nsu': p.nsu,
           'unitValue': p.unitValue,
@@ -197,7 +198,7 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
 
       final resultado = await _api.finishTrade(body);
       if (!mounted) return;
-      _mostrarResultado(resultado, body, session);
+      await _mostrarResultado(resultado, body, session);
     } on TrocaApiException catch (e) {
       if (!mounted) return;
       if (e.statusCode == 401) {
@@ -215,8 +216,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
     }
   }
 
-  void _mostrarResultado(Map<String, dynamic> resultado,
-      Map<String, dynamic> body, SessionManager session) {
+  Future<void> _mostrarResultado(Map<String, dynamic> resultado,
+      Map<String, dynamic> body, SessionManager session) async {
     final status = (resultado['operationStatus'] ?? '').toString();
     final prods = resultado['products'];
     final autorizado = (prods is List && prods.isNotEmpty)
@@ -224,26 +225,57 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
         : '';
     final aprovado = autorizado.toUpperCase() == 'APROVADO' ||
         status.toLowerCase() == 'aceita';
-    final etiquetas = _extrairEtiquetas(resultado);
 
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text(aprovado ? 'Troca aprovada' : 'Troca recusada'),
-        content: Text(aprovado
-            ? 'A troca foi registrada. Deseja imprimir a etiqueta?'
-            : 'Operação: $status${autorizado.isNotEmpty ? ' ($autorizado)' : ''}'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).popUntil((r) => r.isFirst);
-            },
-            child: const Text('Fechar'),
-          ),
-          if (aprovado)
+    if (!aprovado) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Troca recusada'),
+          content: Text(
+              'Operação: $status${autorizado.isNotEmpty ? ' ($autorizado)' : ''}'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).popUntil((r) => r.isFirst);
+              },
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    var labels = _extrairEtiquetas(resultado);
+    final tradeId = _tradeIdResultado(resultado);
+    if (labels.isEmpty && tradeId.isNotEmpty) {
+      try {
+        final detalhe = await _api.getOperacao(tradeId);
+        labels = _extrairEtiquetas(detalhe);
+      } catch (_) {}
+    }
+
+    if (labels.isEmpty) {
+      // Mantém o fluxo antigo quando a API não devolve etiquetas.
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Troca aprovada'),
+          content:
+              const Text('A troca foi registrada. Deseja imprimir a etiqueta?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).popUntil((r) => r.isFirst);
+              },
+              child: const Text('Fechar'),
+            ),
             TextButton(
               onPressed: () async {
                 Navigator.of(ctx).pop();
@@ -251,13 +283,88 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
                   resultado: resultado,
                   body: body,
                   session: session,
-                  etiquetas: etiquetas,
+                  etiquetas: labels,
                 );
               },
               child: const Text('Imprimir etiqueta'),
             ),
-        ],
+          ],
+        ),
+      );
+      return;
+    }
+
+    final operationType =
+        (body['operationType'] ?? 'TROCA').toString().toUpperCase();
+    final loja = (body['storeNumber'] ?? session.getUserStore()).toString();
+    final dataIso = (body['operationDate'] ?? '').toString();
+    final cause = (body['cause'] ?? '').toString();
+    final reason = (body['reason'] ?? '').toString();
+    final descricao = _selecionados
+        .map((s) =>
+            s.produto.name.isNotEmpty ? s.produto.name : s.produto.description)
+        .where((e) => e.trim().isNotEmpty)
+        .join(' | ');
+    final qtd = _selecionados.fold<int>(0, (s, sel) => s + sel.quantidade);
+    final unitValue =
+        _selecionados.isNotEmpty ? _selecionados.first.produto.unitValue : 0.0;
+    final valor = _selecionados.fold<double>(
+        0, (s, sel) => s + sel.produto.unitValue * sel.quantidade);
+    final ean = _selecionados.isNotEmpty ? _selecionados.first.produto.ean : '';
+    final id = tradeId.isNotEmpty ? tradeId : labels.first;
+
+    final detalhe = <String, dynamic>{
+      'products': [
+        {
+          'productDescription': descricao,
+          'labelNumber': labels,
+          'unitValue': unitValue,
+          'quantity': qtd,
+          'productEan': ean,
+        }
+      ],
+      'reason': reason.isNotEmpty ? reason : cause,
+      'cause': cause,
+      'operationDate': dataIso,
+      'storeNumber': loja,
+    };
+    final operacao = Avaliacao(
+      tradeId: id,
+      avaliationDate: dataIso,
+      operation: operationType,
+      cause: cause,
+      totalValue: valor,
+      transactionDate: _cupom.creationDate,
+      costumerName: (_cliente['nome'] ?? '').toString(),
+      products: [
+        AvaliacaoProduct(
+          productName: descricao,
+          ean: ean,
+          unitValue: unitValue,
+          quantity: qtd,
+          avaliationId: null,
+          tags: labels,
+          tradeAuthorization: autorizado,
+        ),
+      ],
+      store: loja,
+      exchangeStatus: 'APROVADO',
+      createdBy: null,
+      origin: null,
+      updatedBy: null,
+    );
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => OperacaoTrocaScreen(
+          operacao: operacao,
+          detalhe: detalhe,
+          api: _api,
+          initialStep: 2,
+          finalizada: true,
+        ),
       ),
+      (route) => route.isFirst,
     );
   }
 
@@ -324,9 +431,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
     }
 
     final produto = _selecionados
-        .map((s) => s.produto.name.isNotEmpty
-            ? s.produto.name
-            : s.produto.description)
+        .map((s) =>
+            s.produto.name.isNotEmpty ? s.produto.name : s.produto.description)
         .where((e) => e.trim().isNotEmpty)
         .join(' | ');
     final operationType =
@@ -391,8 +497,7 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
                     children: [
                       const Text(
                         'Avalie o produto e responda as seguintes questões:',
-                        style:
-                            TextStyle(fontSize: 14, color: Colors.black54),
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
                       ),
                       const SizedBox(height: 16),
                       for (var i = 0; i < _selecionados.length; i++) ...[
@@ -405,8 +510,10 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
                                 style: TextStyle(color: Colors.black54)),
                           )
                         else if (_perguntas.length > i)
-                          ..._perguntas[i].asMap().entries.map((e) =>
-                              _pergunta(i, e.value)),
+                          ..._perguntas[i]
+                              .asMap()
+                              .entries
+                              .map((e) => _pergunta(i, e.value)),
                         const SizedBox(height: 8),
                       ],
                     ],
@@ -419,9 +526,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 OutlinedButton(
-                  onPressed: _enviando
-                      ? null
-                      : () => Navigator.of(context).maybePop(),
+                  onPressed:
+                      _enviando ? null : () => Navigator.of(context).maybePop(),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.grey.shade300),
                     padding: const EdgeInsets.symmetric(
@@ -433,9 +539,8 @@ class _AvaliacaoProdutoScreenState extends State<AvaliacaoProdutoScreen> {
                       style: TextStyle(color: Colors.black87)),
                 ),
                 ElevatedButton(
-                  onPressed: (_todasRespondidas && !_enviando)
-                      ? _continuar
-                      : null,
+                  onPressed:
+                      (_todasRespondidas && !_enviando) ? _continuar : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD32F2F),
                     foregroundColor: Colors.white,
@@ -567,8 +672,7 @@ class _InfoCol extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         const SizedBox(height: 4),
         Text(value,
             style: const TextStyle(

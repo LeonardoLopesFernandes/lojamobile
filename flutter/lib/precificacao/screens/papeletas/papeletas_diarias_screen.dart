@@ -17,7 +17,12 @@ import '../../utils/buscar_anim.dart';
 
 class PapeletasDiariasScreen extends StatefulWidget {
   final bool embedded;
-  const PapeletasDiariasScreen({super.key, this.embedded = false});
+  final String? initialDate;
+  const PapeletasDiariasScreen({
+    super.key,
+    this.embedded = false,
+    this.initialDate,
+  });
 
   @override
   State<PapeletasDiariasScreen> createState() => _PapeletasDiariasScreenState();
@@ -90,15 +95,15 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
   @override
   void initState() {
     super.initState();
-    _storeId = SessionManager.instance?.getUserStore() ?? Constants.defaultStore;
+    _storeId =
+        SessionManager.instance?.getUserStore() ?? Constants.defaultStore;
     final now = DateTime.now();
     _today = _toApi(now);
-    _currentDate = _today;
+    _currentDate = widget.initialDate ?? _today;
     _loadFilters();
   }
 
-  String _toApi(DateTime d) =>
-      '${d.year}-${_pad(d.month)}-${_pad(d.day)}';
+  String _toApi(DateTime d) => '${d.year}-${_pad(d.month)}-${_pad(d.day)}';
   String _pad(int n) => n.toString().padLeft(2, '0');
   DateTime _fromApi(String ymd) {
     final p = ymd.split('-');
@@ -179,11 +184,16 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
     setState(() => _isLoading = true);
     startBuscarAnim();
     try {
-      final comum = await _api.getPriceSigns(_storeId, Constants.signTypePapeletaComum,
-          size: _selectedSize, status: _selectedStatus, startDate: _currentDate);
+      final comum = await _api.getPriceSigns(
+          _storeId, Constants.signTypePapeletaComum,
+          size: _selectedSize,
+          status: _selectedStatus,
+          startDate: _currentDate);
       final promo = await _api.getPriceSigns(
           _storeId, Constants.signTypePapeletaPromocional,
-          size: _selectedSize, status: _selectedStatus, startDate: _currentDate);
+          size: _selectedSize,
+          status: _selectedStatus,
+          startDate: _currentDate);
       List<PriceSign> all = [...comum.priceSigns, ...promo.priceSigns];
 
       if (_selectedMovement.isNotEmpty) {
@@ -198,9 +208,10 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
                 !m.contains('PROMOCIONAL');
           }).toList();
         } else {
-          all = all.where((it) =>
-              it.movement.toLowerCase() ==
-              _selectedMovement.toLowerCase()).toList();
+          all = all
+              .where((it) =>
+                  it.movement.toLowerCase() == _selectedMovement.toLowerCase())
+              .toList();
         }
       }
       if (_selectedDepartments.isNotEmpty) {
@@ -308,7 +319,8 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
     setState(() => _isLoading = true);
     try {
       // Igual ao Kotlin: o relatório é sempre do dia de hoje.
-      final bytes = await _api.reportFullChanges(_storeId, _today, isPriceTag: false);
+      final bytes =
+          await _api.reportFullChanges(_storeId, _today, isPriceTag: false);
       const channel = MethodChannel('com.ir/media');
       final ts = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'relatorio_papeletas_$ts.pdf';
@@ -359,11 +371,12 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
           } else {
             // Fiel ao backend: usa o template ORIGINAL do item (ex: "de_por")
             // que a API de preview reconhece.
-            itemTemplate = pd?.template ?? (movement == 'de/por'
-                ? Constants.signTemplateDepor
-                : movement == 'parcelado'
-                    ? Constants.signTemplateDeporParcelado
-                    : Constants.signTemplateModelo);
+            itemTemplate = pd?.template ??
+                (movement == 'de/por'
+                    ? Constants.signTemplateDepor
+                    : movement == 'parcelado'
+                        ? Constants.signTemplateDeporParcelado
+                        : Constants.signTemplateModelo);
           }
         }
       }
@@ -392,14 +405,14 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
       }
     }
 
-    final r = await Navigator.pushNamed(context, '/modelo_editavel',
-        arguments: {
-          'items': data,
-          'size': _selectedSize,
-          'mostrarCheckboxOverlay': true,
-          'modoEditavel': _usarModeloComum,
-          'usarModeloComum': _usarModeloComum,
-        });
+    final r =
+        await Navigator.pushNamed(context, '/modelo_editavel', arguments: {
+      'items': data,
+      'size': _selectedSize,
+      'mostrarCheckboxOverlay': true,
+      'modoEditavel': _usarModeloComum,
+      'usarModeloComum': _usarModeloComum,
+    });
     if (r == true) await _loadSigns();
   }
 
@@ -520,7 +533,10 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
                           ),
                           value: temp.contains(d.id),
                           onChanged: (v) => setInner(() {
-                            if (v == true) temp.add(d.id); else temp.remove(d.id);
+                            if (v == true)
+                              temp.add(d.id);
+                            else
+                              temp.remove(d.id);
                           }),
                         );
                       }),
@@ -724,13 +740,17 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ..._menuItem('assets/icons/eti_avulsa.png', 'Etiqueta avulsa', 0),
+                ..._menuItem(
+                    'assets/icons/eti_avulsa.png', 'Etiqueta avulsa', 0),
                 _menuDivider(),
-                ..._menuItem('assets/icons/pap_avulsa.png', 'Papeleta avulsa', 1),
+                ..._menuItem(
+                    'assets/icons/pap_avulsa.png', 'Papeleta avulsa', 1),
                 _menuDivider(),
-                ..._menuItem('assets/icons/eti_diaria.png', 'Etiquetas diárias', 2),
+                ..._menuItem(
+                    'assets/icons/eti_diaria.png', 'Etiquetas diárias', 2),
                 _menuDivider(),
-                ..._menuItem('assets/icons/pap_diaria.png', 'Papeletas diárias', 3),
+                ..._menuItem(
+                    'assets/icons/pap_diaria.png', 'Papeletas diárias', 3),
               ],
             ),
           ),
@@ -750,11 +770,17 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
             children: [
-              Image.asset(icon, width: 24, height: 24, fit: BoxFit.contain, color: Colors.white),
+              Image.asset(icon,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                  color: Colors.white),
               const SizedBox(width: 12),
               Text(label,
                   style: const TextStyle(
-                      color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -762,7 +788,8 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
     ];
   }
 
-  Widget _menuDivider() => Container(height: 0.5, color: Colors.white.withOpacity(0.15));
+  Widget _menuDivider() =>
+      Container(height: 0.5, color: Colors.white.withOpacity(0.15));
 
   void _onMenuTap(int index) {
     switch (index) {
@@ -864,7 +891,8 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
               padding: const EdgeInsets.only(top: 30),
               child: Column(
                 children: [
-                  const Icon(Icons.print_disabled, size: 80, color: Colors.grey),
+                  const Icon(Icons.print_disabled,
+                      size: 80, color: Colors.grey),
                   const SizedBox(height: 16),
                   const Text(
                     'Nenhuma papeleta para este período',
@@ -957,7 +985,8 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
                     value: value,
                     isExpanded: true,
                     isDense: true,
-                    icon: Icon(Icons.keyboard_arrow_down, color: primaryRed, size: 16),
+                    icon: Icon(Icons.keyboard_arrow_down,
+                        color: primaryRed, size: 16),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -983,130 +1012,127 @@ class _PapeletasDiariasScreenState extends State<PapeletasDiariasScreen>
   List<Widget> _buildFiltersContent() {
     const primaryRed = Color(0xFFC61033);
     return [
-          Row(
-            children: [
-              Expanded(
-                child: _buildDropdownItem(
-                  icon: Icons.compare_arrows,
-                  label: 'MOVIMENTO',
-                  value: _movementOptions[_movementPos],
-                  items: List<String>.from(_movementOptions),
-                  onChanged: (val) {
-                    final pos = _movementOptions.indexOf(val ?? 'Todos');
-                    setState(() {
-                      _movementPos = pos >= 0 ? pos : 0;
-                      _selectedMovement = _movementPos == 0
-                          ? ''
-                          : _movementOptions[_movementPos];
-                    });
-                  },
-                ),
-              ),
-              Container(width: 1, height: 30, color: Colors.grey[300]),
-              Expanded(
-                child: _buildDropdownItem(
-                  icon: Icons.category,
-                  label: 'TIPO',
-                  value: _typeOptions[_typePos],
-                  items: List<String>.from(_typeOptions),
-                  onChanged: (val) {
-                    final pos = _typeOptions.indexOf(val ?? 'Normal');
-                    setState(() {
-                      _typePos = pos >= 0 ? pos : 0;
-                      _usarModeloPersonalizado =
-                          (_typePos == 2 || _typePos == 3);
-                      _usarModeloComum = (_typePos == 3);
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildDropdownItem(
-                  icon: Icons.aspect_ratio,
-                  label: 'TAMANHO',
-                  value: _selectedSize,
-                  items: List<String>.from(_sizes),
-                  onChanged: (val) =>
-                      setState(() => _selectedSize = val ?? '2X1'),
-                ),
-              ),
-              Container(width: 1, height: 30, color: Colors.grey[300]),
-              Expanded(
-                child: _buildDropdownItem(
-                  icon: Icons.filter_list,
-                  label: 'STATUS',
-                  value: _statusOptions[_statusPos],
-                  items: List<String>.from(_statusOptions),
-                  onChanged: (val) {
-                    final pos = _statusOptions.indexOf(val ?? 'Todos os status');
-                    setState(() {
-                      _statusPos = pos >= 0 ? pos : 0;
-                      _selectedStatus = [
-                        Constants.statusAll,
-                        Constants.statusImpressas,
-                        Constants.statusNaoImpressas
-                      ][_statusPos];
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 18),
-          // DEPARTAMENTOS + BUSCAR
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(10),
+      Row(
+        children: [
+          Expanded(
+            child: _buildDropdownItem(
+              icon: Icons.compare_arrows,
+              label: 'MOVIMENTO',
+              value: _movementOptions[_movementPos],
+              items: List<String>.from(_movementOptions),
+              onChanged: (val) {
+                final pos = _movementOptions.indexOf(val ?? 'Todos');
+                setState(() {
+                  _movementPos = pos >= 0 ? pos : 0;
+                  _selectedMovement =
+                      _movementPos == 0 ? '' : _movementOptions[_movementPos];
+                });
+              },
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _openDepartmentDialog,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      child: Text(
-                        _selectedDepartments.isEmpty
-                            ? 'Departamentos'
-                            : _allDepartmentsSelected
-                                ? 'Todos'
-                                : '${_selectedDepartments.length} selecionado(s)',
-                        style: TextStyle(
-                          color: _selectedDepartments.isEmpty
-                              ? Colors.grey[600]
-                              : Colors.black87,
-                        ),
-                      ),
+          ),
+          Container(width: 1, height: 30, color: Colors.grey[300]),
+          Expanded(
+            child: _buildDropdownItem(
+              icon: Icons.category,
+              label: 'TIPO',
+              value: _typeOptions[_typePos],
+              items: List<String>.from(_typeOptions),
+              onChanged: (val) {
+                final pos = _typeOptions.indexOf(val ?? 'Normal');
+                setState(() {
+                  _typePos = pos >= 0 ? pos : 0;
+                  _usarModeloPersonalizado = (_typePos == 2 || _typePos == 3);
+                  _usarModeloComum = (_typePos == 3);
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+      const Divider(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: _buildDropdownItem(
+              icon: Icons.aspect_ratio,
+              label: 'TAMANHO',
+              value: _selectedSize,
+              items: List<String>.from(_sizes),
+              onChanged: (val) => setState(() => _selectedSize = val ?? '2X1'),
+            ),
+          ),
+          Container(width: 1, height: 30, color: Colors.grey[300]),
+          Expanded(
+            child: _buildDropdownItem(
+              icon: Icons.filter_list,
+              label: 'STATUS',
+              value: _statusOptions[_statusPos],
+              items: List<String>.from(_statusOptions),
+              onChanged: (val) {
+                final pos = _statusOptions.indexOf(val ?? 'Todos os status');
+                setState(() {
+                  _statusPos = pos >= 0 ? pos : 0;
+                  _selectedStatus = [
+                    Constants.statusAll,
+                    Constants.statusImpressas,
+                    Constants.statusNaoImpressas
+                  ][_statusPos];
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+      const Divider(height: 18),
+      // DEPARTAMENTOS + BUSCAR
+      Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: _openDepartmentDialog,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Text(
+                    _selectedDepartments.isEmpty
+                        ? 'Departamentos'
+                        : _allDepartmentsSelected
+                            ? 'Todos'
+                            : '${_selectedDepartments.length} selecionado(s)',
+                    style: TextStyle(
+                      color: _selectedDepartments.isEmpty
+                          ? Colors.grey[600]
+                          : Colors.black87,
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(3),
-                  child: ElevatedButton.icon(
-                    onPressed: buscando ? null : _loadSigns,
-                    icon: const Icon(Icons.search, size: 18),
-                    label: Text(buscando ? buscandoLabel : 'BUSCAR'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryRed,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ];
+            Padding(
+              padding: const EdgeInsets.all(3),
+              child: ElevatedButton.icon(
+                onPressed: buscando ? null : _loadSigns,
+                icon: const Icon(Icons.search, size: 18),
+                label: Text(buscando ? buscandoLabel : 'BUSCAR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryRed,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 
   Widget _buildBottomBar() {
@@ -1159,14 +1185,14 @@ class _PapeletaContadoresCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _counter(naoImpressas.toString(), 'Não\nImpressas',
-            const Color(0xFFC61033)),
-          Container(width: 1, height: 28, color: Colors.grey[200]),
-          _counter(impressas.toString(), 'Impressas', const Color(0xFF388E3C)),
-          Container(width: 1, height: 28, color: Colors.grey[200]),
-          _counter(total.toString(), 'Total', const Color(0xFF1976D2)),
-        ],
-      );
+        _counter(
+            naoImpressas.toString(), 'Não\nImpressas', const Color(0xFFC61033)),
+        Container(width: 1, height: 28, color: Colors.grey[200]),
+        _counter(impressas.toString(), 'Impressas', const Color(0xFF388E3C)),
+        Container(width: 1, height: 28, color: Colors.grey[200]),
+        _counter(total.toString(), 'Total', const Color(0xFF1976D2)),
+      ],
+    );
   }
 
   Widget _counter(String number, String label, Color color) {
@@ -1183,4 +1209,3 @@ class _PapeletaContadoresCard extends StatelessWidget {
     );
   }
 }
-

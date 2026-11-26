@@ -31,12 +31,16 @@ class OperacaoTrocaScreen extends StatefulWidget {
   final Avaliacao operacao;
   final Map<String, dynamic>? detalhe;
   final TrocaApi api;
+  final bool finalizada;
+  final int initialStep;
 
   const OperacaoTrocaScreen({
     super.key,
     required this.operacao,
     required this.api,
     this.detalhe,
+    this.finalizada = false,
+    this.initialStep = 0,
   });
 
   @override
@@ -55,6 +59,7 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
   @override
   void initState() {
     super.initState();
+    _step = widget.initialStep.clamp(0, 2);
     _produtos = _montarProdutos();
     _selecionadas = {
       ..._produtos.expand((p) => p.etiquetas),
@@ -81,8 +86,8 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
   String _brl(double v) {
     final s = v.toStringAsFixed(2);
     final parts = s.split('.');
-    final grouped = parts[0].replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+    final grouped = parts[0]
+        .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
     return 'R\$ $grouped,${parts[1]}';
   }
 
@@ -127,7 +132,8 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
     if (_op.products.isNotEmpty) {
       for (var i = 0; i < _op.products.length; i++) {
         final ap = _op.products[i];
-        final dp = i < detProds.length ? detProds[i] : const <String, dynamic>{};
+        final dp =
+            i < detProds.length ? detProds[i] : const <String, dynamic>{};
         final rawLabels = dp['labelNumber'];
         final labels = rawLabels is List
             ? rawLabels
@@ -135,15 +141,14 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
                 .where((e) => e.isNotEmpty)
                 .toList()
             : <String>[];
-        final tags = ap.tags.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        final tags =
+            ap.tags.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
         final descricaoDet = _s(dp['productDescription']);
         out.add(_ProdutoOperacao(
           descricao: descricaoDet.isNotEmpty ? descricaoDet : ap.productName,
           ean: ap.ean.isNotEmpty ? ap.ean : _s(dp['productEan']),
-          valorUnitario:
-              ap.unitValue > 0 ? ap.unitValue : _d(dp['unitValue']),
-          quantidade:
-              ap.quantity > 0 ? ap.quantity : _i(dp['quantity']),
+          valorUnitario: ap.unitValue > 0 ? ap.unitValue : _d(dp['unitValue']),
+          quantidade: ap.quantity > 0 ? ap.quantity : _i(dp['quantity']),
           etiquetas: labels.isNotEmpty ? labels : tags,
         ));
       }
@@ -169,6 +174,10 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
   }
 
   void _voltar() {
+    if (widget.finalizada) {
+      Navigator.of(context).pop();
+      return;
+    }
     if (_step > 0) {
       setState(() => _step--);
     } else {
@@ -321,7 +330,7 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
                 }
               },
               itemBuilder: (_) => [
-                if (!_cancelada)
+                if (!widget.finalizada && !_cancelada)
                   const PopupMenuItem(
                     value: 'cancelar',
                     child: Text('Cancelar operação'),
@@ -578,16 +587,19 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _info('EAN', produto.ean.isEmpty ? '—' : produto.ean),
+                    const SizedBox(height: 16),
+                    _info('Quantidade', '${produto.quantidade}'),
+                  ],
+                ),
+              ),
+              Expanded(
                 flex: 4,
-                child: _info('EAN', produto.ean.isEmpty ? '—' : produto.ean),
-              ),
-              Expanded(
-                flex: 3,
                 child: _info('Valor unitário', _brl(produto.valorUnitario)),
-              ),
-              Expanded(
-                flex: 2,
-                child: _info('Quantidade', '${produto.quantidade}'),
               ),
             ],
           ),
@@ -651,93 +663,97 @@ class _OperacaoTrocaScreenState extends State<OperacaoTrocaScreen> {
   Widget _cupomCard(String label, _ProdutoOperacao produto) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: const Color(0xFFB9B1B1),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Comprovante de troca',
-            style: TextStyle(fontSize: 19, color: _texto),
+      child: CustomPaint(
+        foregroundPainter: const _DashedBorderPainter(),
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
           ),
-          const SizedBox(height: 15),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-            decoration: BoxDecoration(
-              color: _vermelho,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Text(
-              _modalidade,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Text(
-            produto.descricao,
-            style: const TextStyle(
-              fontSize: 20,
-              height: 1.5,
-              color: _texto,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 35),
-          Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _info('Etiqueta', label)),
-              Expanded(child: _info('Descrição do motivo', _motivoDescricao)),
-            ],
-          ),
-          const SizedBox(height: 40),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _info('Loja de recebimento', _loja)),
-              Expanded(child: _info('Data de recebimento', _dataRecebimento)),
-            ],
-          ),
-          const SizedBox(height: 55),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: _info('Valor da troca', _brl(_op.totalValue)),
+              const Text(
+                'Comprovante de troca',
+                style: TextStyle(fontSize: 19, color: _texto),
               ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      'Nº da operação',
-                      style: TextStyle(color: _texto),
-                    ),
-                    const SizedBox(height: 8),
-                    const _BarcodeVisual(),
-                    const SizedBox(height: 5),
-                    Text(
-                      _op.tradeId,
-                      style: const TextStyle(
-                        color: _texto,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 15),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _vermelho,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Text(
+                  _modalidade,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
+              const SizedBox(height: 30),
+              Text(
+                produto.descricao,
+                style: const TextStyle(
+                  fontSize: 20,
+                  height: 1.5,
+                  color: _texto,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 35),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _info('Etiqueta', label)),
+                  Expanded(
+                      child: _info('Descrição do motivo', _motivoDescricao)),
+                ],
+              ),
+              const SizedBox(height: 40),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _info('Loja de recebimento', _loja)),
+                  Expanded(
+                      child: _info('Data de recebimento', _dataRecebimento)),
+                ],
+              ),
+              const SizedBox(height: 55),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: _info('Valor da troca', _brl(_op.totalValue)),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Nº da operação',
+                          style: TextStyle(color: _texto),
+                        ),
+                        const SizedBox(height: 8),
+                        const _BarcodeVisual(),
+                        const SizedBox(height: 5),
+                        Text(
+                          _op.tradeId,
+                          style: const TextStyle(
+                            color: _texto,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -799,7 +815,7 @@ class _BarcodeVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 65,
-      width: 155,
+      width: double.infinity,
       child: CustomPaint(painter: _BarcodePainter()),
     );
   }
@@ -810,10 +826,46 @@ class _BarcodePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = _texto;
     const barras = [
-      2, 1, 3, 1, 1, 2, 4, 1, 2, 1,
-      3, 2, 1, 1, 4, 2, 1, 3, 1, 2,
-      2, 1, 4, 1, 3, 1, 2, 2, 1, 3,
-      1, 2, 4, 1, 2, 1, 3, 1, 2, 3,
+      2,
+      1,
+      3,
+      1,
+      1,
+      2,
+      4,
+      1,
+      2,
+      1,
+      3,
+      2,
+      1,
+      1,
+      4,
+      2,
+      1,
+      3,
+      1,
+      2,
+      2,
+      1,
+      4,
+      1,
+      3,
+      1,
+      2,
+      2,
+      1,
+      3,
+      1,
+      2,
+      4,
+      1,
+      2,
+      1,
+      3,
+      1,
+      2,
+      3,
     ];
     double x = 0;
     for (final largura in barras) {
@@ -823,6 +875,41 @@ class _BarcodePainter extends CustomPainter {
       );
       x += largura + 2;
       if (x > size.width) break;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 1.5;
+    const radius = 25.0;
+    const dash = 6.0;
+    const gap = 4.0;
+    final paint = Paint()
+      ..color = const Color(0xFFB9B1B1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    final rect = Rect.fromLTWH(
+      strokeWidth / 2,
+      strokeWidth / 2,
+      size.width - strokeWidth,
+      size.height - strokeWidth,
+    );
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(radius)));
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = (distance + dash).clamp(0.0, metric.length).toDouble();
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + gap;
+      }
     }
   }
 
