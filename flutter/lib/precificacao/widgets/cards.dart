@@ -255,6 +255,7 @@ class _EtiquetaCardState extends State<EtiquetaCard> {
                       ean: ean,
                       descricao: descricao,
                       codSap: widget.tag.sap,
+                      urlImagem: widget.tag.urlImagem ?? '',
                       saldo: _saldo,
                     ),
                     child: Text(descricao,

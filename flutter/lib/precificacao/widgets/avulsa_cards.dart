@@ -341,6 +341,7 @@ class _AvulsaEtiquetaCardState extends State<AvulsaEtiquetaCard> {
                       ean: ean,
                       descricao: descricao,
                       codSap: item.sap,
+                      urlImagem: item.urlImagem ?? '',
                     ),
                     child: Text(
                       descricao,
@@ -615,6 +616,7 @@ class _AvulsaPapeletaCardState extends State<AvulsaPapeletaCard> {
                       ean: ean,
                       descricao: descricao,
                       codSap: item.sap,
+                      urlImagem: item.urlImagem ?? '',
                     ),
                     child: Text(
                       descricao,
