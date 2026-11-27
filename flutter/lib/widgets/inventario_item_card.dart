@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/inventario.dart';
+import '../utils/numero_format.dart';
 
 /// Card de item do inventário (layout do resumo): descrição, chips EAN/SAP e
 /// as métricas ESPERADO / CONTADO / DIF.
@@ -64,7 +65,7 @@ class InventarioItemCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _metricTile('ESPERADO',
-                        '${item.expectedQuantity}',
+                        formatIntBr(item.expectedQuantity),
                         const Color(0xFFF9FAFB),
                         const Color(0xFFE5E7EB),
                         const Color(0xFF374151)),
@@ -72,14 +73,16 @@ class InventarioItemCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _metricTile('CONTADO',
-                        '${item.countedQuantity}',
+                        formatIntBr(item.countedQuantity),
                         const Color(0xFFF9FAFB),
                         const Color(0xFFE5E7EB),
                         const Color(0xFF111827)),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _metricTile('DIF.', dif > 0 ? '+$dif' : '$dif',
+                    child: _metricTile(
+                        'DIF.',
+                        dif > 0 ? '+${formatIntBr(dif)}' : formatIntBr(dif),
                         difNeg
                             ? const Color(0xFFFEF2F2)
                             : const Color(0xFFFFFBEB),

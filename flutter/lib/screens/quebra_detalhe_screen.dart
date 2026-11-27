@@ -7,6 +7,7 @@ import '../network/inventario_service.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
 import '../utils/date_format.dart';
+import '../utils/numero_format.dart';
 import '../recebimento/utils/excel_downloader.dart';
 import '../widgets/dialog_adicionar_quebra.dart';
 import '../widgets/dialog_abrir_quebra.dart';
@@ -67,8 +68,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
   double get _totalValor =>
       _itens.fold(0.0, (soma, e) => soma + e.costPrice * e.quantity);
 
-  String _brl(double valor) =>
-      'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+  String _brl(double valor) => formatBrl(valor);
 
   Future<void> _init() async {
     final session = await SessionManager.create();
@@ -1077,7 +1077,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                           Expanded(
                             child: _infoBadge(
                               'Saldo',
-                              '${it.stock}',
+                              formatIntBr(it.stock),
                               const Color(0xFFEFF6FF),
                               const Color(0xFFDBEAFE),
                               const Color(0xFF1D4ED8),
@@ -1152,7 +1152,7 @@ class _QuebraDetalheScreenState extends State<QuebraDetalheScreen> {
                               color: qtyColor,
                               letterSpacing: 0.5)),
                       const SizedBox(height: 2),
-                      Text('${it.quantity}',
+                      Text(formatIntBr(it.quantity),
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
@@ -1561,7 +1561,7 @@ class _ItemAbertoCardState extends State<_ItemAbertoCard> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _info('Saldo Físico', '${item.stock}'),
+                  _info('Saldo Físico', formatIntBr(item.stock)),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1612,7 +1612,7 @@ class _ItemAbertoCardState extends State<_ItemAbertoCard> {
                       ],
                     ),
                   ),
-                  _info('Consolidada', '$consolidada'),
+                  _info('Consolidada', formatIntBr(consolidada)),
                 ],
               ),
             ),
@@ -1667,7 +1667,7 @@ class _ItemAbertoCardState extends State<_ItemAbertoCard> {
                               fontSize: 8,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFFE11D48))),
-                      Text('R\$ ${totalItem.toStringAsFixed(2)}',
+                      Text(formatBrl(totalItem),
                           style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -1846,7 +1846,7 @@ class _ItemCadastroCardState extends State<_ItemCadastroCard> {
                 children: [
                   _detalhe('Cód. SAP', item.sapCode),
                   _detalhe('EAN', item.ean),
-                  _detalhe('Saldo Físico', '${item.stock}'),
+                  _detalhe('Saldo Físico', formatIntBr(item.stock)),
                 ],
               ),
             ),

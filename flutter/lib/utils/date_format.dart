@@ -1,27 +1,55 @@
-/// Formata uma data para dd/MM/yyyy, convertendo de UTC para o horário local
-/// quando a string vier no formato ISO (ex.: `2026-10-13T00:33:56Z`).
-/// Se não for ISO (ex.: `09/10/2026`), devolve como veio.
-String formatDataBr(String valor) {
-  if (valor.isEmpty) return valor;
-  final d = DateTime.tryParse(valor);
-  if (d == null) return valor;
-  final l = d.toLocal();
-  return '${l.day.toString().padLeft(2, '0')}/'
-      '${l.month.toString().padLeft(2, '0')}/${l.year}';
+const _meses = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
+
+DateTime? _parseData(String valor) {
+  final texto = valor.trim();
+  if (texto.isEmpty) return null;
+  final iso = DateTime.tryParse(texto);
+  if (iso != null) return iso.toLocal();
+  final m = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{2,4})$').firstMatch(texto);
+  if (m == null) return null;
+  var ano = int.parse(m.group(3)!);
+  if (ano < 100) ano += 2000;
+  final mes = int.parse(m.group(2)!);
+  final dia = int.parse(m.group(1)!);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  return DateTime(ano, mes, dia);
 }
 
-/// Formata dd/MM/yyyy • HH:MM quando a string trouxer horário (ISO com "T"
-/// ou contendo ":"). Se for só data, devolve no formato dd/MM/yyyy.
+String _dataBr(DateTime d) {
+  final dia = d.day.toString().padLeft(2, '0');
+  final mes = _meses[d.month - 1];
+  final ano = (d.year % 100).toString().padLeft(2, '0');
+  return '$dia/$mes/$ano';
+}
+
+/// Formata para dd/Mês/aa (ex.: 01/Novembro/26).
+String formatDataBr(String valor) {
+  final d = _parseData(valor);
+  return d == null ? valor : _dataBr(d);
+}
+
+/// Data por extenso + hora (ex.: 01/Novembro/26 • 20h:30m).
 String formatDataHoraBr(String valor) {
   if (valor.isEmpty) return valor;
   final temHora = valor.contains('T') || valor.contains(':');
-  final d = DateTime.tryParse(valor);
+  final d = _parseData(valor);
   if (d == null) return valor;
-  final l = d.toLocal();
-  final data = '${l.day.toString().padLeft(2, '0')}/'
-      '${l.month.toString().padLeft(2, '0')}/${l.year}';
+  final data = _dataBr(d);
   if (!temHora) return data;
-  final hora = '${l.hour.toString().padLeft(2, '0')}:'
-      '${l.minute.toString().padLeft(2, '0')}';
+  final hora = '${d.hour.toString().padLeft(2, '0')}h:'
+      '${d.minute.toString().padLeft(2, '0')}m';
   return '$data • $hora';
 }

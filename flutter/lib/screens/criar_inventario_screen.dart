@@ -5,6 +5,7 @@ import '../network/inventario_service.dart';
 import '../widgets/inventario_item_card.dart';
 import '../network/session_manager.dart';
 import '../utils/constants.dart';
+import '../utils/numero_format.dart';
 import 'scanner_ean_screen.dart';
 
 class CriarInventarioScreen extends StatefulWidget {
@@ -181,7 +182,7 @@ class _CriarInventarioScreenState extends State<CriarInventarioScreen> {
                                 color: Color(Constants.invTextSecondary),
                                 fontSize: 14)),
                         const SizedBox(height: 6),
-                        Text('Estoque: ${p.stock.toStringAsFixed(0)}',
+                        Text('Estoque: ${formatIntBr(p.stock.round())}',
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
