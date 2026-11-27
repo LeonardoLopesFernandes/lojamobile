@@ -629,14 +629,11 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
         codPedidoDestino: codPedidoDestino,
         codPedidoOcorrenciaTipo: codOcorrencia,
       ));
-      if (resp.aberturaBauAutorizada == true ||
-          resp.status?.toLowerCase() == "ok" ||
-          resp.statusCode == 200 ||
-          (resp.status == null && resp.mensagem == null)) {
+      if (resp.autorizado) {
+        if (!mounted) return;
         setState(() {
           _bauAutorizado = true;
         });
-        if (!mounted) return;
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -654,8 +651,9 @@ class _DetalhesViagemScreenState extends State<DetalhesViagemScreen> {
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("❌ ${resp.mensagem ?? 'Não autorizado'})")));
+            content: Text("❌ ${resp.erroDescricao}")));
       }
     } catch (e) {
       ScaffoldMessenger.of(context)

@@ -31,10 +31,34 @@ class BrasilRiskClient {
   Future<BrasilRiskBauResponse> autorizarAberturaBau(
       AutorizarAberturaBauRequest request) async {
     final uri = Uri.parse(baseUrl + 'salvar/AutorizarAberturaBau');
-    final response = await http.post(uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request.toJson()));
+    final response = await http
+        .post(uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(request.toJson()))
+        .timeout(const Duration(seconds: 20));
+    final texto = response.body.trim();
+    Map<String, dynamic> json = const {};
+    if (texto.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(texto);
+        if (decoded is Map) {
+          json = Map<String, dynamic>.from(decoded);
+        } else if (decoded is bool) {
+          json = {'AberturaBauAutorizada': decoded};
+        } else if (decoded is String) {
+          json = {'Mensagem': decoded};
+        }
+      } catch (_) {
+        json = {'Mensagem': texto};
+      }
+    }
     return BrasilRiskBauResponse.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+      json,
+      httpStatus: response.statusCode,
+      rawBody: texto,
+    );
   }
 }

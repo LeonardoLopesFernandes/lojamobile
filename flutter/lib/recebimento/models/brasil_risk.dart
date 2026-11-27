@@ -1,3 +1,28 @@
+bool? _asBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final texto = value.toString().trim().toLowerCase();
+  if (texto == 'true' || texto == '1' || texto == 'sim' || texto == 's') {
+    return true;
+  }
+  if (texto == 'false' ||
+      texto == '0' ||
+      texto == 'não' ||
+      texto == 'nao' ||
+      texto == 'n') {
+    return false;
+  }
+  return null;
+}
+
+int? _asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
 class TokenBody {
   final String token;
 
@@ -32,7 +57,7 @@ class BrasilRiskLoginResponse {
       nomeUsuario: json['NomeUsuario'],
       mensagem: json['Mensagem'],
       status: json['Status'],
-      statusCode: json['StatusCode'],
+      statusCode: _asInt(json['StatusCode']),
       notaFiscal: (json['NotaFiscal'] as List? ?? [])
           .map((e) => BrasilRiskNota.fromJson(e))
           .toList(),
@@ -251,7 +276,7 @@ class BrasilRiskNotaDetalhe {
 
   factory BrasilRiskNotaDetalhe.fromJson(Map<String, dynamic> json) {
     return BrasilRiskNotaDetalhe(
-      aberturaBauAutorizada: json['AberturaBauAutorizada'],
+      aberturaBauAutorizada: _asBool(json['AberturaBauAutorizada']),
       cidadeCliente: json['CidadeCliente'],
       codDestino: json['CodDestino'],
       codEmpresaNF: json['CodEmpresaNF'],
@@ -300,7 +325,7 @@ class BrasilRiskNotaDetalhe {
       latitudeVeiculo: (json['LatitudeVeiculo'] as num?)?.toDouble(),
       longitudeVeiculo: (json['LongitudeVeiculo'] as num?)?.toDouble(),
       contrato: json['Contrato'],
-      hibrido: json['Hibrido'],
+      hibrido: _asBool(json['Hibrido']),
       latitudeDestino: (json['LatitudeDestino'] as num?)?.toDouble(),
       longitudeDestino: (json['LongitudeDestino'] as num?)?.toDouble(),
       latitudeOrigem: (json['LatitudeOrigem'] as num?)?.toDouble(),
@@ -333,7 +358,7 @@ class AutorizarAberturaBauRequest {
         'CodPedido': codPedido,
         'CodEmpresaUsuario': codEmpresaUsuario,
         'DataCadastro': dataCadastro,
-        'CodPedidoDestino': codPedidoDestino.toString(),
+        'CodPedidoDestino': codPedidoDestino,
         'CodPedidoOcorrenciaTipo': codPedidoOcorrenciaTipo,
       };
 }
@@ -343,20 +368,118 @@ class BrasilRiskBauResponse {
   final String? status;
   final int? statusCode;
   final bool? aberturaBauAutorizada;
+  final int? httpStatus;
+  final String? rawBody;
 
   BrasilRiskBauResponse({
     this.mensagem,
     this.status,
     this.statusCode,
     this.aberturaBauAutorizada,
+    this.httpStatus,
+    this.rawBody,
   });
 
-  factory BrasilRiskBauResponse.fromJson(Map<String, dynamic> json) {
+  factory BrasilRiskBauResponse.fromJson(
+    Map<String, dynamic> json, {
+    int? httpStatus,
+    String? rawBody,
+  }) {
+    dynamic pick(List<String> keys) {
+      for (final key in keys) {
+        if (json.containsKey(key)) return json[key];
+      }
+      for (final entry in json.entries) {
+        final k = entry.key.toLowerCase();
+        for (final key in keys) {
+          if (k == key.toLowerCase()) return entry.value;
+        }
+      }
+      return null;
+    }
+
+    bool? boolOf(dynamic value) {
+      if (value == null) return null;
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      final texto = value.toString().trim().toLowerCase();
+      if (texto == 'true' || texto == '1' || texto == 'sim' || texto == 's') {
+        return true;
+      }
+      if (texto == 'false' ||
+          texto == '0' ||
+          texto == 'não' ||
+          texto == 'nao' ||
+          texto == 'n') {
+        return false;
+      }
+      return null;
+    }
+
+    final codigo = pick(['StatusCode', 'statusCode', 'HttpStatusCode']);
     return BrasilRiskBauResponse(
-      mensagem: json['Mensagem'],
-      status: json['Status'],
-      statusCode: json['StatusCode'],
-      aberturaBauAutorizada: json['AberturaBauAutorizada'],
+      mensagem: pick(['Mensagem', 'mensagem', 'Message', 'message'])?.toString(),
+      status: pick(['Status', 'status'])?.toString(),
+      statusCode: codigo is num
+          ? codigo.toInt()
+          : int.tryParse(codigo?.toString() ?? ''),
+      aberturaBauAutorizada: boolOf(
+          pick(['AberturaBauAutorizada', 'aberturaBauAutorizada'])),
+      httpStatus: httpStatus,
+      rawBody: rawBody,
     );
+  }
+
+  bool get autorizado {
+    if (aberturaBauAutorizada == true) return true;
+    final s = status?.trim().toLowerCase() ?? '';
+    final m = mensagem?.trim().toLowerCase() ?? '';
+    if (s == 'ok' ||
+        s == 'sucesso' ||
+        s == 'autorizado' ||
+        s == 'true' ||
+        s == '1') {
+      return true;
+    }
+    if (s.contains('autoriz') &&
+        !s.contains('não') &&
+        !s.contains('nao') &&
+        !s.contains('negad')) {
+      return true;
+    }
+    if (m.contains('autoriz') &&
+        !m.contains('não') &&
+        !m.contains('nao') &&
+        !m.contains('negad') &&
+        !m.contains('erro') &&
+        !m.contains('falha')) {
+      return true;
+    }
+    final corpoVazio = rawBody == null || rawBody!.trim().isEmpty;
+    final semMensagem = mensagem == null || mensagem!.trim().isEmpty;
+    final semStatus = status == null || status!.trim().isEmpty;
+    if (statusCode == 200 && semMensagem && semStatus) return true;
+    if (corpoVazio &&
+        semMensagem &&
+        semStatus &&
+        httpStatus != null &&
+        httpStatus! >= 200 &&
+        httpStatus! < 300) {
+      return true;
+    }
+    return false;
+  }
+
+  String get erroDescricao {
+    final partes = <String>[];
+    if (httpStatus != null) partes.add('HTTP $httpStatus');
+    if (mensagem != null && mensagem!.trim().isNotEmpty) {
+      partes.add(mensagem!.trim());
+    } else if (status != null && status!.trim().isNotEmpty) {
+      partes.add(status!.trim());
+    } else if (rawBody != null && rawBody!.trim().isNotEmpty) {
+      partes.add(rawBody!.trim());
+    }
+    return partes.isEmpty ? 'Não autorizado' : partes.join(' - ');
   }
 }
