@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:inventario/rotina/components/product_card.dart';
-import 'package:inventario/rotina/components/sticky_check.dart';
 import 'package:inventario/rotina/theme.dart';
 import 'package:inventario/rotina/types.dart';
 
 class DepartmentCard extends StatelessWidget {
   final Department department;
   final bool blocked;
+  final bool expanded;
+  final VoidCallback onToggle;
   final void Function(Department) onViewAll;
   final void Function(Item) onEditItem;
   final void Function(Item) onShowBadge;
@@ -15,6 +16,8 @@ class DepartmentCard extends StatelessWidget {
     super.key,
     required this.department,
     required this.blocked,
+    required this.expanded,
+    required this.onToggle,
     required this.onViewAll,
     required this.onEditItem,
     required this.onShowBadge,
@@ -28,117 +31,105 @@ class DepartmentCard extends StatelessWidget {
     final total = allItems.length;
     final treatedCount = allItems.where((i) => i.treated).length;
     final allTreated = total > 0 && treatedCount == total;
+    const navy = Color(0xFF1B2559);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
+      color: Colors.white,
       child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${department.department.code} - ${department.department.name}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Open Sans',
+          InkWell(
+            onTap: onToggle,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 22),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${department.department.code} - ${department.department.name}',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        color: navy,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Open Sans',
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-                if (allTreated) ...[
-                  const SizedBox(width: 6),
-                  const StickyCheck(size: 30),
-                ] else if (blocked) ...[
-                  const SizedBox(width: 6),
-                  Image.asset('assets/rotina/ic_block.png', width: 20, height: 20),
+                  if (allTreated)
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: const Color(0xFF20B26B), width: 2),
+                      ),
+                      child: const Icon(Icons.check,
+                          size: 21, color: Color(0xFF20B26B)),
+                    )
+                  else if (blocked)
+                    Image.asset('assets/rotina/ic_block.png',
+                        width: 22, height: 22),
+                  const SizedBox(width: 16),
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: const Icon(Icons.keyboard_arrow_down,
+                        color: navy, size: 28),
+                  ),
                 ],
-                const SizedBox(width: 8),
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    GestureDetector(
-                      onTap: () => onViewAll(department),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x47000000),
-                              blurRadius: 3.6,
-                              offset: Offset(0, 1.6),
-                            ),
-                          ],
-                        ),
-                        child: const Text(
-                          'VER TUDO',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Open Sans',
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: -8,
-                      right: -8,
-                      child: Container(
-                        constraints:
-                            const BoxConstraints(minWidth: 22, minHeight: 22),
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(11),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x33000000),
-                              blurRadius: 4,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$total',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Open Sans',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
-          Column(
-            children: allItems
-                .map((item) => ProductCard(
-                      key: ValueKey('${item.id}-${item.ean}'),
-                      item: item,
-                      blocked: blocked,
-                      onEdit: onEditItem,
-                      onShowBadge: onShowBadge,
-                    ))
-                .toList(),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: !expanded
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Divider(height: 1, color: Color(0xFFE5E7EF)),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 4, 8, 0),
+                        child: Row(
+                          children: [
+                            Text(
+                              '$total ${total == 1 ? 'item' : 'itens'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                                fontFamily: 'Open Sans',
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () => onViewAll(department),
+                              child: const Text('VER TUDO',
+                                  style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: 'Open Sans')),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ...allItems.map((item) => ProductCard(
+                            key: ValueKey('${item.id}-${item.ean}'),
+                            item: item,
+                            blocked: blocked,
+                            onEdit: onEditItem,
+                            onShowBadge: onShowBadge,
+                          )),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
           ),
+          const Divider(height: 1, color: Color(0xFFE5E7EF)),
         ],
       ),
     );

@@ -40,6 +40,7 @@ class _MainScreenState extends State<MainScreen> {
   bool _showSuccessToast = false;
   bool _loaded = false;
   bool _ocultarTopo = false;
+  final Set<String> _expandidos = <String>{};
   List<BookStatus> _books = [];
 
   @override
@@ -176,7 +177,7 @@ class _MainScreenState extends State<MainScreen> {
         _confirmarVoltarHubs();
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFFF2F4F7),
         body: Stack(
           children: [
             Column(
@@ -195,7 +196,8 @@ class _MainScreenState extends State<MainScreen> {
                               ? _minimalDateCard(controller)
                               : _mainCard(controller),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
+                        if (!_ocultarTopo) _filtrosBar(controller),
                         if (booksPendentes.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
@@ -287,9 +289,9 @@ class _MainScreenState extends State<MainScreen> {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top, left: 12, right: 12),
+          top: MediaQuery.of(context).padding.top, left: 8, right: 8),
       child: SizedBox(
-        height: 64,
+        height: 68,
         child: Row(
           children: [
             GestureDetector(
@@ -306,18 +308,35 @@ class _MainScreenState extends State<MainScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset('assets/rotina/logo_rotina.png', width: 26, height: 26),
+                  Image.asset('assets/rotina/logo_rotina.png',
+                      width: 42, height: 42),
                   const SizedBox(width: 8),
-                  const Text('Rotina Comercial',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                          fontFamily: 'Open Sans')),
+                  Flexible(
+                    child: Text('Rotina Comercial',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1B2559),
+                            fontFamily: 'Open Sans')),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 44),
+            GestureDetector(
+              onTap: () => setState(() => _showLogout = true),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: Colors.white, size: 26),
+              ),
+            ),
+            const SizedBox(width: 4),
           ],
         ),
       ),
@@ -325,124 +344,266 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _mainCard(DepartmentsController controller) {
-    final dayOfWeek = getDayOfWeekPt(controller.selectedDate);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () => setState(() {
-              _showDatePicker = true;
-              _calendarMonth =
-                  DateTime(controller.selectedDate.year, controller.selectedDate.month, 1);
-            }),
-            child: Row(
-              children: [
-                const Icon(Icons.today, color: AppColors.primary, size: 22),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Dia da Semana:',
-                          style: TextStyle(fontSize: 15, color: AppColors.textMuted, fontFamily: 'Open Sans')),
-                      Text(dayOfWeek,
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              fontFamily: 'Open Sans')),
-                    ],
-                  ),
-                ),
-                Image.asset('assets/rotina/agenda.png', width: 110, height: 44),
-              ],
-            ),
+    final diaSemana = getDayOfWeekPt(controller.selectedDate)
+        .split('-')
+        .map(capitalize)
+        .join('-');
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE3E7EF)),
           ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => setState(() {
-              _showDatePicker = true;
-              _calendarMonth =
-                  DateTime(controller.selectedDate.year, controller.selectedDate.month, 1);
-            }),
-            child: Row(
-              children: [
-                const Icon(Icons.date_range, color: AppColors.primary, size: 22),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Data:',
-                          style: TextStyle(fontSize: 15, color: AppColors.textMuted, fontFamily: 'Open Sans')),
-                      Text(formatDisplayDate(controller.selectedDate),
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              fontFamily: 'Open Sans')),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    showToast('Gerando PDF...');
-                    final result = await downloadDaySchedulePdf(
-                        formatApiDate(controller.selectedDate));
-                    showToast(result.message, isError: true);
-                  },
-                  child: Image.asset('assets/rotina/imprimir.png', width: 110, height: 44),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 18, color: AppColors.divider),
-          Row(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+          child: Row(
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFC8C6C4)),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
+                child: GestureDetector(
+                  onTap: () => setState(() {
+                    _showDatePicker = true;
+                    _calendarMonth = DateTime(controller.selectedDate.year,
+                        controller.selectedDate.month, 1);
+                  }),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.search, color: AppColors.primary, size: 22),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _queryController,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontFamily: 'Open Sans',
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: 'Pesquisar por departamento',
-                            hintStyle: TextStyle(
-                              color: AppColors.textHint,
-                              fontFamily: 'Open Sans',
+                      const Text('Dia:',
+                          style: TextStyle(
                               fontSize: 15,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                          onChanged: (text) => controller.searchDepartment(text),
-                        ),
+                              color: AppColors.textMuted,
+                              fontFamily: 'Open Sans')),
+                      const SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(diaSemana,
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1B2559),
+                                fontFamily: 'Open Sans')),
                       ),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() {
+                    _showDatePicker = true;
+                    _calendarMonth = DateTime(controller.selectedDate.year,
+                        controller.selectedDate.month, 1);
+                  }),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Data:',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textMuted,
+                              fontFamily: 'Open Sans')),
+                      const SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(formatDisplayDate(controller.selectedDate),
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1B2559),
+                                fontFamily: 'Open Sans')),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => setState(() {
+                  _showDatePicker = true;
+                  _calendarMonth = DateTime(controller.selectedDate.year,
+                      controller.selectedDate.month, 1);
+                }),
+                child: Container(
+                  width: 56,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      const Icon(Icons.calendar_month, color: Colors.white, size: 30),
+                ),
+              ),
             ],
           ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE3E7EF)),
+          ),
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _queryController,
+                  style: const TextStyle(fontSize: 15, fontFamily: 'Open Sans'),
+                  decoration: InputDecoration(
+                    hintText: 'Pesquisar por departamento',
+                    hintStyle: const TextStyle(
+                        color: AppColors.textHint,
+                        fontFamily: 'Open Sans',
+                        fontSize: 15),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 13),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          const BorderSide(color: Color(0xFFC8CDD9)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  onChanged: (text) => controller.searchDepartment(text),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  controller.searchDepartment(_queryController.text);
+                },
+                child: Container(
+                  width: 54,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.search, color: Colors.white, size: 30),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _filtrosBar(DepartmentsController controller) {
+    final todos = controller.departments
+        .map((d) => d.department.code)
+        .where((c) => c.isNotEmpty)
+        .toList();
+    final qualquerAberto =
+        todos.any((code) => _expandidos.contains(code));
+    return SizedBox(
+      height: 42,
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                if (qualquerAberto) {
+                  _expandidos.clear();
+                } else {
+                  _expandidos.addAll(todos);
+                }
+              });
+            },
+            icon: Icon(
+              qualquerAberto
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              color: const Color(0xFF1B2559),
+              size: 28,
+            ),
+            tooltip: qualquerAberto ? 'Recolher tudo' : 'Expandir tudo',
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: () => _mostrarFiltros(controller),
+            icon: const Icon(Icons.tune,
+                color: Color(0xFF1B2559), size: 26),
+            tooltip: 'Filtros',
+          ),
         ],
+      ),
+    );
+  }
+
+  void _mostrarFiltros(DepartmentsController controller) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Filtros',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B2559),
+                      fontFamily: 'Open Sans')),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.unfold_more,
+                    color: AppColors.primary),
+                title: const Text('Expandir todos os departamentos',
+                    style: TextStyle(fontFamily: 'Open Sans')),
+                onTap: () {
+                  setState(() => _expandidos
+                    ..clear()
+                    ..addAll(controller.departments
+                        .map((d) => d.department.code)
+                        .where((c) => c.isNotEmpty)));
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.unfold_less,
+                    color: AppColors.primary),
+                title: const Text('Recolher todos os departamentos',
+                    style: TextStyle(fontFamily: 'Open Sans')),
+                onTap: () {
+                  setState(() => _expandidos.clear());
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.clear_all,
+                    color: AppColors.primary),
+                title: const Text('Limpar pesquisa',
+                    style: TextStyle(fontFamily: 'Open Sans')),
+                onTap: () {
+                  _queryController.clear();
+                  controller.searchDepartment('');
+                  Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -518,9 +679,18 @@ class _MainScreenState extends State<MainScreen> {
             itemCount: controller.departments.length,
             itemBuilder: (context, index) {
               final dept = controller.departments[index];
+              final code = dept.department.code;
               return DepartmentCard(
                 department: dept,
                 blocked: _blocked,
+                expanded: _expandidos.contains(code),
+                onToggle: () => setState(() {
+                  if (_expandidos.contains(code)) {
+                    _expandidos.remove(code);
+                  } else {
+                    _expandidos.add(code);
+                  }
+                }),
                 onViewAll: (d) {
                   Navigator.of(context).pushNamed(
                     'DepartmentDetail',
@@ -594,6 +764,14 @@ class _MainScreenState extends State<MainScreen> {
                 }),
                 _menuItem(Icons.today, 'Rotina do dia', () => setState(() => _showMenu = false)),
                 _menuItem(Icons.menu_book, 'Books', _openBooks),
+                _menuItem(Icons.print, 'Imprimir agenda do dia', () async {
+                  setState(() => _showMenu = false);
+                  final c = context.read<DepartmentsController>();
+                  showToast('Gerando PDF...');
+                  final result = await downloadDaySchedulePdf(
+                      formatApiDate(c.selectedDate));
+                  showToast(result.message, isError: true);
+                }),
                 _menuItem(Icons.remove_shopping_cart, 'Itens sem venda', () {
                   setState(() => _showMenu = false);
                   Navigator.of(context).pushNamed('SpecialItems',
